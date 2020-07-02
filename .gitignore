@@ -1,0 +1,20 @@
+# Temporary files #
+.DS_Store
+*.pyc
+*.swp
+*.swo
+*~
+\#*
+.#*
+._*
+
+# IDE files #
+/.idea
+
+# Distribution #
+/build/
+/dist/
+/autopaths.egg-info/
+
+# Testing #
+/.pytest_cache/
