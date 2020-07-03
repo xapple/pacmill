@@ -19,8 +19,8 @@ Typically you would run this file from a command line like this:
 from pacmill.core.project import Project
 
 # Constants #
-proj_xls = "~/repos/collab_sinclair/pacmill_projects/aj_skin/200702_metadata_sinclair_lm.xlsx"
+proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/metadata_aj_skin.xlsx"
 
 ###############################################################################
-proj = Project('aj_skin', '~/test/metadata.xlsx')
-for sample in proj: print(sample.read_count)
+proj = Project('aj_skin', proj_xls)
+for sample in proj: print(sample.path.size)

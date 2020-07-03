@@ -12,6 +12,9 @@ MIT Licensed.
 # Third party modules #
 
 # First party modules #
+from plumbing.cache import property_cached
+from autopaths      import Path
+from fasta.fastq    import FASTQ
 
 # Internal modules #
 
@@ -65,3 +68,20 @@ class Sample:
         """
         # Check the short name contains only alphanumerics and underscore #
         assert self.short_name.isidentifier()
+        # Check that the FASTA exists #
+
+    #----------------------------- Properties --------------------------------#
+    @property_cached
+    def path(self):
+        """The path to the FASTQ reads file."""
+        # Check that input_dir always ends with a dash (/) #
+        assert self.input_dir.endswith("/")
+        # Check that suffix_dir always ends with a dash (/) #
+        assert self.suffix_dir.endswith("/")
+        # Join the three components together #
+        return Path(self.input_dir + self.suffix_dir + self.fwd_file_name)
+
+    @property_cached
+    def fastq(self):
+        """The FASTQ object itself."""
+        return FASTQ(self.path)
