@@ -14,7 +14,6 @@ Contact at www.sinclair.bio
 # First party modules #
 from plumbing.cache import property_cached
 from autopaths      import Path
-from autopaths.auto_paths import AutoPaths
 
 # Internal modules #
 
@@ -54,8 +53,10 @@ class Sample:
         was parsed by the Project object.
         """
         # Keep a reference to the Project object #
-        self.parent = parent
-        self.proj   = parent
+        self.parent  = parent
+        self.project = parent
+        # Record which metadata keys were passed to this sample #
+        self.metadata_keys = [k for k in kwargs if not k.startswith("Unnamed")]
         # Set the attributes of this instance with the given kwargs #
         for name, value in kwargs.items(): setattr(self, name, value)
         # We need to transform some attributes #
@@ -98,13 +99,23 @@ class Sample:
                   "It should be located at: '%s'"
             msg = msg % (self.description, self.path)
             raise FileNotFoundError(msg)
+        # Check the DNA sequences #
+        dna_keys = ['fwd_index_seq', 'rev_index_seq', 'fwd_primer_seq',
+                    'rev_primer_seq']
+        for key in dna_keys:
+            seq = getattr(self, key)
+            if '\n' in seq:
+                msg = "The `%s` entry of <%s> contains illegal " \
+                      "characters, please check: '%s'"
+                msg = msg % (key, self.description, seq)
+                raise ValueError(msg)
 
     #----------------------------- Properties --------------------------------#
     @property
     def description(self):
         """A string describing the current sample."""
         desc = "Sample object %i in project '%s' with name '%s'"
-        return desc % (self.num, self.proj.short_name, self.short_name)
+        return desc % (self.num, self.project.short_name, self.short_name)
 
     @property_cached
     def path(self):
@@ -114,37 +125,58 @@ class Sample:
 
     @property_cached
     def fastq(self):
-        """The FASTQ object with convenience methods."""
+        """
+        The FASTQ object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        """
         # This class is taken from the `fasta` python package #
         from fasta import FASTQ
         fastq = FASTQ(self.path)
-        # Change the location of first FastQC, as we don't want to touch the
-        # directory where the original reads are stored on the file system.
+        # Change the location of the first FastQC, as we don't want to touch
+        # the directory where the original reads are stored on the file system.
         from fasta.fastqc import FastQC
         fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
         # Return #
         return fastq
+
+    #------------------------- Automatic paths -------------------------------#
+    all_paths = """
+                /fastqc/
+                /report/cache/
+                /report/sample.pdf
+                """
 
     @property_cached
     def base_dir(self):
         """
         The path to the directory where all results will be stored
         for this sample. We build it by joining three components together.
+        See https://github.com/xapple/autopaths#directorypath-object
         """
         return Path(self.output_dir + 'samples/' + self.short_name + '/')
-
-    all_paths = """
-                /fastqc/
-                """
 
     @property_cached
     def autopaths(self):
         """
-        The AutoPaths object for quickly assessing the filesystem paths
-        of various outputs and directories.
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
         """
+        from autopaths.auto_paths import AutoPaths
         return AutoPaths(self.base_dir, self.all_paths)
 
-
     #---------------------------- Compositions -------------------------------#
-    pass
+    @property_cached
+    def filter(self):
+        """Will filter out unwanted sequences."""
+        return SeqFilter(self.joiner.results.assembled, self.p.filtered_dir, self.short_name, self.primers)
+
+    @property_cached
+    def report(self):
+        """
+        The SampleReport object is used to produce a PDF document containing
+        all the informations and graphs that concern this sample
+        See https://github.com/xapple/pymarktex#usage
+        """
+        from pacmill.reports.sample import SampleReport
+        return SampleReport(self, self.autopaths.report_pdf)

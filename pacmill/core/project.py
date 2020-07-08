@@ -29,6 +29,9 @@ class Project:
     def __iter__(self):
         return iter(self.samples)
 
+    def __len__(self):
+        return len(self.samples)
+
     def __init__(self, short_name, *args):
         """
         A Project object takes:
@@ -46,11 +49,14 @@ class Project:
         Attributes are the following:
 
             * self.short_name: the name of this project.
+            * self.long_name:  the more lengthy description of this project.
             * self.all_xlsx:   a list of file paths (that are excel files).
             * self.all_dfs:    a list of pandas dataframes (one for each file).
             * self.metadata:   a pandas dataframe with all metadata
                                for this project combined.
             * self.samples:    a list of Sample objects.
+
+        Other properties are described in their respective docstrings.
         """
         # The name of the project #
         self.short_name = short_name.lower()
@@ -74,14 +80,32 @@ class Project:
         # Remove samples that are not marked as "yes" for "used" #
         self.metadata = self.metadata.query('used == "yes"').copy()
 
+    #----------------------------- Properties --------------------------------#
     @property_cached
     def samples(self):
-        """Create all Sample objects."""
+        """Create all the Sample objects."""
         # Iterate over all rows of the input #
         rows = self.metadata.iterrows()
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
         # Add a reference the current project #
         for sample in samples: sample.parent = self
+        # Check we have at least one sample #
+        assert len(samples) > 0
         # Return #
         return samples
+
+    @property_cached
+    def long_name(self):
+        """
+        Get the project's long name which is a string describing the
+        project title in a longer fashion than the short name.
+        """
+        # It's actually contained in the Sample objects #
+        all_names = set(s.project_long_name for s in self)
+        # Check that it doesn't diverge between samples #
+        if not len(all_names) == 1:
+            msg = "The project long name is not uniform across samples."
+            raise ValueError(msg)
+        # Return #
+        return all_names.pop()

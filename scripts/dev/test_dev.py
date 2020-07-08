@@ -24,7 +24,6 @@ proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/metad
 ###############################################################################
 # Create project #
 proj = Project('aj_skin', proj_xls)
-
-# Run FastQC on the samples individually #
 for sample in proj:
-    print(sample.fastq.fastqc())
+    print(sample.report())
+    break

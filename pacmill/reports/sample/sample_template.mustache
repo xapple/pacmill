@@ -1,0 +1,59 @@
+Sample report
+=============
+
+General Information
+-------------------
+This sample has the code "`{{sample_short_name}}`" and is named "{{sample_long_name}}". It is part of the project code "`{{project_short_name}}`" which is described as "{{project_long_name}}" and contains {{project_other_samples}} other samples.
+
+Meta-data details
+-----------------
+All the meta-data associated with this sample is displayed below:
+
+{{all_metadata}}
+
+-------
+
+Processing
+----------
+* This report and all the analysis was generated using the `{{project_name}}` python pipeline.
+
+* Documentation and source code is available at:
+
+<{{project_url}}>
+
+* Version `{{project_version}}` of the pipeline was used.
+
+* This document was generated at `{{now}}` on host `{{hostname}}`.
+
+{{#git}}
+* The exact git hash of the latest commit was: `{{git_hash}}`
+{{/git}}
+
+
+Validation
+----------
+The original reads file weighed {{fastq_size}} and was validated using the \url{https://github.com/statgen/fastQValidator} program. It contained no invalid characters.
+
+
+Raw data
+--------
+The original reads file contained {{fastq_count}} reads with an average PHRED quality of {{fastq_qual}}. The average quality per base and the average quality per sequence can be seen in figure \ref{fastqc_graphs}.
+
+{{fastqc_graphs}}
+
+
+{{#filtering}}
+Filtering
+---------
+Next, we filter the sequences based on several criteria. These many sequences are lost:
+
+* Checking for the presence of both primers within at least {{primer_max_dist}} base pairs of the read ends and with at most {{mismatches_allowed}} mismatches allowed discards {{primer_discard}} sequences ({{primer_left}} left).
+
+* Checking for the absence of undetermined "N" bases anywhere in the reads (expect in the primers) discards {{n_base_discard}} sequences ({{n_base_left}} left).
+
+* Checking that no sequence is shorter than {{min_read_length}} base pairs and no sequence is longer than {{max_read_length}} base pairs discards {{length_discard}} sequences ({{length_left}} left).
+
+This leaves us with {{percent_remaining}} of this sample's sequences.
+
+-------
+{{/filtering}}
