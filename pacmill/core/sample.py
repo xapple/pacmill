@@ -136,12 +136,18 @@ class Sample:
         # the directory where the original reads are stored on the file system.
         from fasta.fastqc import FastQC
         fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
+        # Change the location of the length distribution graphs too.
+        fastq.graphs.length_dist.path = self.autopaths.len_dist_pdf
+        fastq.graphs.length_hist.path = self.autopaths.len_hist_pdf
         # Return #
         return fastq
 
     #------------------------- Automatic paths -------------------------------#
     all_paths = """
                 /fastqc/
+                /graphs/raw_len_dist.pdf
+                /graphs/raw_len_hist.pdf
+                /filtered/
                 /report/cache/
                 /report/sample.pdf
                 """
@@ -169,7 +175,9 @@ class Sample:
     @property_cached
     def filter(self):
         """Will filter out unwanted sequences."""
-        return SeqFilter(self.joiner.results.assembled, self.p.filtered_dir, self.short_name, self.primers)
+        from pacmill.filtering.seq_filter import SeqFilter
+        return SeqFilter(self.fastq, self.autopaths.filtered_dir,
+                         self.short_name, self.primers)
 
     @property_cached
     def report(self):

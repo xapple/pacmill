@@ -35,17 +35,24 @@ Validation
 The original reads file weighed {{fastq_size}} and was validated using the \url{https://github.com/statgen/fastQValidator} program. It contained no invalid characters.
 
 
-Raw data
---------
+Quality
+-------
 The original reads file contained {{fastq_count}} reads with an average PHRED quality of {{fastq_qual}}. The average quality per base and the average quality per sequence can be seen in figure \ref{fastqc_graphs}.
 
 {{fastqc_graphs}}
 
 
+Lengths
+-------
+The shortest sequence in the file was {{shortest_seq}} base pairs long, while the longest measured {{longest_seq}} base pairs. The complete sequence length distribution of the original reads file can be seen in figure \ref{raw_len_dist}.
+
+{{raw_len_dist}}
+
+
 {{#filtering}}
 Filtering
 ---------
-Next, we filter the sequences based on several criteria. These many sequences are lost:
+Next, we filter the sequences based on several criteria. These many sequences are lost at each step:
 
 * Checking for the presence of both primers within at least {{primer_max_dist}} base pairs of the read ends and with at most {{mismatches_allowed}} mismatches allowed discards {{primer_discard}} sequences ({{primer_left}} left).
 
@@ -53,7 +60,7 @@ Next, we filter the sequences based on several criteria. These many sequences ar
 
 * Checking that no sequence is shorter than {{min_read_length}} base pairs and no sequence is longer than {{max_read_length}} base pairs discards {{length_discard}} sequences ({{length_left}} left).
 
-This leaves us with {{percent_remaining}} of this sample's sequences.
+This leaves us with {{percent_remaining}} of this sample's original sequences.
 
 -------
 {{/filtering}}

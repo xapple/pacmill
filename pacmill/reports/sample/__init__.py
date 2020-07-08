@@ -17,7 +17,7 @@ from pacmill.reports.template      import Header, Footer
 from plumbing.cache    import property_cached, property_pickled
 from plumbing.common   import split_thousands as thousands
 from pymarktex         import Document
-from pymarktex.figures import DualFigure
+from pymarktex.figures import DualFigure, ScaledFigure
 from autopaths         import Path
 
 # Third party modules #
@@ -96,7 +96,7 @@ class SampleTemplate(ReportTemplate):
         # Return #
         return result
 
-    #----------------------------- Raw data ----------------------------------#
+    #------------------------------ Quality ----------------------------------#
     def fastq_size(self): return str(self.sample.fastq.size)
 
     @property_pickled
@@ -118,8 +118,24 @@ class SampleTemplate(ReportTemplate):
         # Return #
         return str(DualFigure(*params))
 
+    #------------------------------ Lengths ----------------------------------#
+    @property_pickled
+    def shortest_seq(self):
+        return min(self.sample.fastq.lengths)
+
+    @property_pickled
+    def longest_seq(self):
+        return max(self.sample.fastq.lengths)
+
+    def raw_len_dist(self):
+        caption = "Distribution of sequence lengths in original reads."
+        path    = self.sample.fastq.graphs.length_hist()
+        label   = "raw_len_dist"
+        return str(ScaledFigure(path, caption, label))
+
     #----------------------------- Filtering ---------------------------------#
     def filtering(self):
+        return False
         if not self.sample.filter: return False
 
     def primer_max_dist(self):
