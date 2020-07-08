@@ -34,7 +34,7 @@ Alternatively, if you want to install it for all users of the system:
 
 The first thing to do when starting a new analysis is to fill in a metadata file that details all there is to know about the samples being processed.
 
-A template for such a file is found under this repository at "./metadata/metadata_blank.xlsx". In addition, another file called "./metadata/metadata_example.xlsx" shows typicall values that the fields are supposed to take.
+A template for such a file is found under this repository at "./metadata/metadata_blank.xlsx". In addition, another file called "./metadata/metadata_example.xlsx" shows typical values that the fields are supposed to take.
 
 ### Loading the project
 
