@@ -123,25 +123,6 @@ class Sample:
         # Join the three components together #
         return Path(self.input_dir + self.suffix_dir + self.fwd_file_name)
 
-    @property_cached
-    def fastq(self):
-        """
-        The FASTQ object with convenience methods.
-        See https://github.com/xapple/fasta#usage
-        """
-        # This class is taken from the `fasta` python package #
-        from fasta import FASTQ
-        fastq = FASTQ(self.path)
-        # Change the location of the first FastQC, as we don't want to touch
-        # the directory where the original reads are stored on the file system.
-        from fasta.fastqc import FastQC
-        fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
-        # Change the location of the length distribution graphs too.
-        fastq.graphs.length_dist.path = self.autopaths.len_dist_pdf
-        fastq.graphs.length_hist.path = self.autopaths.len_hist_pdf
-        # Return #
-        return fastq
-
     #------------------------- Automatic paths -------------------------------#
     all_paths = """
                 /fastqc/
@@ -172,6 +153,35 @@ class Sample:
         return AutoPaths(self.base_dir, self.all_paths)
 
     #---------------------------- Compositions -------------------------------#
+    @property_cached
+    def fastq(self):
+        """
+        The FASTQ object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        """
+        # This class is taken from the `fasta` python package #
+        from fasta import FASTQ
+        fastq = FASTQ(self.path)
+        # Change the location of the first FastQC, as we don't want to touch
+        # the directory where the original reads are stored on the file system.
+        from fasta.fastqc import FastQC
+        fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
+        # Change the location of the length distribution graphs too.
+        fastq.graphs.length_dist.path = self.autopaths.len_dist_pdf
+        fastq.graphs.length_hist.path = self.autopaths.len_hist_pdf
+        # Return #
+        return fastq
+
+    @property_cached
+    def primers(self):
+        """
+        Will return an object that holds the two primers of a
+        given sample and has many convenience methods to parse and
+        find the location of a primer inside all sequences.
+        """
+        from fasta.primers import TwoPrimers
+        return TwoPrimers(self.fwd_primer_seq, self.rev_primer_seq)
+
     @property_cached
     def filter(self):
         """Will filter out unwanted sequences."""

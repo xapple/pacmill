@@ -28,4 +28,3 @@ proj = Project('aj_skin', proj_xls)
 for sample in proj:
     print(sample.fastq.graphs.length_hist(rerun=True))
     print(sample.report())
-    break
