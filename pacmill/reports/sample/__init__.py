@@ -10,6 +10,7 @@ Contact at www.sinclair.bio
 # Built-in modules #
 
 # Internal modules #
+from pacmill import repos_dir
 from pacmill.reports.base_template import ReportTemplate
 from pacmill.reports.template      import Header, Footer
 
@@ -32,7 +33,8 @@ class SampleReport(Document):
     footer_template = Footer
 
     # Specific title for sample report #
-    params = {'title': 'Auto-generated sample report'}
+    params = {'title':      'Auto-generated sample report',
+              'image_path': repos_dir + 'docs/logo.png'}
 
     def __init__(self, sample, output_path):
         # Reference to parent objects #

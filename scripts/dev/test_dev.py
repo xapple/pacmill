@@ -26,5 +26,5 @@ proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/metad
 proj = Project('aj_skin', proj_xls)
 
 for sample in proj:
-    print(sample.fastq.graphs.length_hist(rerun=True))
+    #print(sample.fastq.graphs.length_hist(rerun=True))
     print(sample.report())
