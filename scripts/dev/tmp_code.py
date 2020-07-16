@@ -6,11 +6,12 @@ Written by Lucas Sinclair.
 MIT Licensed.
 Contact at www.sinclair.bio
 
-Development script to test some of the methods in `pacmill`.
+Development script to test some of the methods in `pacmill`
+and try out different things. This script can safely be ignored.
 
 Typically you would run this file from a command line like this:
 
-     ipython3 -i -- ~/deploy/pacmill/scripts/dev/test_dev.py
+     ipython3 -i -- ~/deploy/pacmill/scripts/dev/tmp_code.py
 """
 
 # Built-in modules #
@@ -26,5 +27,7 @@ proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/metad
 proj = Project('aj_skin', proj_xls)
 
 for sample in proj:
-    #print(sample.fastq.graphs.length_hist(rerun=True))
-    print(sample.report())
+   print(sample.filter(True))
+
+for sample in proj:
+   print(sample.report())

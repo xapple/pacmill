@@ -49,18 +49,23 @@ The shortest sequence in the file was {{shortest_seq}} base pairs long, while th
 {{raw_len_dist}}
 
 
-{{#filtering}}
 Filtering
 ---------
+{{#filtering}}
 Next, we filter the sequences based on several criteria. These many sequences are lost at each step:
 
-* Checking for the presence of both primers within at least {{primer_max_dist}} base pairs of the read ends and with at most {{mismatches_allowed}} mismatches allowed discards {{primer_discard}} sequences ({{primer_left}} left).
+* Checking for the presence of both primers within at least {{primer_max_dist}} base pairs of the read's start or end and with at most {{mismatches_allowed}} mismatches allowed discards {{primer_discard}} sequences ({{primer_left}} left).
 
-* Checking for the absence of undetermined "N" bases anywhere in the reads (expect in the primers) discards {{n_base_discard}} sequences ({{n_base_left}} left).
+* Checking for the absence of undetermined "N" bases anywhere in the reads discards {{n_base_discard}} sequences ({{n_base_left}} left).
 
 * Checking that no sequence is shorter than {{min_read_length}} base pairs and no sequence is longer than {{max_read_length}} base pairs discards {{length_discard}} sequences ({{length_left}} left).
 
-This leaves us with {{percent_remaining}} of this sample's original sequences.
+* Checking that no sequence has a quality score below {{phred_threshold}} within a rolling average window of {{phred_window_size}} base pairs discards {{score_discard}} sequences ({{score_left}} left).
 
--------
+This leaves us with {{percent_remaining}} of this sample's original sequences.
 {{/filtering}}
+
+{{^filtering}}
+The filtering on this sample has not been performed yet. Please run the pipeline and regenerate this report.
+{{/filtering}}
+-------

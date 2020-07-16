@@ -32,7 +32,7 @@ class Project:
     def __len__(self):
         return len(self.samples)
 
-    def __init__(self, short_name, *args):
+    def __init__(self, short_name, *all_xlsx):
         """
         A Project object takes:
 
@@ -51,7 +51,6 @@ class Project:
             * self.short_name: the name of this project.
             * self.long_name:  the more lengthy description of this project.
             * self.all_xlsx:   a list of file paths (that are excel files).
-            * self.all_dfs:    a list of pandas dataframes (one for each file).
             * self.metadata:   a pandas dataframe with all metadata
                                for this project combined.
             * self.samples:    a list of Sample objects.
@@ -63,24 +62,33 @@ class Project:
         # Check it contains only alphanumerics and underscore #
         assert self.short_name.isidentifier()
         # You need at least one excel file #
-        assert len(args) > 0
+        assert len(all_xlsx) > 0
         # Save all excel file paths as AutoPaths objects #
-        self.all_xlsx = list(map(Path, args))
+        self.all_xlsx = list(map(Path, all_xlsx))
         # Check all the excel paths actually exist #
         assert all(xlsx.exists for xlsx in self.all_xlsx)
+
+    #----------------------------- Properties --------------------------------#
+    @property_cached
+    def metadata(self):
+        """
+        Return a pandas.DataFrame object describing the metadata of all
+        samples contained in this project.
+        """
         # Function to read one excel file #
         read_excel = lambda path: pandas.read_excel(str(path), header=1)
         # Read them all as data frames #
-        self.all_dfs = [read_excel(path) for path in self.all_xlsx]
+        all_dfs = [read_excel(path) for path in self.all_xlsx]
         # If there are several excel files, merge them together #
-        self.metadata = pandas.concat(self.all_dfs, sort=False)
+        metadata = pandas.concat(all_dfs, sort=False)
         # Filter and take only samples that match this project's short_name #
         query = f'project_short_name == "{self.short_name}"'
-        self.metadata = self.metadata.query(query).copy()
+        metadata = metadata.query(query).copy()
         # Remove samples that are not marked as "yes" for "used" #
-        self.metadata = self.metadata.query('used == "yes"').copy()
+        metadata = metadata.query('used == "yes"').copy()
+        # Return #
+        return metadata
 
-    #----------------------------- Properties --------------------------------#
     @property_cached
     def samples(self):
         """Create all the Sample objects."""

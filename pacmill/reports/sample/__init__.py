@@ -33,11 +33,11 @@ class SampleReport(Document):
     footer_template = Footer
 
     # Specific title for sample report #
-    params = {'title':      'Auto-generated sample report',
-              'image_path': repos_dir + 'docs/logo.png'}
+    params = {'title': 'Auto-generated sample report'}
 
     def __init__(self, sample, output_path):
         # Reference to parent objects #
+        self.parent  = sample
         self.sample  = sample
         self.project = sample.project
         # The output location #
@@ -90,10 +90,11 @@ class SampleTemplate(ReportTemplate):
                      'project_long_name']
         # Filter them out #
         keys = [k for k in keys if k not in skip_keys]
-        # Let's also remove those that have no value (nan) #
-        keys = [k for k in keys if not pandas.isna(getattr(self.sample, k))]
+        # Let's also remove those that have no value #
+        keys = [k for k in keys if getattr(self.sample, k) is not None]
         # Format them as a bullet list #
-        bullet = lambda k: '* **' + k + '**: ' + str(getattr(self.sample, k))
+        value =  lambda k: str(getattr(self.sample, k))
+        bullet = lambda k: '* **`%s`**: `%s`' % (k, value(k))
         result = '\n'.join(bullet(k) for k in keys)
         # Return #
         return result
@@ -123,11 +124,11 @@ class SampleTemplate(ReportTemplate):
     #------------------------------ Lengths ----------------------------------#
     @property_pickled
     def shortest_seq(self):
-        return min(self.sample.fastq.lengths)
+        return thousands(min(self.sample.fastq.lengths))
 
     @property_pickled
     def longest_seq(self):
-        return max(self.sample.fastq.lengths)
+        return thousands(max(self.sample.fastq.lengths))
 
     def raw_len_dist(self):
         caption = "Distribution of sequence lengths in original reads."
@@ -137,8 +138,7 @@ class SampleTemplate(ReportTemplate):
 
     #----------------------------- Filtering ---------------------------------#
     def filtering(self):
-        return False
-        if not self.sample.filter: return False
+        return bool(self.sample.filter)
 
     def primer_max_dist(self):
         return self.sample.filter.primer_max_dist
@@ -148,42 +148,59 @@ class SampleTemplate(ReportTemplate):
 
     @property_pickled
     def primer_discard(self):
-        before = self.sample.count
-        after  = self.sample.filter.results.primers_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.fastq.count
+        after  = self.sample.filter.results.primers_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def primer_left(self):
-        return thousands(len(self.sample.filter.results.primers_fasta))
+        return thousands(self.sample.filter.results.primers_fastq.count)
 
     @property_pickled
     def n_base_discard(self):
-        before = self.sample.filter.results.primers_fasta
-        after  = self.sample.filter.results.n_base_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.filter.results.primers_fastq.count
+        after  = self.sample.filter.results.n_base_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def n_base_left(self):
-        return thousands(len(self.sample.filter.results.n_base_fasta))
+        return thousands(self.sample.filter.results.n_base_fastq.count)
 
     def min_read_length(self):
-        return self.sample.filter.min_read_length
+        return thousands(self.sample.filter.min_read_len)
 
     def max_read_length(self):
-        return self.sample.filter.max_read_length
+        return thousands(self.sample.filter.max_read_len)
 
     @property_pickled
     def length_discard(self):
-        before = self.sample.filter.results.n_base_fasta
-        after  = self.sample.filter.results.length_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.filter.results.n_base_fastq.count
+        after  = self.sample.filter.results.length_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def length_left(self):
-        return thousands(len(self.sample.filter.results.length_fasta))
+        return thousands(self.sample.filter.results.length_fastq.count)
+
+    def phred_window_size(self):
+        return thousands(self.sample.phred_window_size)
+
+    def phred_threshold(self):
+        return thousands(self.sample.phred_threshold)
+
+    @property_pickled
+    def score_discard(self):
+        before = self.sample.filter.results.length_fastq.count
+        after  = self.sample.filter.results.score_fastq.count
+        return thousands(before - after)
+
+    @property_pickled
+    def score_left(self):
+        return thousands(self.sample.filter.results.score_fastq.count)
 
     @property_pickled
     def percent_remaining(self):
-        percent = len(self.sample.filter.results.clean) / len(self.sample)
-        percent *= 100
+        before = self.sample.fastq.count
+        after  = self.sample.filter.results.clean.count
+        percent = 100 * (after / before)
         return "%.1f%%" % percent
