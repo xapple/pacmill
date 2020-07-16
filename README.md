@@ -12,7 +12,7 @@ To check if you have `python3` installed, type the following on your terminal:
 
 If you do not have `python3` installed, please refer to the section [obtaining python3](docs/installing_tips.md#obtaining-python3).
 
-To check you have `pip3` installed, type the following on your terminal:
+To check if you have `pip3` installed, type the following on your terminal:
 
     $ pip3 -V
 
@@ -27,6 +27,8 @@ To install the `pacmill` package, simply type the following commands on your ter
 Alternatively, if you want to install it for all users of the system:
 
     $ sudo pip3 install pacmill
+    
+These commands will also automatically install all the other python modules on which `pacmill` depends.
 
 ## Usage
 
@@ -44,11 +46,17 @@ Bellow are some examples to illustrate the various ways there are to use this pa
 
 ### Customizing report headers
 
-To change the text that appears inside the header of the PDF reports generated, you can adjust these three environment variables to your liking. Credit is appreciated where credit is due, but as the software has a very permissive license that lets you decide what is best.
+To change the text that appears inside the header of the PDF reports generated, you can adjust these three environment variables to your liking. Credit is appreciated where credit is due, but the software has a very permissive license that lets you decide what is best.
 
     $ export PACMILL_HEADER="From the \textbf{pacmill} project"
     $ export PACMILL_SUBHEADER="Written by consultants at \url{www.sinclair.bio}"" 
     $ export PACMILL_LINK="Hosted at \url{www.github.com/xapple/pacmill}"
+
+## Demo project
+
+To run the demo project, do the following:
+
+    # This example is not completed yet. TODO.
 
 ## Extra documentation 
 
