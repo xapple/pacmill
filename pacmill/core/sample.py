@@ -138,6 +138,9 @@ class Sample:
                 /graphs/raw_len_dist.pdf
                 /graphs/raw_len_hist.pdf
                 /filtered/
+                /barrnap/
+                /barrnap/results.gff
+                /barrnap/has_rrna_gene.fastq
                 /report/cache/
                 /report/sample.pdf
                 """
@@ -206,6 +209,19 @@ class Sample:
         seq_filter.phred_threshold   = self.phred_threshold
         # Return #
         return seq_filter
+
+    @property_cached
+    def barrnap(self):
+        """Takes care of running the Barrnap program."""
+        # Get file paths #
+        source   = self.filter.results.clean
+        dest     = self.autopaths.barrnap_gff
+        filtered = self.autopaths.barrnap_fastq
+        # Create barrnap object #
+        from pacmill.filtering.barrnap import Barrnap
+        barrnap = Barrnap(source, dest, filtered)
+        # Return #
+        return barrnap
 
     @property_cached
     def report(self):

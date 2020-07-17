@@ -204,3 +204,17 @@ class SampleTemplate(ReportTemplate):
         after  = self.sample.filter.results.clean.count
         percent = 100 * (after / before)
         return "%.1f%%" % percent
+
+    #------------------------------ Barrnap ----------------------------------#
+    def barrnap(self):
+        return bool(self.sample.barrnap)
+
+    @property_pickled
+    def barrnap_discard(self):
+        before = self.sample.filter.results.clean.count
+        after  = self.sample.barrnap.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def barrnap_left(self):
+        return thousands(self.sample.barrnap.results.count)

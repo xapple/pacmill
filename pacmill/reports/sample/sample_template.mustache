@@ -69,3 +69,18 @@ This leaves us with {{percent_remaining}} of this sample's original sequences.
 The filtering on this sample has not been performed yet. Please run the pipeline and regenerate this report.
 {{/filtering}}
 -------
+
+Gene Presence with Barrnap
+--------------------------
+
+{{#barrnap}}
+In this step, we run every sequence through the `barrnap` algorithm to detect the presence of any type of rRNA gene. We then keep only raw sequences that had a positive hit.
+
+* Checking for the presence of an rRNA gene further discards {{barrnap_discard}} sequences ({{barrnap_left}} left).
+{{/barrnap}}
+
+{{^barrnap}}
+The barrnap algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
+{{/barrnap}}
+-------
+

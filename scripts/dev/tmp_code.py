@@ -20,14 +20,22 @@ Typically you would run this file from a command line like this:
 from pacmill.core.project import Project
 
 # Constants #
-proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/metadata_aj_skin.xlsx"
+proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/" \
+           "metadata_aj_skin.xlsx"
 
 ###############################################################################
 # Create project #
 proj = Project('aj_skin', proj_xls)
 
-for sample in proj:
-   print(sample.filter(True))
+#for sample in proj:
+#   print(sample.filter(True))
+
+proj.samples.pop(0)
 
 for sample in proj:
-   print(sample.report())
+    print(sample.barrnap())
+    print(sample.barrnap.filter())
+
+for sample in proj:
+    print(sample.report())
+    break

@@ -66,8 +66,6 @@ params = [[case.get(name) for name in input_names] for case in cases]
 @pytest.mark.parametrize(input_names, params)
 def test_primers(seq_filter, fwd_primer, rev_primer, seq, expected,
                  mismatches):
-    # Pytest doesn't support default values #
-    if mismatches is None: mismatches = 0
     # Create primers #
     primers = TwoPrimers(fwd_primer, rev_primer)
     # Create the sequences for the  fake FASTQ #
