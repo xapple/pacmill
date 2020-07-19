@@ -20,7 +20,7 @@ from plumbing.apt_pkg         import get_apt_packages
 from plumbing.scraping        import download_from_url
 
 # Third party modules #
-import sh
+import sh, tag
 
 ###############################################################################
 class Barrnap:
@@ -30,7 +30,7 @@ class Barrnap:
     Barrnap predicts the presence and location of ribosomal RNA genes in
     genomes. Expects version 0.9.
 
-    The output of the program looks something like:
+    The output of the program is a GFF3 and looks something like:
 
         P.marinus  barrnap:0.9  rRNA  353314  354793  0       +  .  Name=16S_rRNA
         P.marinus  barrnap:0.9  rRNA  355464  358334  0       +  .  Name=23S_rRNA
@@ -125,17 +125,24 @@ class Barrnap:
         """
         Using the original reads file and the GFF output of barrnap,
         we will create a new FASTQ file containing only the original reads
-        that had a hit for an rRNA gene.
+        that had a hit for both rRNA genes.
         """
         # Message #
         if verbose:
-            msg = "Extracting sequences with rRNA genes from '%s'"
+            msg = "Extracting sequences with both rRNA genes from '%s'"
             print(msg % self.dest)
-        # Get IDs that passed #
-        from BCBio import GFF
-        all_ids = [rec.id for rec in GFF.parse(self.dest.path)]
+        # Get IDs that passed (only for 16S) #
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type='rRNA')
+        ids_16s = [rec.seqid for rec in reader if '16S_rRNA' in rec.attributes]
+        # Get IDs that passed (only for 23S) #
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type='rRNA')
+        ids_23s = [rec.seqid for rec in reader if '23S_rRNA' in rec.attributes]
+        # Get those that had both genes #
+        ids_both = set(ids_16s) & set(ids_23s)
         # Extract those IDs #
-        FASTQ(self.source).extract_sequences(all_ids, self.filtered, verbose)
+        FASTQ(self.source).extract_sequences(ids_both, self.filtered, verbose)
         # Return #
         return self.filtered
 

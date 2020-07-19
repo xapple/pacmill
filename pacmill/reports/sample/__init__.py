@@ -10,7 +10,6 @@ Contact at www.sinclair.bio
 # Built-in modules #
 
 # Internal modules #
-from pacmill import repos_dir
 from pacmill.reports.base_template import ReportTemplate
 from pacmill.reports.template      import Header, Footer
 
@@ -22,7 +21,6 @@ from pymarktex.figures import DualFigure, ScaledFigure
 from autopaths         import Path
 
 # Third party modules #
-import pandas
 
 ###############################################################################
 class SampleReport(Document):
@@ -32,7 +30,7 @@ class SampleReport(Document):
     header_template = Header
     footer_template = Footer
 
-    # Specific title for sample report #
+    # Specific title for the sample report #
     params = {'title': 'Auto-generated sample report'}
 
     def __init__(self, sample, output_path):
@@ -218,3 +216,17 @@ class SampleTemplate(ReportTemplate):
     @property_pickled
     def barrnap_left(self):
         return thousands(self.sample.barrnap.results.count)
+
+    #------------------------------ Chimeras ---------------------------------#
+    def chimeras(self):
+        return bool(self.sample.chimeras)
+
+    @property_pickled
+    def chimeras_discard(self):
+        before = self.sample.barrnap.results.count
+        after  = self.sample.chimeras.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def chimeras_left(self):
+        return thousands(self.sample.chimeras.results.count)

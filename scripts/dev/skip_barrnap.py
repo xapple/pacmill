@@ -6,12 +6,12 @@ Written by Lucas Sinclair.
 MIT Licensed.
 Contact at www.sinclair.bio
 
-Development script to test some of the methods in `pacmill`
+Development script to skip some of the steps in the `pacmill` pipeline
 and try out different things. This script can safely be ignored.
 
 Typically you would run this file from a command line like this:
 
-     ipython3 -i -- ~/deploy/pacmill/scripts/dev/tmp_code.py
+     ipython3 -i -- ~/deploy/pacmill/scripts/dev/skip_barrnap.py
 """
 
 # Built-in modules #
@@ -27,17 +27,6 @@ proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/" \
 # Create project #
 proj = Project('aj_skin', proj_xls)
 
-#for sample in proj:
-#   print(sample.filter(True))
-
-#for sample in proj:
-#   result = sample.chimeras()
-#   print('\n'.join(result.directory.flat_contents))
-#    break
-
-#for sample in proj:
-#    print(sample.report())
-
-#proj.combine_reads()
-
-proj.report()
+# Copy file to new location directly #
+for sample in proj:
+    sample.filter.results.clean.copy(sample.barrnap.results)

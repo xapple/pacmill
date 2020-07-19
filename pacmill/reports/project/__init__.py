@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio
+"""
+
+# Built-in modules #
+
+# Internal modules #
+from pacmill.reports.base_template import ReportTemplate
+from pacmill.reports.template      import Header, Footer
+
+# First party modules #
+from plumbing.cache    import property_cached
+from plumbing.common   import split_thousands as thousands
+from pymarktex         import Document
+from pymarktex.figures import ScaledFigure
+from autopaths         import Path
+
+# Third party modules #
+
+###############################################################################
+class ProjectReport(Document):
+    """A full report generated in PDF for every Project object."""
+
+    # Custom LaTeX headers and footers for the report #
+    header_template = Header
+    footer_template = Footer
+
+    # Specific title for the project report #
+    params = {'title': 'Auto-generated project report'}
+
+    def __init__(self, project, output_path):
+        # Reference to parent objects #
+        self.parent  = project
+        self.project = project
+        # The output location #
+        self.output_path = Path(output_path)
+
+    @property_cached
+    def template(self):
+        return ProjectTemplate(self)
+
+    def load_markdown(self):
+        self.markdown = str(self.template)
+
+###############################################################################
+class ProjectTemplate(ReportTemplate):
+    """All the parameters to be rendered in the markdown template."""
+
+    delimiters = (u'{{', u'}}')
+
+    def __repr__(self):
+        return '<%s object on %s>' % (self.__class__.__name__, self.parent)
+
+    def __init__(self, parent):
+        # Reference to parent objects #
+        self.parent = parent
+        self.report = parent
+        # Reference to the project object #
+        self.project = parent.project
+        # Reference to the samples #
+        self.samples = self.project.samples
+        # Where to pickle properties that are costly to compute #
+        self.cache_dir = self.project.autopaths.report_cache_dir
+
+    #------------------------- General information ---------------------------#
+    def proj_short_name(self):
+        return self.project.short_name
+
+    def proj_long_name(self):
+        return self.project.long_name
+
+    def count_samples(self):
+        return len(self.project.samples)
+
+    def count_sequences(self):
+        return thousands(self.project.fasta.count)
+
+    def input_length_dist(self):
+        caption = "Distribution of sequence lengths at input"
+        path    = self.project.fasta.graphs.length_hist()
+        label   = "input_length_dist"
+        return str(ScaledFigure(path, caption, label))
+
+    #----------------------------- Summary table -----------------------------#
+    def sample_table(self):
+        # The functions #
+        name = lambda s: "**" + s.short_name + "**"
+        desc = lambda s: s.long_name
+        lost = lambda s: "%.1f%%" % s.percent_lost
+        left = lambda s: thousands(len(s.filter.results.clean))
+        # The columns #
+        info = {
+          'Name':        name,
+          'Description': desc,
+          'Reads lost':  lost,
+          'Reads left':  left,
+        }
+        # The title row #
+        headers = ['#'] + list(info.keys())
+        # The table contents, row after row #
+        table = [[i+1] + [f(s) for f in info.values()]
+                 for i, s in enumerate(self.samples)]
+        # Make it as text #
+        from tabulate import tabulate
+        table = tabulate(table, headers, numalign="right", tablefmt="pipe")
+        # Add caption #
+        return table + "\n\n   : Summary information for all samples."
+
+    #------------------------------ OTU making --------------------------------#
+    def otus(self):
+        return False
+
+    def otus_threshold(self):
+        return "%.1f" % self.centering.threshold
+
+    def otus_total(self):
+        return thousands(len(self.centering.results.centers))

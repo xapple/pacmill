@@ -1,0 +1,48 @@
+Project report
+==============
+
+General Information
+-------------------
+This is the project named "`{{proj_short_name}}`". It contains {{count_samples}} samples. It is described as "{{proj_long_name}}".
+
+-------
+
+Processing
+----------
+* This report and all the analysis was generated using the `{{project_name}}` python pipeline.
+
+* Documentation and source code is available at:
+
+<{{project_url}}>
+
+* Version `{{project_version}}` of the pipeline was used.
+
+* This document was generated at `{{now}}` on host `{{hostname}}`.
+
+{{#git}}
+* The exact git hash of the latest commit was: `{{git_hash}}`
+{{/git}}
+
+-------
+
+Samples
+-------
+Some summary information concerning the samples is given in table 1 below.
+
+{{sample_table}}
+
+Input data
+----------
+Summing the reads from all the samples, we have {{count_sequences}} sequences to work on. Before starting the analysis we can look at the length distribution pattern that these reads form in figure \ref{input_length_dist}.
+
+{{input_length_dist}}
+
+-------
+
+{{#otus}}
+Clustering into OTUs
+--------------------
+Two sequences that diverge by no more than a few nucleotides are probably not produced by ecological diversity. They are most likely produced by errors along the laboratory method and the sequencing. Therefore, we place them together in one unit, called an OTU.
+
+The similarity threshold chosen is {{clustering_threshold}}%. Exactly {{otus_total}} OTUs are produced.
+{{/otus}}

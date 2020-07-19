@@ -132,6 +132,11 @@ class Sample:
         # Join the three components together #
         return Path(self.input_dir + self.suffix_dir + self.fwd_file_name)
 
+    @property_cached
+    def percent_lost(self):
+        """Once all filtering is done, what fraction of reads were lost."""
+        return 100 - 100 * self.chimeras.results.count / self.fastq.count
+
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """
                 /fastqc/
@@ -141,6 +146,8 @@ class Sample:
                 /barrnap/
                 /barrnap/results.gff
                 /barrnap/has_rrna_gene.fastq
+                /chimeras/cleaned.fasta
+                /chimeras/rejects.fasta
                 /report/cache/
                 /report/sample.pdf
                 """
@@ -176,6 +183,7 @@ class Sample:
         fastq = FASTQ(self.path)
         # Change the location of the first FastQC, as we don't want to touch
         # the directory where the original reads are stored on the file system.
+        # We might simply not have permission to write there.
         from fasta.fastqc import FastQC
         fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
         # Change the location of the length distribution graphs too #
@@ -222,6 +230,19 @@ class Sample:
         barrnap = Barrnap(source, dest, filtered)
         # Return #
         return barrnap
+
+    @property_cached
+    def chimeras(self):
+        """Takes care of removing chimeric reads."""
+        # Get file paths #
+        source   = self.barrnap.results
+        cleaned  = self.autopaths.chimeras_cleaned
+        rejects  = self.autopaths.chimeras_rejects
+        # Create chimeras object #
+        from pacmill.filtering.chimeras import Chimeras
+        chimeras = Chimeras(source, cleaned, rejects)
+        # Return #
+        return chimeras
 
     @property_cached
     def report(self):
