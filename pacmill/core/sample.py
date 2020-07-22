@@ -47,13 +47,14 @@ class Sample:
 
     def __init__(self, parent, **kwargs):
         """
-        A Sample object takes a dictionary of metadata as input.
+        A Sample object takes a dictionary of metadata as input and a
+        reference to the Project object that creates it.
         Each named parameter will be set as an attribute of this instance
         with the same name. Hence, the attributes of a Sample correspond
         directly to the column headers of the excel metadata file that
         was parsed by the Project object.
         """
-        # Keep a reference to the Project object #
+        # Keep a reference to the parent Project object #
         self.parent  = parent
         self.project = parent
         # Record which metadata keys were passed to this sample #

@@ -13,7 +13,7 @@ setup(
     packages         = find_packages(),
     install_requires = ['plumbing>=2.8.5', 'autopaths>=1.4.4', 'fasta>=2.0.8',
                         'pymarktex>=1.4.4', 'biopython', 'pandas', 'sh',
-                        'tag', 'shell_command'],
+                        'tag', 'shell_command', 'tabulate'],
     long_description = open('README.md').read(),
     long_description_content_type = 'text/markdown',
     include_package_data = True,

@@ -68,6 +68,7 @@ This leaves us with {{percent_remaining}} of this sample's original sequences.
 {{^filtering}}
 The filtering on this sample has not been performed yet. Please run the pipeline and regenerate this report.
 {{/filtering}}
+
 -------
 
 Gene Presence with Barrnap
@@ -82,6 +83,7 @@ In this step, we run every sequence through the `barrnap` algorithm to detect th
 {{^barrnap}}
 The barrnap algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
 {{/barrnap}}
+
 -------
 
 Chimera Detection
@@ -96,6 +98,7 @@ In this step, we run every sequence through the `vsearch --uchime3_denovo` algor
 {{^chimeras}}
 The chimeras detection algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
 {{/chimeras}}
+
 -------
 
 Clustering

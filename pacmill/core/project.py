@@ -65,7 +65,7 @@ class Project:
         assert self.short_name.isidentifier()
         # You need at least one excel file #
         assert len(all_xlsx) > 0
-        # Save all excel file paths as AutoPaths objects #
+        # Save all excel file paths as Paths objects #
         self.all_xlsx = list(map(Path, all_xlsx))
         # Check all the excel paths actually exist #
         assert all(xlsx.exists for xlsx in self.all_xlsx)
@@ -150,6 +150,7 @@ class Project:
                 /graphs/
                 /report/cache/
                 /report/project.pdf
+                /bundle/
                 """
 
     @property_cached
@@ -205,3 +206,12 @@ class Project:
         """
         from pacmill.reports.project import ProjectReport
         return ProjectReport(self, self.autopaths.report_pdf)
+
+    @property_cached
+    def bundle(self):
+        """
+        The Bundle object is used to regroup all PDF reports together in
+        the same directory for easy distribution to stakeholders.
+        """
+        from pacmill.distribute.bundle import Bundle
+        return Bundle(self, self.autopaths.bundle_dir)

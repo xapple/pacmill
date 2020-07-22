@@ -38,6 +38,9 @@ proj = Project('aj_skin', proj_xls)
 #for sample in proj:
 #   print(sample.report())
 
-proj.otus()
+#proj.otus()
 
 #proj.report()
+
+proj.bundle()
+print(proj.bundle.results.rsync)
