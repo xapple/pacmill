@@ -30,7 +30,7 @@ class Chimeras:
     mothur "#chimera.uchime(fasta=roi.$sample.rhq.trim.fwdrev.pol.fasta,
                             reference=self, chunks=16, abskew=1, chimealns=T)"
     mothur "#remove.seqs(fasta=roi.$sample.rhq.trim.fwdrev.pol.fasta,
-                          accnos=roi.$sample.rhq.trim.fwdrev.pol.denovo.uchime.accnos)"
+                         accnos=roi.$sample.rhq.trim.fwdrev.pol.denovo.uchime.accnos)"
 
     In case of missing output see:
 

@@ -36,8 +36,8 @@ proj = Project('aj_skin', proj_xls)
 #    break
 
 #for sample in proj:
-#    print(sample.report())
+#   print(sample.report())
 
-#proj.combine_reads()
+proj.otus()
 
-proj.report()
+#proj.report()

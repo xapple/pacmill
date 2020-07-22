@@ -18,6 +18,7 @@ from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
+from pacmill.centering.vsearch import OTUs
 from pacmill.core.sample import Sample
 
 ###############################################################################
@@ -134,7 +135,7 @@ class Project:
     @property_cached
     def fasta(self):
         """
-        The reads from all samples combined in the same files accessed through
+        The reads from all samples combined into the same file accessed through
         a FASTA object with convenience methods.
         See https://github.com/xapple/fasta#usage
         """
@@ -144,8 +145,8 @@ class Project:
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """
                 /reads/all_reads.fasta
-                /centers/
-                /otu_table/
+                /otus/consensus.fasta
+                /otus/table.tsv
                 /graphs/
                 /report/cache/
                 /report/project.pdf
@@ -191,9 +192,10 @@ class Project:
     @property_cached
     def otus(self):
         """
-        Lorem
+        Takes care of running a single-pass, greedy centroid-based clustering
+        algorithm on all sequences to determine consensus sequences of OTUs.
         """
-        pass
+        return OTUs(self.fasta, self.autopaths.consensus)
 
     @property_cached
     def report(self):

@@ -47,7 +47,7 @@ class Barrnap:
     def __init__(self, source, dest=None, filtered=None):
         # Source is the FASTA or FASTQ file on which barrnap will be run #
         self.source = FilePath(source)
-        # Destination is a GFF file that contains the reuslts #
+        # Destination is a GFF file that contains the results #
         if dest is None:
             dest = self.source.prefix_path + '.barrnap.gff'
         self.dest = FilePath(dest)

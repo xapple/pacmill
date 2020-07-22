@@ -111,12 +111,16 @@ class ProjectTemplate(ReportTemplate):
         # Add caption #
         return table + "\n\n   : Summary information for all samples."
 
-    #------------------------------ OTU making --------------------------------#
+    #------------------------------ OTU making -------------------------------#
     def otus(self):
-        return False
+        return bool(self.project.otus)
 
     def otus_threshold(self):
-        return "%.1f" % self.centering.threshold
+        return "%.1f%%" % self.project.otus.threshold * 100
 
     def otus_total(self):
-        return thousands(len(self.centering.results.centers))
+        return thousands(self.project.otus.results.count)
+
+    #------------------------------- Taxonomy --------------------------------#
+    def taxonomy(self):
+        return False

@@ -42,7 +42,29 @@ Summing the reads from all the samples, we have {{count_sequences}} sequences to
 {{#otus}}
 Clustering into OTUs
 --------------------
-Two sequences that diverge by no more than a few nucleotides are probably not produced by ecological diversity. They are most likely produced by errors along the laboratory method and the sequencing. Therefore, we place them together in one unit, called an OTU.
+Two sequences that diverge by no more than a few nucleotides are probably not produced by ecological diversity. They are most likely produced by errors along the laboratory method and the sequencing. Therefore, we place them together in one unit, called an "Operational Taxonomic Unit".
 
-The similarity threshold chosen is {{clustering_threshold}}%. Exactly {{otus_total}} OTUs are produced.
+For this clustering, we use the `vsearch --cluster_size` algorithm.
+
+The similarity threshold chosen is {{clustering_threshold}}. Exactly {{otus_total}} OTUs are produced.
 {{/otus}}
+
+{{^otus}}
+The OTU clustering algorithm has not been run on this project yet. Please run the pipeline and regenerate this report.
+{{/otus}}
+-------
+
+{{#taxonomy}}
+Clustering into OTUs
+--------------------
+Relying on databases of ribosomal genes such as Silva, we can classify each OTU and give it an approximative affiliation. This pairs each OTU to a taxonomic name. This is done using {{classify_citation}} and {{classify_database}}.
+
+Out of our {{otus_total}} OTUs, some are totally unclassified while others have predictions at different positions in the tree of life. The proportion of classified OTUs is summarized below:
+
+{{otu_classified_table}}
+{{/taxonomy}}
+
+{{^taxonomy}}
+The taxonomic classification algorithm has not been run on this project yet. Please run the pipeline and regenerate this report.
+{{/taxonomy}}
+-------

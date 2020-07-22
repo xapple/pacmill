@@ -19,33 +19,39 @@ from plumbing.cache           import property_cached
 import sh
 
 ###############################################################################
-class Chimeras:
+class OTUs:
     """
-    Takes care of detecting and removing chimeric reads, by calling
+    Takes care of clustering reads into OTUs by calling
     `vsearch --uchime3_denovo`.
-    Number of chunks cannot be set in the vsearch implementation.
+
+    From the man pages:
+
+        Output cluster consensus sequences to filename. For each cluster,
+        a multiple alignment is computed, and a consensus sequence is
+        constructed by taking the majority symbol (nucleotide or gap) from
+        each column of the alignment.
     """
+
+    threshold = 0.97
 
     def __repr__(self):
         msg = '<%s object on "%s">'
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, cleaned=None, rejects=None):
-        # Source is the FASTA or FASTQ file to run the algorithm on #
+    def __init__(self, source, otus=None):
+        # Source is a FASTA to run the algorithm on #
         self.source = FASTQ(source)
-        # Cleaned is a FASTA file that contains the good reads #
-        if cleaned is None:
-            cleaned = self.source.prefix_path + '.no_chimeras.fasta'
-        self.cleaned = FASTA(cleaned)
-        # Rejects is a FASTA file that contains the bad chimeric reads #
-        if rejects is None:
-            rejects = self.source.prefix_path + '.yes_chimeras.fasta'
-        self.rejects = FASTA(rejects)
+        # OTUs is a FASTA file that contains the consensus sequences #
+        if otus is None:
+            otus = self.source.prefix_path + '.otus.fasta'
+        self.otus = FASTA(otus)
 
     #------------------------------ Running ----------------------------------#
     def __call__(self, cpus=None, verbose=True):
         # Message #
-        if verbose: print("Running chimeras detection on '%s'" % self.source)
+        if verbose:
+            msg = "Running OTU creation detection on '%s'"
+            print(msg % self.source)
         # Check it is installed #
         check_cmd('vsearch', True)
         # Check version #
@@ -53,37 +59,36 @@ class Chimeras:
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Pick the command parameters #
-        command = ("--uchime3_denovo", self.source,
-                   "-chimeras",        self.rejects,
-                   "-nonchimeras",     self.cleaned,
-                   "--threads",        cpus,
-                   "-abskew",          1)
+        command = ("--cluster_size", self.source,
+                   "--consout",      self.otus,
+                   "--id",           self.threshold,
+                   "--otutabout",    self.otus + '.tsv',
+                   "--threads",      cpus)
         # Run the command on the input FASTA file #
         sh.vsearch(command)
-        # Sanity check the total #
-        assert self.cleaned.count + self.rejects.count == self.source.count
         # Return #
-        return self.cleaned
+        return self.otus
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
         """
-        Return True if the Chimeras software was run already and the results are
-        stored on the filesystem. Return False if it was not yet run.
+        Return True if the OTU creation software was run already and the
+        results are stored on the filesystem. Return False if it was not yet
+        run.
         """
-        return self.cleaned.exists
+        return self.otus.exists
 
     @property_cached
     def results(self):
         # Check it was run #
         if not self:
-            msg = "You can't access results from Chimeras " \
+            msg = "You can't access results from OTU creation " \
                   "before running the tool."
             raise Exception(msg)
         # Return the results #
-        return ChimerasResults(self.cleaned)
+        return OTUsResults(self.otus)
 
 ###############################################################################
-class ChimerasResults(FASTA):
-    """A file with the results from Chimeras."""
+class OTUsResults(FASTA):
+    """A file with the results."""
     pass

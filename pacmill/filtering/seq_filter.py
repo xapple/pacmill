@@ -66,7 +66,7 @@ class SeqFilter:
         return '<%s object on %s>' % (self.__class__.__name__, self.sample)
 
     def __init__(self, sample):
-        # Save reference to sample object #
+        # Save the reference to a sample object #
         self.sample = sample
         # The different files #
         self.primers_fastq = FASTQ(self.autopaths.primers)
@@ -121,16 +121,16 @@ class SeqFilter:
     #-------------------------------- Primers --------------------------------#
     def primer_gen(self, reads, verbose=False, debug=False):
         """
-        We will uses regex patterns to search every read for primers.
-        We will records the start and end positions of primers when they are
+        We will uses regex patterns to search every read for both primers.
+        We will record the start and end positions of primers when they are
         found. Both the forward and reverse primers are searched for.
         Both the original sequences and their reverse complements are
-        searched for, in case the read is in the opposite direction.
+        searched for, in case the read is on the opposite strand.
         """
         # Select verbosity #
         import tqdm
         wrapper = tqdm.tqdm if verbose else lambda x: x
-        # Shorter name #
+        # Shorter name for the distance allowed #
         dist = self.primer_max_dist
         # Loop #
         for r in wrapper(reads):
@@ -142,7 +142,7 @@ class SeqFilter:
             # Skip reads that don't pass this criteria #
             if not fwd_found or not rev_found: continue
             # These situations should not occur, could be long chimeras #
-            if r.fwd_srt is not None    and r.rev_srt is not None: continue
+            if r.fwd_srt is not None    and r.rev_srt is not None:    continue
             if r.fwd_rc_srt is not None and r.rev_rc_srt is not None: continue
             # We are in a forward sequence situation #
             if r.fwd_srt is not None and r.rev_rc_srt is not None:
@@ -226,10 +226,10 @@ class SeqFilter:
         # Count positions #
         all_fwd_pos, all_rev_pos = Counter(), Counter()
         # Make a generator #
-        parse_primers = self.sample.fastq.parse_primers(self.sample.primers,
-                                                        self.primer_mismatches)
+        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                    self.primer_mismatches)
         # Iterate over the generator #
-        for r in parse_primers():
+        for r in all_reads():
             if r.fwd_start_pos is not None:
                 all_fwd_pos.update((r.fwd_start_pos,))
             if r.rev_start_pos is not None:
