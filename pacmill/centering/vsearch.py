@@ -8,12 +8,13 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
-import os, multiprocessing
+import multiprocessing
 
 # First party modules #
 from fasta import FASTA, FASTQ
 from plumbing.check_cmd_found import check_cmd
 from plumbing.cache           import property_cached
+from autopaths.file_path      import FilePath
 
 # Third party modules #
 import sh
@@ -22,7 +23,7 @@ import sh
 class OTUs:
     """
     Takes care of clustering reads into OTUs by calling
-    `vsearch --uchime3_denovo`.
+    `vsearch --cluster_size`.
 
     From the man pages:
 
@@ -38,13 +39,17 @@ class OTUs:
         msg = '<%s object on "%s">'
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, otus=None):
+    def __init__(self, source, otus=None, table=None):
         # Source is a FASTA to run the algorithm on #
         self.source = FASTQ(source)
-        # OTUs is a FASTA file that contains the consensus sequences #
+        # self.otus is a FASTA file that contains the centroid sequences #
         if otus is None:
             otus = self.source.prefix_path + '.otus.fasta'
         self.otus = FASTA(otus)
+        # self.table is a TSV file that contains the per sample counts #
+        if table is None:
+            table = self.source.prefix_path + '.otus.tsv'
+        self.table = FilePath(table)
 
     #------------------------------ Running ----------------------------------#
     def __call__(self, cpus=None, verbose=True):
@@ -62,7 +67,7 @@ class OTUs:
         command = ("--cluster_size", self.source,
                    "--consout",      self.otus,
                    "--id",           self.threshold,
-                   "--otutabout",    self.otus + '.tsv',
+                   "--otutabout",    self.table,
                    "--threads",      cpus)
         # Run the command on the input FASTA file #
         sh.vsearch(command)
