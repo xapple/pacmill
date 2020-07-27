@@ -7,7 +7,8 @@ MIT Licensed.
 Contact at www.sinclair.bio
 
 Development script to test some of the methods in `pacmill`
-and try out different things. This script can safely be ignored.
+and try out different things. This script can safely be ignored
+and is meant simply as a sandbox.
 
 Typically you would run this file from a command line like this:
 
@@ -40,7 +41,11 @@ proj = Project('aj_skin', proj_xls)
 
 #proj.otus()
 
-#proj.report()
+#proj.barrnap.extract()
 
-proj.bundle()
-print(proj.bundle.results.rsync)
+#proj.taxonomy()
+
+proj.report()
+
+#proj.bundle()
+#print(proj.bundle.results.rsync)

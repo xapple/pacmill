@@ -48,11 +48,37 @@ Two sequences that diverge by no more than a few nucleotides are probably not pr
 For this clustering, we use the `vsearch --cluster_size` algorithm.
 
 The similarity threshold chosen is {{otus_threshold}}. Exactly {{otus_total}} OTUs are produced.
+
+OTU table
+---------
+A table with OTUs as rows ({{otus_filtered}}) and samples as columns ({{count_samples}}) is produced. Each cell within this table tells us how many sequences are participating in the given OTU from the given sample. This table is too big to be viewed directly here. However, we can plot some of its properties to better gauge the sparsity in figures \ref{otu_sums_graph}, \ref{sample_sums_graph} and \ref{cumulative_presence}:
+
+{{otu_sums_graph}}
+
+{{sample_sums_graph}}
+
+{{cumulative_presence}}
+
 {{/otus}}
 
 {{^otus}}
 The OTU clustering algorithm has not been run on this project yet. Please run the pipeline and regenerate this report.
 {{/otus}}
+
+-------
+
+Extracting 16S portions
+-----------------------
+
+{{#barrnap}}
+In this step, we run every sequence through the `barrnap` algorithm to detect the presence of rRNA genes (via `nhmmer`). We then only keep the specific portion of OTU sequences that had a positive hit for the 16S gene.
+
+* Checking for the presence of the 16 rRNA gene discards {{barrnap_discard}} sequences ({{barrnap_left}} left).
+{{/barrnap}}
+
+{{^barrnap}}
+The 16S extraction algorithm has not been run on this project yet. Please run the pipeline and regenerate this report.
+{{/barrnap}}
 
 -------
 
@@ -65,6 +91,17 @@ Relying on databases of ribosomal genes such as Silva, we can classify each OTU 
 Out of our {{otus_total}} OTUs, some are totally unclassified while others have predictions at different positions in the tree of life. The proportion of classified OTUs is summarized below:
 
 {{otu_classified_table}}
+
+Composition
+-----------
+At this point, one of the most obvious graphs to produce is a bar-chart detailing the composition in terms of taxonomy of every one of our samples. Once again, this can be done at several levels or ranks of classification ranging from *Domain*, down to *Species*. At levels that are too deep, such visualization become too crowded and unreadable. This of course depends on the complexity of the samples. Here are plotted three different taxonomic levels in figures \ref{level_one_barstack}, \ref{level_two_barstack} and \ref{level_three_barstack}:
+
+{{level_one_barstack}}
+
+{{level_two_barstack}}
+
+{{level_three_barstack}}
+
 {{/taxonomy}}
 
 {{^taxonomy}}
@@ -72,3 +109,18 @@ The taxonomic classification algorithm has not been run on this project yet. Ple
 {{/taxonomy}}
 
 -------
+
+{{#comparison}}
+Comparison
+----------
+We now would like to start comparing samples amongst each other to determine which ones are similar or if any clear groups can be observed. A first means of doing that is by using the information in the OTU table and a distance metric such as the "Horn 1966 (adapted from Morisita 1959)" one to place them on an ordination plot. This can be seen in figure \ref{otu_nmds}.
+
+    {{otu_nmds}}
+
+These kind of graphs have a random component to them and can be easily influenced by one or two differently looking samples.
+
+Distances
+---------
+To compute beta diversity, other distance measures are possible of course. Bray-Curtis and Jaccard distance matrices can be created. We can also explore phylogenetic distance measures such as the UniFrac one. This is also possible and a UniFrac distance matrix can easily be computed. One can also build a hierarchical clustering of the samples from it (not included).
+
+{{/comparison}}

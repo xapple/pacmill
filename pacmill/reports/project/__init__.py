@@ -121,6 +121,22 @@ class ProjectTemplate(ReportTemplate):
     def otus_total(self):
         return thousands(self.project.otus.results.count)
 
+    #------------------------------ Barrnap ----------------------------------#
+    def barrnap(self):
+        return bool(self.project.barrnap)
+
+    def barrnap_discard(self):
+        before = self.project.otus.results.count
+        after  = self.project.barrnap.results.count
+        return thousands(before - after)
+
+    def barrnap_left(self):
+        return thousands(self.project.barrnap.results.count)
+
     #------------------------------- Taxonomy --------------------------------#
     def taxonomy(self):
+        return False
+
+    #------------------------------ Comparison -------------------------------#
+    def comparison(self):
         return False

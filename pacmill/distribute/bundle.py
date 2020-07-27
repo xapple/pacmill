@@ -59,7 +59,7 @@ class Bundle:
         # Remove the directory if it was created previously #
         self.base_dir.remove()
         self.base_dir.create()
-        # Loop every sample #
+        # Loop every sample report #
         for s in self.project:
             destination = self.autopaths.samples_dir + s.short_name + '.pdf'
             s.report.output_path.copy(destination)
@@ -77,7 +77,7 @@ class Bundle:
     def results(self):
         results = BundleResults(self)
         message = "You can't access results from a bundle before" \
-                  "running it."
+                  "creating it."
         if not results: raise Exception(message)
         return results
 

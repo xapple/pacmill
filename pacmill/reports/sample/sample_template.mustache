@@ -75,7 +75,7 @@ Gene Presence with Barrnap
 --------------------------
 
 {{#barrnap}}
-In this step, we run every sequence through the `barrnap` algorithm to detect the presence of any type of rRNA gene (via `nhmmer`). We then keep only raw sequences that had a positive hit for both the 16S gene and the 23S gene.
+In this step, we run every sequence through the `barrnap` algorithm to detect the presence of any type of rRNA gene (via `nhmmer`). We then only keep raw sequences that had a positive hit for both the 16S gene and the 23S gene.
 
 * Checking for the presence of rRNA genes further discards {{barrnap_discard}} sequences ({{barrnap_left}} left).
 {{/barrnap}}
@@ -103,4 +103,4 @@ The chimeras detection algorithm has not been run on this sample yet. Please run
 
 Clustering
 ----------
-Further analysis is usually performed not at the single sample level but on a collection of samples at the same time (samples are concatenated within a project). The next steps are found in the Project report PDF and not the Sample report PDF.
+Further analysis is usually performed on a collection of samples at the same time instead of on a single sample. Indeed, samples should be concatenated within a project after cleaning. The samples PDF report ends here and the next steps are found in the project report PDF.

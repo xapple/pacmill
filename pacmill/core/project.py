@@ -18,8 +18,10 @@ from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
-from pacmill.centering.vsearch import OTUs
 from pacmill.core.sample import Sample
+from pacmill.centering.vsearch import OTUs
+from pacmill.filtering.barrnap import Barrnap
+from pacmill.taxonomy.mothur_classify import MothurClassify
 
 ###############################################################################
 class Project:
@@ -147,6 +149,9 @@ class Project:
                 /reads/all_reads.fasta
                 /otus/consensus.fasta
                 /otus/table.tsv
+                /barrnap/results.gff
+                /barrnap/only_16s.fasta
+                /taxonomy/
                 /graphs/
                 /report/cache/
                 /report/project.pdf
@@ -196,7 +201,28 @@ class Project:
         Takes care of running a single-pass, greedy centroid-based clustering
         algorithm on all sequences to determine consensus sequences of OTUs.
         """
-        return OTUs(self.fasta, self.autopaths.consensus)
+        return OTUs(self.fasta,
+                    self.autopaths.otus_fasta,
+                    self.autopaths.otus_table)
+
+    @property_cached
+    def barrnap(self):
+        """
+        Takes care of extracting the 16S rRNA portion from each OTU
+        in preparation for a sequence search against a database.
+        """
+        return Barrnap(self.otus.results,
+                       self.autopaths.barrnap_gff,
+                       self.autopaths.barrnap_16s)
+
+    @property_cached
+    def taxonomy(self):
+        """
+        Will compare all OTU sequences against a database of curated 16S genes
+        to associate a taxonomically assignment where possible.
+        """
+        return MothurClassify(self.barrnap.results,
+                              self.autopaths.taxonomy_dir)
 
     @property_cached
     def report(self):

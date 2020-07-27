@@ -11,7 +11,7 @@ Contact at www.sinclair.bio
 import os, multiprocessing
 
 # First party modules #
-from fasta import FASTQ
+from fasta import FASTA, FASTQ
 from autopaths.file_path      import FilePath
 from autopaths.tmp_path       import new_temp_dir, new_temp_path
 from plumbing.cache           import property_cached
@@ -46,15 +46,18 @@ class Barrnap:
 
     def __init__(self, source, dest=None, filtered=None):
         # Source is the FASTA or FASTQ file on which barrnap will be run #
-        self.source = FilePath(source)
+        if source.endswith('fasta'): self.source = FASTA(source)
+        else:                        self.source = FASTQ(source)
         # Destination is a GFF file that contains the results #
         if dest is None:
             dest = self.source.prefix_path + '.barrnap.gff'
         self.dest = FilePath(dest)
-        # Filtered is a FASTA file containing only raw reads with rRNA genes #
+        # Filtered is a file containing only raw reads with rRNA genes #
         if filtered is None:
             filtered = self.source.prefix_path + '.barrnap.fastq'
-        self.filtered = FASTQ(filtered)
+        # It can be either a FASTA or a FASTQ #
+        if filtered.endswith('fasta'): self.filtered = FASTA(filtered)
+        else:                          self.filtered = FASTQ(filtered)
 
     #---------------------------- Installing ---------------------------------#
     apt_packages = ['bedtools']
@@ -125,7 +128,7 @@ class Barrnap:
         """
         Using the original reads file and the GFF output of barrnap,
         we will create a new FASTQ file containing only the original reads
-        that had a hit for both rRNA genes.
+        that had a hit for both rRNA genes on the same read.
         """
         # Message #
         if verbose:
@@ -146,6 +149,34 @@ class Barrnap:
         # Return #
         return self.filtered
 
+    def extract(self, verbose=True):
+        """
+        Alternatively, using the original reads file and the GFF output of
+        barrnap, we will create a new FASTA file containing only the portion of
+        the original reads that contains the 16S rRNA gene.
+        """
+        # Message #
+        if verbose:
+            msg = "Extracting the 16S rRNA portion of sequences from '%s'"
+            print(msg % self.dest)
+        # Get reads that had a rRNA hit #
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type='rRNA')
+        # Make a lookup table for those with 16S hits #
+        lookup = {rec.seqid: (rec.start, rec.end)
+                  for rec in reader if '16S_rRNA' in rec.attributes}
+        # Function to yield only the good part of each read #
+        def only_16s_portion(reads):
+            for r in reads:
+                start_and_end = lookup.get(r.id)
+                if start_and_end is None: continue
+                start, end = start_and_end
+                yield r[start:end]
+        # Write new FASTA file #
+        self.filtered.write(only_16s_portion(self.source))
+        # Return #
+        return self.filtered
+
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
         """
@@ -162,9 +193,4 @@ class Barrnap:
                   "before running the tool."
             raise Exception(msg)
         # Return the results #
-        return BarrnapResults(self.filtered)
-
-###############################################################################
-class BarrnapResults(FASTQ):
-    """A file with the results from Barrnap."""
-    pass
+        return self.filtered

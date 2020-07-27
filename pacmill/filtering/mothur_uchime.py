@@ -20,7 +20,7 @@ from autopaths.tmp_path       import new_temp_dir, new_temp_path
 import sh
 
 ###############################################################################
-class Chimeras:
+class MothurUchime:
     """
     Takes care of detecting and removing chimeric reads, by calling
     `mothur.uchime` as seen in:
@@ -80,7 +80,7 @@ class Chimeras:
         # Restore current directory #
         os.chdir(current_dir)
         # Move files #
-        pass
+        pass #TODO
         # Return #
         return self.dest
 
