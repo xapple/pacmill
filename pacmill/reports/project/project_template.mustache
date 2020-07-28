@@ -86,21 +86,11 @@ Taxonomic classification
 ------------------------
 
 {{#taxonomy}}
-Relying on databases of ribosomal genes such as Silva, we can classify each OTU and give it an approximative affiliation. This pairs OTU to predicted taxonomic names where possible. This is done using {{classify_citation}} and {{classify_database}}.
+Relying on databases of ribosomal genes such as Silva, we can attempt to classify each OTU and give it an approximative affiliation. This pairs OTU to predicted taxonomic names where possible. This is done using {{classify_citation}} and {{classify_database}}.
 
-Out of our {{otus_total}} OTUs, some are totally unclassified while others have predictions at different positions in the tree of life. The proportion of classified OTUs is summarized below:
+Out of our {{barrnap_left}} OTUs that had a hit for 16S rRNA, some remain totally unclassified while others have predictions at different positions in the tree of life. The proportion of classified OTUs is summarized below:
 
 {{otu_classified_table}}
-
-Composition
------------
-At this point, one of the most obvious graphs to produce is a bar-chart detailing the composition in terms of taxonomy of every one of our samples. Once again, this can be done at several levels or ranks of classification ranging from *Domain*, down to *Species*. At levels that are too deep, such visualization become too crowded and unreadable. This of course depends on the complexity of the samples. Here are plotted three different taxonomic levels in figures \ref{level_one_barstack}, \ref{level_two_barstack} and \ref{level_three_barstack}:
-
-{{level_one_barstack}}
-
-{{level_two_barstack}}
-
-{{level_three_barstack}}
 
 {{/taxonomy}}
 
@@ -111,6 +101,18 @@ The taxonomic classification algorithm has not been run on this project yet. Ple
 -------
 
 {{#comparison}}
+
+    Composition
+    -----------
+    At this point, one of the most obvious graphs to produce is a bar-chart detailing the composition in terms of taxonomy of every one of our samples. Once again, this can be done at several levels or ranks of classification ranging from *Domain*, down to *Species*. At levels that are too deep, such visualization become too crowded and unreadable. This of course depends on the complexity of the samples. Here are plotted three different taxonomic levels in figures \ref{level_one_barstack}, \ref{level_two_barstack} and \ref{level_three_barstack}:
+
+    {{level_one_barstack}}
+
+    {{level_two_barstack}}
+
+    {{level_three_barstack}}
+
+
 Comparison
 ----------
 We now would like to start comparing samples amongst each other to determine which ones are similar or if any clear groups can be observed. A first means of doing that is by using the information in the OTU table and a distance metric such as the "Horn 1966 (adapted from Morisita 1959)" one to place them on an ordination plot. This can be seen in figure \ref{otu_nmds}.

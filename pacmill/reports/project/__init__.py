@@ -100,11 +100,11 @@ class ProjectTemplate(ReportTemplate):
           'Reads lost':  lost,
           'Reads left':  left,
         }
-        # The title row #
-        headers = ['#'] + list(info.keys())
         # The table contents, row after row #
         table = [[i+1] + [f(s) for f in info.values()]
                  for i, s in enumerate(self.samples)]
+        # The title row #
+        headers = ['#'] + list(info.keys())
         # Make it as text #
         from tabulate import tabulate
         table = tabulate(table, headers, numalign="right", tablefmt="pipe")
@@ -150,7 +150,38 @@ class ProjectTemplate(ReportTemplate):
 
     #------------------------------- Taxonomy --------------------------------#
     def taxonomy(self):
-        return False
+        return bool(self.project.taxonomy)
+
+    def classify_citation(self):
+        return "the '%s' method" % self.project.taxonomy.long_name
+
+    def classify_database(self):
+        return "'" + self.project.taxonomy.database.long_name + "'"
+
+    def otu_classified_table(self):
+        # The functions #
+        def rank(i):
+            return "**" + self.project.taxonomy.database.rank_names[i] + "**"
+        def classified(i):
+            return self.project.taxonomy.results.count_assigned[i]
+        def unclassified(i):
+            return self.project.taxonomy.results.count_unassigned[i]
+        # The columns #
+        info = {
+            'Rank':         rank,
+            'Classified':   classified,
+            'Unclassified': unclassified,
+        }
+        # The table contents, row after row #
+        table = [[i+1] + [f(i) for f in info.values()]
+                 for i in range(len(self.project.taxonomy.database.rank_names))]
+        # The title row #
+        headers = ['#'] + list(info.keys())
+        # Make it as text #
+        from tabulate import tabulate
+        table = tabulate(table, headers, numalign="right", tablefmt="pipe")
+        # Add caption #
+        return table + "\n\n   : Summary information for all samples."
 
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
