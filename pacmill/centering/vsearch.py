@@ -20,7 +20,7 @@ from autopaths.file_path      import FilePath
 import sh
 
 ###############################################################################
-class OTUs:
+class ClusterVsearch:
     """
     Takes care of clustering reads into OTUs by calling
     `vsearch --cluster_size`.
@@ -91,9 +91,9 @@ class OTUs:
                   "before running the tool."
             raise Exception(msg)
         # Return the results #
-        return OTUsResults(self.otus)
+        return ClusteringResults(self.otus)
 
 ###############################################################################
-class OTUsResults(FASTA):
+class ClusteringResults(FASTA):
     """A file with the results."""
     pass

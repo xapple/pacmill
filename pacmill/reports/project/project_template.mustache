@@ -51,7 +51,7 @@ The similarity threshold chosen is {{otus_threshold}}. Exactly {{otus_total}} OT
 
 OTU table
 ---------
-A table with OTUs as rows ({{otus_filtered}}) and samples as columns ({{count_samples}}) is produced. Each cell within this table tells us how many sequences are participating in the given OTU from the given sample. This table is too big to be viewed directly here. However, we can plot some of its properties to better gauge the sparsity in figures \ref{otu_sums_graph}, \ref{sample_sums_graph} and \ref{cumulative_presence}:
+A table with OTUs as rows and samples as columns is produced. Each cell within this table tells us how many sequences are participating in the given OTU from the given sample. This table is often too big to be viewed directly here. However, we can plot some of its properties to better gauge the sparsity as seen in figures \ref{otu_sums_graph}, \ref{sample_sums_graph} and \ref{cumulative_presence}:
 
 {{otu_sums_graph}}
 
@@ -86,7 +86,7 @@ Taxonomic classification
 ------------------------
 
 {{#taxonomy}}
-Relying on databases of ribosomal genes such as Silva, we can classify each OTU and give it an approximative affiliation. This pairs each OTU to a taxonomic name. This is done using {{classify_citation}} and {{classify_database}}.
+Relying on databases of ribosomal genes such as Silva, we can classify each OTU and give it an approximative affiliation. This pairs OTU to predicted taxonomic names where possible. This is done using {{classify_citation}} and {{classify_database}}.
 
 Out of our {{otus_total}} OTUs, some are totally unclassified while others have predictions at different positions in the tree of life. The proportion of classified OTUs is summarized below:
 

@@ -18,8 +18,9 @@ from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
+from pacmill.centering.otu_table import OtuTable
 from pacmill.core.sample import Sample
-from pacmill.centering.vsearch import OTUs
+from pacmill.centering.vsearch import ClusterVsearch
 from pacmill.filtering.barrnap import Barrnap
 from pacmill.taxonomy.mothur_classify import MothurClassify
 
@@ -148,7 +149,7 @@ class Project:
     all_paths = """
                 /reads/all_reads.fasta
                 /otus/consensus.fasta
-                /otus/table.tsv
+                /otus/consensus.tsv
                 /barrnap/results.gff
                 /barrnap/only_16s.fasta
                 /taxonomy/
@@ -201,15 +202,24 @@ class Project:
         Takes care of running a single-pass, greedy centroid-based clustering
         algorithm on all sequences to determine consensus sequences of OTUs.
         """
-        return OTUs(self.fasta,
-                    self.autopaths.otus_fasta,
-                    self.autopaths.otus_table)
+        return ClusterVsearch(self.fasta,
+                              self.autopaths.otus_fasta,
+                              self.autopaths.otus_tsv)
+
+    @property_cached
+    def otu_table(self):
+        """
+        Takes care of storing a table with OTU as rows and samples as columns
+        and tracks how many sequences where found from each sample in each OTU.
+        Also responsible for drawing graphs of OTU distribution.
+        """
+        return OtuTable(self.otus.table)
 
     @property_cached
     def barrnap(self):
         """
-        Takes care of extracting the 16S rRNA portion from each OTU
-        in preparation for a sequence search against a database.
+        Takes care of extracting the 16S rRNA portion from each OTU sequence
+        in preparation for a similarity search against a taxonomic database.
         """
         return Barrnap(self.otus.results,
                        self.autopaths.barrnap_gff,
@@ -219,7 +229,7 @@ class Project:
     def taxonomy(self):
         """
         Will compare all OTU sequences against a database of curated 16S genes
-        to associate a taxonomically assignment where possible.
+        to associate a taxonomic assignment where possible.
         """
         return MothurClassify(self.barrnap.results,
                               self.autopaths.taxonomy_dir)
@@ -237,7 +247,7 @@ class Project:
     def bundle(self):
         """
         The Bundle object is used to regroup all PDF reports together in
-        the same directory for easy distribution to stakeholders.
+        the same directory/zip-file for easy distribution to stakeholders.
         """
         from pacmill.distribute.bundle import Bundle
         return Bundle(self, self.autopaths.bundle_dir)

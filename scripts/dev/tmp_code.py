@@ -45,6 +45,10 @@ proj = Project('aj_skin', proj_xls)
 
 #proj.taxonomy()
 
+print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
+print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
+print(proj.otu_table.graphs.cumulative_presence(rerun=True))
+
 proj.report()
 
 #proj.bundle()

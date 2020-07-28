@@ -121,6 +121,21 @@ class ProjectTemplate(ReportTemplate):
     def otus_total(self):
         return thousands(self.project.otus.results.count)
 
+    def otu_sums_graph(self):
+        caption = "Distribution of OTU presence per OTU"
+        path    = self.project.otu_table.graphs.otu_sums_graph()
+        return str(ScaledFigure(path, caption))
+
+    def sample_sums_graph(self):
+        caption = "Distribution of OTU presence per sample"
+        path    = self.project.otu_table.graphs.sample_sums_graph()
+        return str(ScaledFigure(path, caption))
+
+    def cumulative_presence(self):
+        caption = "Cumulative number of reads by OTU presence"
+        path    = self.project.otu_table.graphs.cumulative_presence()
+        return str(ScaledFigure(path, caption))
+
     #------------------------------ Barrnap ----------------------------------#
     def barrnap(self):
         return bool(self.project.barrnap)
