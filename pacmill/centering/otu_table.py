@@ -47,8 +47,11 @@ class OtuTable:
         are all the graphs found in `otu_graphs.py` initialized with this
         instance as only argument.
         """
+        # Make a dummy object #
         result = type('Dummy', (), {})
+        # Loop over graphs #
         for graph_name in pacmill.centering.otu_graphs.__all__:
             graph_cls = getattr(pacmill.centering.otu_graphs, graph_name)
             setattr(result, graph_cls.short_name, graph_cls(self))
+        # Return #
         return result

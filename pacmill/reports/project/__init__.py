@@ -181,7 +181,23 @@ class ProjectTemplate(ReportTemplate):
         from tabulate import tabulate
         table = tabulate(table, headers, numalign="right", tablefmt="pipe")
         # Add caption #
-        return table + "\n\n   : Summary information for all samples."
+        return table + "\n\n   : Classification summary for OTUs."
+
+    #--------------------------- Taxa Table Graphs ---------------------------#
+    def taxa_barstack_at_rank(self, rank, label):
+        graphs  = self.project.taxa_tables.results.graphs.by_rank
+        graph   = [g for g in graphs if g.base_rank == rank][0]
+        caption = "Relative abundances per sample on the '%s' level"
+        return str(ScaledFigure(graph(), caption % graph.label, label))
+
+    def level_one_barstack(self):
+        return self.taxa_barstack_at_rank(2, "level_one_barstack")
+
+    def level_two_barstack(self):
+        return self.taxa_barstack_at_rank(3, "level_two_barstack")
+
+    def level_three_barstack(self):
+        return self.taxa_barstack_at_rank(4, "level_three_barstack")
 
     #------------------------------ Comparison -------------------------------#
     def comparison(self):

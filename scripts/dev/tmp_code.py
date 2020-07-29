@@ -49,6 +49,10 @@ proj = Project('aj_skin', proj_xls)
 #print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
 #print(proj.otu_table.graphs.cumulative_presence(rerun=True))
 
+#print(proj.taxa_tables())
+
+for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
+
 proj.report()
 
 #proj.bundle()

@@ -18,11 +18,12 @@ from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
-from pacmill.centering.otu_table import OtuTable
-from pacmill.core.sample import Sample
-from pacmill.centering.vsearch import ClusterVsearch
-from pacmill.filtering.barrnap import Barrnap
+from pacmill.centering.otu_table      import OtuTable
+from pacmill.core.sample              import Sample
+from pacmill.centering.vsearch        import ClusterVsearch
+from pacmill.filtering.barrnap        import Barrnap
 from pacmill.taxonomy.mothur_classify import MothurClassify
+from pacmill.taxonomy.taxa_tables     import TaxaTable
 
 ###############################################################################
 class Project:
@@ -153,6 +154,7 @@ class Project:
                 /barrnap/results.gff
                 /barrnap/only_16s.fasta
                 /taxonomy/
+                /taxa_tables/
                 /graphs/
                 /report/cache/
                 /report/project.pdf
@@ -233,6 +235,17 @@ class Project:
         """
         return MothurClassify(self.barrnap.results,
                               self.autopaths.taxonomy_dir)
+
+    @property_cached
+    def taxa_tables(self):
+        """
+        By using the OTU table along with the taxonomic assignment results,
+        we can generate taxa tables at different ranks.
+        """
+        return TaxaTable(self.otu_table,
+                         self.taxonomy,
+                         self.samples,
+                         self.autopaths.taxa_tables_dir)
 
     @property_cached
     def report(self):

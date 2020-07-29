@@ -8,7 +8,7 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
-import os, multiprocessing
+import os, multiprocessing, re
 
 # First party modules #
 from fasta import FASTA
@@ -201,9 +201,16 @@ class MothurClassifyResults:
         result = {}
         with open(self.autopaths.assignments, 'r') as handle:
             for line in handle:
+                # Get the OTU name and the assignment as a string #
                 otu_name, species = line.split('\t')
-                species           = [i.strip('\n') for i in species.split(';')]
-                result[otu_name]  = tuple(species)
+                # Split the assignment into ranks #
+                species = [i.strip('\n') for i in species.split(';')]
+                # The OTU name matches what vsearch outputted in the FASTA #
+                # And not what vsearch outputted in the TSV. We fix that #
+                pattern  = '\Acentroid=(.+);seqs=[0-9]+\Z'
+                otu_name = re.findall(pattern, otu_name)[0]
+                # Assign that OTU to that tuple of ranks #
+                result[otu_name] = tuple(species)
         # Return #
         return result
 

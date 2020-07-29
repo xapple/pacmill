@@ -31,6 +31,21 @@ class ClusterVsearch:
         a multiple alignment is computed, and a consensus sequence is
         constructed by taking the majority symbol (nucleotide or gap) from
         each column of the alignment.
+
+    Caveat: The Vsearch algorithm will name OTU differently in the FASTA
+            file it outputs as compared to the TSV file it outputs
+
+    In the `self.table` they are named:
+
+        sample_1:1034      sample_1:1041       etc.
+
+    In the `self.otus` they are named:
+
+       centroid=sample_1:1034;seqs=128      etc.
+
+    After mothur classifies the OTU they are named:
+
+       centroid=sample_1_1034;seqs=128      etc.
     """
 
     threshold = 0.97
