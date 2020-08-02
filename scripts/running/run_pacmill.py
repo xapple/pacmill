@@ -7,77 +7,102 @@ MIT Licensed.
 Contact at www.sinclair.bio
 
 Script to run the `pacmill` pipeline.
+
+Typically you would run this file from a command line like this:
+
+    ipython3 -i -- ~/deploy/pacmill/scripts/running/run_pacmill.py \
+                   small_test small_test/metadata_small_test.xlsx
 """
 
 # Built-in modules #
-import os
+import os, argparse
 
 # Internal modules #
 from pacmill.core.project import Project
 
 # Constants #
-proj_name = os.environ.get("PACMILL_PROJ_NAME", "No base project has been set")
-proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No base project has been set")
+env_name = os.environ.get("PACMILL_PROJ_NAME")
+env_xls = os.environ.get("PACMILL_PROJ_XLS")
 
 ###############################################################################
-# Create project #
-proj = Project(proj_name, proj_xls)
+if __name__ == "__main__":
+    # Some strings #
+    proj_name_help = "Short name of the project to run."
+    proj_xls_help  = "The path to the excel metadata file."
+    description    = "Script to run a project through the whole pipeline."
 
-# Validate the format of the FASTQs #
-for sample in proj: print(sample.fastq.validator())
+    # Parse the shell arguments #
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("proj_name", help=proj_name_help,
+                        type=str, nargs='?', default=None)
+    parser.add_argument("proj_xls",  help=proj_xls_help,
+                        type=str, nargs='?', default=None)
+    args = parser.parse_args()
 
-# Run FastQC on the samples individually #
-for sample in proj:
-    print(sample.fastq.fastqc())
+    # Get defaults #
+    if args.proj_name is None: proj_name = env_name
+    if args.proj_name is None: raise Exception("No base project has been set")
+    if args.proj_xls  is None: proj_xls = env_xls
+    if args.proj_xls  is None: raise Exception("No base project has been set")
 
-# Filter reads in every sample based on several criteria #
-for sample in proj:
-    print(sample.filter(verbose=True))
+    # Create project #
+    proj = Project(args.proj_name, args.proj_xls)
 
-# Detect presence of rRNA genes #
-for sample in proj:
-    print(sample.barrnap())
-    print(sample.barrnap.filter())
+    # Validate the format of the FASTQs #
+    for sample in proj: print(sample.fastq.validator())
 
-# Remove chimeric reads #
-for sample in proj:
-    print(sample.chimeras())
+    # Run FastQC on the samples individually #
+    for sample in proj:
+        print(sample.fastq.fastqc())
 
-# Concatenate reads from all samples to one file #
-print(proj.combine_reads())
+    # Filter reads in every sample based on several criteria #
+    for sample in proj:
+        print(sample.filter(verbose=True))
 
-# Pick OTUS #
-print(proj.otus())
+    # Detect presence of rRNA genes #
+    for sample in proj:
+        print(sample.barrnap())
+        print(sample.barrnap.filter())
 
-# Extract 16S location within OTUs #
-print(proj.barrnap())
-print(proj.barrnap.extract())
+    # Remove chimeric reads #
+    for sample in proj:
+        print(sample.chimeras())
 
-# Assign taxonomy #
-print(proj.taxonomy())
+    # Concatenate reads from all samples to one file #
+    print(proj.combine_reads())
 
-# Make all taxa tables #
-print(proj.taxa_tables())
+    # Pick OTUS #
+    print(proj.otus())
 
-# Regenerate the graphs for samples #
-for sample in proj:
-    print(sample.fastq.graphs.length_hist(rerun=True))
+    # Extract 16S location within OTUs #
+    print(proj.barrnap())
+    print(proj.barrnap.extract())
 
-# Regenerate the graphs for the project #
-print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
-print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
-print(proj.otu_table.graphs.cumulative_presence(rerun=True))
+    # Assign taxonomy #
+    print(proj.taxonomy())
 
-# Regenerate the graphs for taxa bar-stacks #
-for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
+    # Make all taxa tables #
+    print(proj.taxa_tables())
 
-# Clear the cache #
-for sample in proj:
-    print(sample.report.cache_dir.remove())
+    # Regenerate the graphs for samples #
+    for sample in proj:
+        print(sample.fastq.graphs.length_hist(rerun=True))
 
-# Create the PDF reports for each sample #
-for sample in proj:
-    print(sample.report())
+    # Regenerate the graphs for the project #
+    print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
+    print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
+    print(proj.otu_table.graphs.cumulative_presence(rerun=True))
 
-# Create the PDF report for the project #
-print(proj.report())
+    # Regenerate the graphs for taxa bar-stacks #
+    for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
+
+    # Clear the cache #
+    for sample in proj:
+        print(sample.report.template.cache_dir.remove())
+
+    # Create the PDF reports for each sample #
+    for sample in proj:
+        print(sample.report())
+
+    # Create the PDF report for the project #
+    print(proj.report())
