@@ -16,24 +16,26 @@ Typically you would run this file from a command line like this:
 """
 
 # Built-in modules #
+import os
 
 # Internal modules #
 from pacmill.core.project import Project
 
 # Constants #
-proj_xls = "/home/sinclair/deploy/collab_sinclair/pacmill_projects/aj_skin/" \
-           "metadata_aj_skin.xlsx"
+proj_name = os.environ.get("PACMILL_PROJ_NAME", "No base project has been set")
+proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No base project has been set")
 
 ###############################################################################
 # Create project #
-proj = Project('aj_skin', proj_xls)
+proj = Project(proj_name, proj_xls)
+
+for sample in proj:
+    print(sample.filter(True))
+    break
 
 #for sample in proj:
-#   print(sample.filter(True))
-
-#for sample in proj:
-#   result = sample.chimeras()
-#   print('\n'.join(result.directory.flat_contents))
+#    result = sample.chimeras()
+#    print('\n'.join(result.directory.flat_contents))
 #    break
 
 #for sample in proj:
@@ -53,7 +55,7 @@ proj = Project('aj_skin', proj_xls)
 
 #for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
 
-proj.nmds_graph()
+#proj.nmds_graph()
 
 #proj.report()
 

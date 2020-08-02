@@ -124,6 +124,26 @@ class Barrnap:
         # Return #
         return self.dest
 
+    #--------------------------- Presence of gene ----------------------------#
+    def parse_hits(self, attr_text):
+        """
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        all IDs that contained a given text in their attributes
+        """
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type='rRNA')
+        return [rec.seqid for rec in reader if attr_text in rec.attributes]
+
+    @property_cached
+    def ids_16s(self):
+        """Return read IDs for reads that contained a 16S gene."""
+        return self.parse_hits('16S_rRNA')
+
+    @property_cached
+    def ids_23s(self):
+        """Return read IDs for reads that contained a 16S gene."""
+        return self.parse_hits('23S_rRNA')
+
     def filter(self, verbose=True):
         """
         Using the original reads file and the GFF output of barrnap,
@@ -134,21 +154,14 @@ class Barrnap:
         if verbose:
             msg = "Extracting sequences with both rRNA genes from '%s'"
             print(msg % self.dest)
-        # Get IDs that passed (only for 16S) #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type='rRNA')
-        ids_16s = [rec.seqid for rec in reader if '16S_rRNA' in rec.attributes]
-        # Get IDs that passed (only for 23S) #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type='rRNA')
-        ids_23s = [rec.seqid for rec in reader if '23S_rRNA' in rec.attributes]
         # Get those that had both genes #
-        ids_both = set(ids_16s) & set(ids_23s)
+        ids_both = set(self.ids_16s) & set(self.ids_23s)
         # Extract those IDs #
         FASTQ(self.source).extract_sequences(ids_both, self.filtered, verbose)
         # Return #
         return self.filtered
 
+    #--------------------------- Location of gene ----------------------------#
     def extract(self, verbose=True):
         """
         Alternatively, using the original reads file and the GFF output of

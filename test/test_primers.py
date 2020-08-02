@@ -19,43 +19,56 @@ from fasta import FASTQ
 
 # Third party modules #
 import pytest, Bio
-from Bio.SeqRecord import SeqRecord
 
 ###############################################################################
 cases = [{
+
     'fwd_primer': "ATTTA",                         # This is a standard case
     'rev_primer':                     "AGGGA",     # Only forward and reverse
     'seq':        "ATTTAGGGGGGGCGGGGGGGTCCCT",     # primers are found
     'expected':        "GGGGGGGCGGGGGGG",
+
 }, {
+
     'fwd_primer': "AAA",                           # Here both are found but
     'rev_primer': "TTT",                           # they are found in the same
     'seq':        "AAAAAAAA",                      # spot causing a 0 length
+
 }, {
+
     'fwd_primer':                     "AATAA",     # The sequence is in the
     'rev_primer': "AAAAA",                         # opposite direction
     'seq':        "AAAAAGGGGGGCGCGGGGGGTTATT",     # (reverse complement)
     'expected':        "CCCCCCGCGCCCCCC",
+
 }, {
+
     'fwd_primer': "ATTTA",                         # Mismatch in the reverse
     'rev_primer':                     "AGGGA",     # primer
     'seq':        "ATTTAGGGGGGGCGGGGGGGTCTCT",
+
 }, {
+
     'fwd_primer': "ATTTA",                        # Authorizing a mismatch here
     'rev_primer':                     "AGGGA",    # causes the reverse primer
     'seq':        "ATTTAGGGGGGGCGGGGGGGTCCCT",    # to be found twice at pos
     'mismatches': 1                               # 4 and at pos 20
+
 }, {
+
     'fwd_primer': "ATTAATTA",
     'rev_primer':                    "AGAAGA",    # Authorizing a mismatch here
     'seq':        "TTTAATTAGGGGCGGGGGGTCTTTT",    # causes both primers to be
     'expected':           "GGGGCGGGGGG",          # found correctly
     'mismatches': 1
+
 }, {
+
     'fwd_primer':    "ATTAATTA",
     'rev_primer':                       "AGAAGA",     # Primers are further
     'seq':        "GGGTTTAATTAGGGGCTGGGGGTCTTTTGGG",  # inside the read but
     'expected':              "GGGGCTGGGGG",           # are found correctly
+
     'mismatches': 1
 }]
 

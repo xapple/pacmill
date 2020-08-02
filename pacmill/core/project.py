@@ -67,7 +67,11 @@ class Project:
         # The name of the project #
         self.short_name = short_name.lower()
         # Check it contains only alphanumerics and underscore #
-        assert self.short_name.isidentifier()
+        if not self.short_name.isidentifier():
+            msg = "The short name of a project can only contain " \
+                  "alphanumerical characters and underscores."    \
+                  "Currently it is: \n\n   `%s`\n"
+            raise ValueError(msg % short_name)
         # You need at least one excel file #
         assert len(all_xlsx) > 0
         # Save all excel file paths as Paths objects #
