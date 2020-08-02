@@ -256,7 +256,7 @@ class SeqFilter:
         return SeqFilterResults(self)
 
 ###############################################################################
-class SeqFilterResults(object):
+class SeqFilterResults:
 
     def __init__(self, parent):
         # Reference to the SeqFilter instance #

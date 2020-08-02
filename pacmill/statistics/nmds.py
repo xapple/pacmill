@@ -133,7 +133,7 @@ class GraphNMDS(Graph):
     def stress_value(self):
         # Check no convergence #
         full_output = '\n'.join(self.stdout)
-        if 'No convergence' in full_output: return 'No convergence'
+        if 'No convergence' in full_output: return '<No convergence>'
         # Default case #
         return self.stdout[-1]
 

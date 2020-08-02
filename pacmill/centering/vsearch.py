@@ -43,7 +43,7 @@ class ClusterVsearch:
 
        centroid=sample_1:1034;seqs=128      etc.
 
-    After mothur classifies the OTU they are named:
+    After mothur classifies the OTU, they are named:
 
        centroid=sample_1_1034;seqs=128      etc.
     """
@@ -70,7 +70,7 @@ class ClusterVsearch:
     def __call__(self, cpus=None, verbose=True):
         # Message #
         if verbose:
-            msg = "Running OTU creation detection on '%s'"
+            msg = "Running OTU creation on '%s'"
             print(msg % self.source)
         # Check it is installed #
         check_cmd('vsearch', True)

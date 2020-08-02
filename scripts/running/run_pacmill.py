@@ -92,6 +92,7 @@ if __name__ == "__main__":
     print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
     print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
     print(proj.otu_table.graphs.cumulative_presence(rerun=True))
+    print(proj.nmds_graph(rerun=True))
 
     # Regenerate the graphs for taxa bar-stacks #
     for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))

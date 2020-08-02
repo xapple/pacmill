@@ -107,7 +107,7 @@ class Project:
         rows = metadata.iterrows()
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
-        # Add a reference the current project #
+        # Add a reference to the current project #
         for sample in samples: sample.parent = self
         # Check we have at least one sample #
         assert len(samples) > 0

@@ -82,7 +82,7 @@ class Bundle:
         return results
 
 ###############################################################################
-class BundleResults(object):
+class BundleResults:
 
     def __nonzero__(self): return bool(self.autopaths.x)
 

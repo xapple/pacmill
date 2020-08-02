@@ -83,8 +83,7 @@ class ProjectTemplate(ReportTemplate):
     def input_length_dist(self):
         caption = "Distribution of sequence lengths at input"
         path    = self.project.fasta.graphs.length_hist()
-        label   = "input_length_dist"
-        return str(ScaledFigure(path, caption, label))
+        return str(ScaledFigure(path, caption, "input_length_dist"))
 
     #----------------------------- Summary table -----------------------------#
     def sample_table(self):
@@ -124,17 +123,17 @@ class ProjectTemplate(ReportTemplate):
     def otu_sums_graph(self):
         caption = "Distribution of OTU presence per OTU"
         path    = self.project.otu_table.graphs.otu_sums_graph()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, 'otu_sums_graph'))
 
     def sample_sums_graph(self):
         caption = "Distribution of OTU presence per sample"
         path    = self.project.otu_table.graphs.sample_sums_graph()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, 'sample_sums_graph'))
 
     def cumulative_presence(self):
         caption = "Cumulative number of reads by OTU presence"
         path    = self.project.otu_table.graphs.cumulative_presence()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, 'cumulative_presence'))
 
     #------------------------------ Barrnap ----------------------------------#
     def barrnap(self):
@@ -202,9 +201,9 @@ class ProjectTemplate(ReportTemplate):
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
         if len(self.samples) < 2: return False
-        return self.èr
+        return bool(self.project.nmds_graph)
 
     def otu_nmds(self):
         caption = "NMDS using the OTU table for %i samples" % len(self.samples)
-        path    = self.project.nmds_graph()
-        return str(ScaledFigure(path, caption))
+        graph   = self.project.nmds_graph()
+        return str(ScaledFigure(graph, caption, 'otu_nmds'))

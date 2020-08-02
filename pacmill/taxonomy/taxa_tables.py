@@ -20,7 +20,7 @@ from plumbing.cache import property_cached
 import pandas
 
 ###############################################################################
-class TaxaTable(object):
+class TaxaTable:
     """
     Takes the OTU table along with the taxonomic assignment results to
     generate taxa tables at different ranks.
@@ -129,7 +129,7 @@ class TaxaTable(object):
         return TaxaTableResults(self)
 
 ###############################################################################
-class TaxaTableResults(object):
+class TaxaTableResults:
 
     def __init__(self, parent):
         self.parent      = parent
