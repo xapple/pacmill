@@ -29,9 +29,9 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No base project has been set")
 # Create project #
 proj = Project(proj_name, proj_xls)
 
-for sample in proj:
-    print(sample.filter(True))
-    break
+#for sample in proj:
+#    print(sample.filter(True))
+#    break
 
 #for sample in proj:
 #    result = sample.chimeras()
@@ -55,7 +55,7 @@ for sample in proj:
 
 #for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
 
-#proj.nmds_graph()
+proj.nmds_graph()
 
 #proj.report()
 

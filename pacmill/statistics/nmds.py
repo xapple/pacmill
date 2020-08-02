@@ -40,7 +40,7 @@ class GraphNMDS(Graph):
 
     https://scikit-learn.org/stable/auto_examples/manifold/plot_mds.html
 
-    And ecopy provides something that calls scikit learn:
+    And `ecopy` provides something that in turn calls scikit learn:
 
     https://ecopy.readthedocs.io/en/latest/ordination.html
 
@@ -59,6 +59,7 @@ class GraphNMDS(Graph):
         self.parent.df.T.to_csv(str(transposed), sep='\t')
         transposed.prepend('X')
         # Run via R #
+        self.capture_r_output()
         coord = self.run_via_r(transposed.path)
         # Data #
         x      = coord['NMDS1'].values
@@ -87,6 +88,26 @@ class GraphNMDS(Graph):
         # Close #
         pyplot.close(fig)
 
+    def capture_r_output(self):
+        """
+        Will cause all the output that normally goes to the R console,
+        to end up instead in a python list.
+        """
+        # Import module #
+        import rpy2.rinterface_lib.callbacks
+        # Record output #
+        self.stdout = []
+        self.stderr = []
+        # Dummy functions #
+        def add_to_stdout(line): self.stdout.append(line)
+        def add_to_stderr(line): self.stderr.append(line)
+        # Keep the old functions #
+        self.stdout_orig = rpy2.rinterface_lib.callbacks.consolewrite_print
+        self.stderr_orig = rpy2.rinterface_lib.callbacks.consolewrite_warnerror
+        # Set the call backs #
+        rpy2.rinterface_lib.callbacks.consolewrite_print     = add_to_stdout
+        rpy2.rinterface_lib.callbacks.consolewrite_warnerror = add_to_stderr
+
     def run_via_r(self, otu_table_path):
         # Module on demand #
         from rpy2 import robjects
@@ -106,6 +127,14 @@ class GraphNMDS(Graph):
         coord = self.r_matrix_to_dataframe(coord)
         # Return #
         return coord
+
+    @property
+    def stress_value(self):
+        # Check no convergence #
+        full_output = '\n'.join(self.stdout)
+        if 'No convergence' in full_output: return 'No convergence'
+        # Default case #
+        return self.stdout[-1]
 
     def r_matrix_to_dataframe(self, matrix):
         cols = list(matrix.colnames)
