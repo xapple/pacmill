@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name             = 'pacmill',
-    version          = '0.2.0',
+    version          = '0.2.1',
     description      = 'The `pacmill` python package is a bioinformatics '
                        'pipeline that is developed to process microbial '
                        '16S amplicon sequencing data.',

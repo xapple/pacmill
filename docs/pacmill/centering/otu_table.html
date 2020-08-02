@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.3" />
-<title>pacmill.reports.base_template API documentation</title>
+<title>pacmill.centering.otu_table API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
 Contact at www.sinclair.bio" />
@@ -21,7 +21,7 @@ Contact at www.sinclair.bio" />
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>pacmill.reports.base_template</code></h1>
+<h1 class="title">Module <code>pacmill.centering.otu_table</code></h1>
 </header>
 <section id="section-intro">
 <p>Written by Lucas Sinclair.
@@ -41,28 +41,53 @@ Contact at www.sinclair.bio
 &#34;&#34;&#34;
 
 # Built-in modules #
-import socket
 
 # Internal modules #
-import pacmill
+import pacmill.centering.otu_graphs
 
 # First party modules #
-from pymarktex.templates import Template
-from plumbing.common     import pretty_now
+from plumbing.cache import property_cached
+from autopaths.file_path import FilePath
+
+# Third party modules #
+import pandas
 
 ###############################################################################
-class ReportTemplate(Template):
-    &#34;&#34;&#34;Things that are common to most reports in waste_flow.&#34;&#34;&#34;
+class OtuTable:
 
-    def project_name(self):      return pacmill.project_name
-    def project_url(self):       return pacmill.project_url
-    def project_version(self):   return pacmill.__version__
-    def now(self):               return pretty_now()
-    def hostname(self):          return socket.gethostname()
+    def __init__(self, tsv_path):
+        # Record the tsv path #
+        self.tsv_path = FilePath(tsv_path)
+        # Pick a directory for storing the graphs #
+        self.graphs_dir = self.tsv_path.directory + &#39;graphs/&#39;
 
-    def git(self):
-        if not pacmill.git_repo: return False
-        return {&#39;git_hash&#39;  : pacmill.git_repo.hash}</code></pre>
+    @property_cached
+    def df(self):
+        &#34;&#34;&#34;
+        Parse the TSV file and return a pandas.DataFrame object.
+        Returns a table with OTU as rows and samples as columns which tracks
+        how many sequences where found from each sample in each OTU.
+        &#34;&#34;&#34;
+        # Parse #
+        df = pandas.read_csv(str(self.tsv_path), &#39;\t&#39;, index_col=0)
+        # Return #
+        return df
+
+    @property_cached
+    def graphs(self):
+        &#34;&#34;&#34;
+        Minor use of black magic here. The result is an object whose attributes
+        are all the graphs found in `otu_graphs.py` initialized with this
+        instance as only argument.
+        &#34;&#34;&#34;
+        # Make a dummy object #
+        result = type(&#39;Dummy&#39;, (), {})
+        # Loop over graphs #
+        for graph_name in pacmill.centering.otu_graphs.__all__:
+            graph_cls = getattr(pacmill.centering.otu_graphs, graph_name)
+            setattr(result, graph_cls.short_name, graph_cls(self))
+        # Return #
+        return result</code></pre>
 </details>
 </section>
 <section>
@@ -74,112 +99,116 @@ class ReportTemplate(Template):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="pacmill.reports.base_template.ReportTemplate"><code class="flex name class">
-<span>class <span class="ident">ReportTemplate</span></span>
-<span>(</span><span>options=None)</span>
+<dt id="pacmill.centering.otu_table.OtuTable"><code class="flex name class">
+<span>class <span class="ident">OtuTable</span></span>
+<span>(</span><span>tsv_path)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Things that are common to most reports in waste_flow.</p></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ReportTemplate(Template):
-    &#34;&#34;&#34;Things that are common to most reports in waste_flow.&#34;&#34;&#34;
+<pre><code class="python">class OtuTable:
 
-    def project_name(self):      return pacmill.project_name
-    def project_url(self):       return pacmill.project_url
-    def project_version(self):   return pacmill.__version__
-    def now(self):               return pretty_now()
-    def hostname(self):          return socket.gethostname()
+    def __init__(self, tsv_path):
+        # Record the tsv path #
+        self.tsv_path = FilePath(tsv_path)
+        # Pick a directory for storing the graphs #
+        self.graphs_dir = self.tsv_path.directory + &#39;graphs/&#39;
 
-    def git(self):
-        if not pacmill.git_repo: return False
-        return {&#39;git_hash&#39;  : pacmill.git_repo.hash}</code></pre>
+    @property_cached
+    def df(self):
+        &#34;&#34;&#34;
+        Parse the TSV file and return a pandas.DataFrame object.
+        Returns a table with OTU as rows and samples as columns which tracks
+        how many sequences where found from each sample in each OTU.
+        &#34;&#34;&#34;
+        # Parse #
+        df = pandas.read_csv(str(self.tsv_path), &#39;\t&#39;, index_col=0)
+        # Return #
+        return df
+
+    @property_cached
+    def graphs(self):
+        &#34;&#34;&#34;
+        Minor use of black magic here. The result is an object whose attributes
+        are all the graphs found in `otu_graphs.py` initialized with this
+        instance as only argument.
+        &#34;&#34;&#34;
+        # Make a dummy object #
+        result = type(&#39;Dummy&#39;, (), {})
+        # Loop over graphs #
+        for graph_name in pacmill.centering.otu_graphs.__all__:
+            graph_cls = getattr(pacmill.centering.otu_graphs, graph_name)
+            setattr(result, graph_cls.short_name, graph_cls(self))
+        # Return #
+        return result</code></pre>
 </details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>pymarktex.templates.Template</li>
-</ul>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="pacmill.reports.project.ProjectTemplate" href="project/index.html#pacmill.reports.project.ProjectTemplate">ProjectTemplate</a></li>
-<li><a title="pacmill.reports.sample.SampleTemplate" href="sample/index.html#pacmill.reports.sample.SampleTemplate">SampleTemplate</a></li>
-</ul>
-<h3>Methods</h3>
+<h3>Instance variables</h3>
 <dl>
-<dt id="pacmill.reports.base_template.ReportTemplate.git"><code class="name flex">
-<span>def <span class="ident">git</span></span>(<span>self)</span>
-</code></dt>
+<dt id="pacmill.centering.otu_table.OtuTable.df"><code class="name">var <span class="ident">df</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Parse the TSV file and return a pandas.DataFrame object.
+Returns a table with OTU as rows and samples as columns which tracks
+how many sequences where found from each sample in each OTU.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def git(self):
-    if not pacmill.git_repo: return False
-    return {&#39;git_hash&#39;  : pacmill.git_repo.hash}</code></pre>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
 </details>
 </dd>
-<dt id="pacmill.reports.base_template.ReportTemplate.hostname"><code class="name flex">
-<span>def <span class="ident">hostname</span></span>(<span>self)</span>
-</code></dt>
+<dt id="pacmill.centering.otu_table.OtuTable.graphs"><code class="name">var <span class="ident">graphs</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Minor use of black magic here. The result is an object whose attributes
+are all the graphs found in <code>otu_graphs.py</code> initialized with this
+instance as only argument.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def hostname(self):          return socket.gethostname()</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.base_template.ReportTemplate.now"><code class="name flex">
-<span>def <span class="ident">now</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def now(self):               return pretty_now()</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.base_template.ReportTemplate.project_name"><code class="name flex">
-<span>def <span class="ident">project_name</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def project_name(self):      return pacmill.project_name</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.base_template.ReportTemplate.project_url"><code class="name flex">
-<span>def <span class="ident">project_url</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def project_url(self):       return pacmill.project_url</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.base_template.ReportTemplate.project_version"><code class="name flex">
-<span>def <span class="ident">project_version</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def project_version(self):   return pacmill.__version__</code></pre>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
 </details>
 </dd>
 </dl>
@@ -195,20 +224,16 @@ class ReportTemplate(Template):
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="pacmill.reports" href="index.html">pacmill.reports</a></code></li>
+<li><code><a title="pacmill.centering" href="index.html">pacmill.centering</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="pacmill.reports.base_template.ReportTemplate" href="#pacmill.reports.base_template.ReportTemplate">ReportTemplate</a></code></h4>
-<ul class="two-column">
-<li><code><a title="pacmill.reports.base_template.ReportTemplate.git" href="#pacmill.reports.base_template.ReportTemplate.git">git</a></code></li>
-<li><code><a title="pacmill.reports.base_template.ReportTemplate.hostname" href="#pacmill.reports.base_template.ReportTemplate.hostname">hostname</a></code></li>
-<li><code><a title="pacmill.reports.base_template.ReportTemplate.now" href="#pacmill.reports.base_template.ReportTemplate.now">now</a></code></li>
-<li><code><a title="pacmill.reports.base_template.ReportTemplate.project_name" href="#pacmill.reports.base_template.ReportTemplate.project_name">project_name</a></code></li>
-<li><code><a title="pacmill.reports.base_template.ReportTemplate.project_url" href="#pacmill.reports.base_template.ReportTemplate.project_url">project_url</a></code></li>
-<li><code><a title="pacmill.reports.base_template.ReportTemplate.project_version" href="#pacmill.reports.base_template.ReportTemplate.project_version">project_version</a></code></li>
+<h4><code><a title="pacmill.centering.otu_table.OtuTable" href="#pacmill.centering.otu_table.OtuTable">OtuTable</a></code></h4>
+<ul class="">
+<li><code><a title="pacmill.centering.otu_table.OtuTable.df" href="#pacmill.centering.otu_table.OtuTable.df">df</a></code></li>
+<li><code><a title="pacmill.centering.otu_table.OtuTable.graphs" href="#pacmill.centering.otu_table.OtuTable.graphs">graphs</a></code></li>
 </ul>
 </li>
 </ul>

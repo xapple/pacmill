@@ -41,18 +41,19 @@ Contact at www.sinclair.bio
 &#34;&#34;&#34;
 
 # Built-in modules #
-import re
 from collections import Counter
 
 # Internal modules #
 
 # First party modules #
-from fasta                import FASTA
-from autopaths.auto_paths import AutoPaths
-from plumbing.cache       import property_cached
+from fasta import FASTQ
+from plumbing.cache import property_cached
+
+# Third party modules #
+import pandas
 
 ###############################################################################
-class SeqFilter(object):
+class SeqFilter:
     &#34;&#34;&#34;
     This class takes care of filtering sequences from a FASTA or FASTQ file
     depending on certain criteria.
@@ -61,122 +62,211 @@ class SeqFilter(object):
        * Check that the primers are found where they should be found.
        * Check that the primers have the sequence they should have.
 
-    - Filter based on N bases.
+    - Filter based on presence of N bases.
 
     - Filter based on maximum and minimum sequence lengths.
+
+    - Filter based on the minimum PHRED score of a sliding window.
 
     You can adjust several parameters:
 
     * primer_mismatches: Number of mismatches allowed before discarding.
-    * primer_max_dist:   Maximum distance for primer presence before discarding.
-                         (Counted in base pairs from sequence start)
-    * min_read_length:   Minimum sequence length
-    * max_read_length:   Maximum sequence length
+    * primer_max_dist:   Maximum distance for primer presence before
+                         discarding (counted in base pairs from sequence
+                         start or end).
+    * min_read_length:   Minimum sequence length.
+    * max_read_length:   Maximum sequence length.
+    * phred_window_size: The size of the rolling window (in base pairs) inside
+                         which scores are averaged.
+    * phred_threshold:   The quality score cutoff point for the average score
+                         within any window.
+
+    The final cleaned FASTQ is available at `self.results.clean`
     &#34;&#34;&#34;
 
     # Attributes #
     short_name = &#39;seq_filter&#39;
 
-    # Parameters #
-    primer_mismatches = 2
-    primer_max_dist   = 70
-    min_read_length   = None
-    max_read_length   = None
-
-    # Paths #
-    all_paths = &#34;&#34;&#34;
-                /primers.fasta
-                /n_base.fasta
-                /length.fasta
-                /region.fasta
-                /renamed.fasta
-                &#34;&#34;&#34;
+    # Default parameters #
+    primer_mismatches = None
+    primer_max_dist   = None
+    min_read_len      = None
+    max_read_len      = None
+    phred_window_size = None
+    phred_threshold   = None
 
     def __repr__(self):
-        return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.input)
+        return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.sample)
 
-    def __init__(self, input, result_dir, sample_name, primers):
-        # Save attributes #
-        self.input       = input
-        self.result_dir  = result_dir
-        self.sample_name = sample_name
-        self.primers     = primers
-        # Auto paths #
-        self.base_dir = self.result_dir + self.short_name + &#39;/&#39;
-        self.p = AutoPaths(self.base_dir, self.all_paths)
+    def __init__(self, sample):
+        # Save the reference to a sample object #
+        self.sample = sample
         # The different files #
-        self.primers_fasta = FASTA(self.p.primers)
-        self.n_base_fasta  = FASTA(self.p.n_base)
-        self.length_fasta  = FASTA(self.p.length)
-        self.renamed_fasta = FASTA(self.p.renamed)
+        self.primers_fastq = FASTQ(self.autopaths.primers)
+        self.n_base_fastq  = FASTQ(self.autopaths.n_base)
+        self.length_fastq  = FASTQ(self.autopaths.length)
+        self.score_fastq   = FASTQ(self.autopaths.score)
+        self.renamed_fastq = FASTQ(self.autopaths.renamed)
         # The final result #
-        self.clean = self.renamed_fasta
+        self.clean = self.renamed_fastq
 
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /primers.fastq
+                /n_base.fastq
+                /length.fastq
+                /score.fastq
+                /renamed.fastq
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.sample.autopaths.filtered_dir, self.all_paths)
+
+    #-------------------------------- Running --------------------------------#
     def __call__(self, verbose=False):
         # Message #
-        if verbose: print(&#34;Filtering sample &#39;%s&#39;&#34; % self.sample_name)
+        if verbose: print(&#34;Filtering sample &#39;%s&#39;&#34; % self.sample.short_name)
         # Primers #
         self.primer_filter()
         # N bases #
         self.n_base_filter()
         # Length #
         self.len_filter()
+        # Score #
+        self.score_filter()
         # Rename with a number #
-        self.length_fasta.rename_with_num(self.sample_name + &#39;:&#39;, self.renamed_fasta)
+        self.score_fastq.rename_with_num(self.sample.short_name + &#39;:&#39;,
+                                         self.renamed_fastq)
         # Check #
-        if len(self.length_fasta) == 0:
-            raise Exception(&#34;No results left after filtering the sample &#39;%s&#39;&#34; % self.sample_name)
+        if len(self.score_fastq) == 0:
+            msg = &#34;No results left after filtering the sample &#39;%s&#39;.&#34;
+            raise Exception(msg % self.sample.short_name)
         # Return #
         return self.results.clean
 
-    # Primers #
+    #-------------------------------- Primers --------------------------------#
+    def primer_gen(self, reads, verbose=False, debug=False):
+        &#34;&#34;&#34;
+        We will uses regex patterns to search every read for both primers.
+        We will record the start and end positions of primers when they are
+        found. Both the forward and reverse primers are searched for.
+        Both the original sequences and their reverse complements are
+        searched for, in case the read is on the opposite strand.
+        &#34;&#34;&#34;
+        # Select verbosity #
+        import tqdm
+        wrapper = tqdm.tqdm if verbose else lambda x: x
+        # Shorter name for the distance allowed #
+        dist = self.primer_max_dist
+        # Loop #
+        for r in wrapper(reads):
+            # Use this for debugging purposes #
+            if debug: print(r.pretty_visualization)
+            # Did we find both primers? #
+            fwd_found = r.fwd_srt is not None or r.fwd_rc_srt is not None
+            rev_found = r.rev_srt is not None or r.rev_rc_srt is not None
+            # Skip reads that don&#39;t pass this criteria #
+            if not fwd_found or not rev_found: continue
+            # These situations should not occur, could be long chimeras #
+            if r.fwd_srt is not None    and r.rev_srt is not None:    continue
+            if r.fwd_rc_srt is not None and r.rev_rc_srt is not None: continue
+            # We are in a forward sequence situation #
+            if r.fwd_srt is not None and r.rev_rc_srt is not None:
+                if dist and r.fwd_srt                 &gt; dist: continue
+                if dist and len(r.seq) - r.rev_rc_end &gt; dist: continue
+                out = r.read[r.fwd_end:r.rev_rc_srt]
+                if len(out) == 0: continue
+            # We are in a reverse complemented situation #
+            if r.fwd_rc_srt is not None and r.rev_srt is not None:
+                if dist and r.rev_srt                 &gt; dist: continue
+                if dist and len(r.seq) - r.fwd_rc_end &gt; dist: continue
+                out = r.read[r.rev_end:r.fwd_rc_srt].reverse_complement()
+                if len(out) == 0: continue
+            # Return #
+            yield out
+
     def primer_filter(self):
-        &#34;&#34;&#34;Will take only reads that have both primers and will trim the primers.&#34;&#34;&#34;
-        def good_primer_iterator(reads):
-            for r in reads:
-                if r.fwd_start_pos is None or r.rev_start_pos is None: continue
-                if r.fwd_start_pos &gt; self.primer_max_dist:             continue
-                if r.rev_start_pos &lt; -self.primer_max_dist:            continue
-                yield r.read[r.fwd_end_pos:r.rev_end_pos]
-        # Useful function, returns a GenWithLength #
-        parse_primers = lambda: self.input.parse_primers(self.primers, self.primer_mismatches, revcompl=True)
-        # Do it #
-        self.primers_fasta.write(good_primer_iterator(parse_primers()))
+        &#34;&#34;&#34;
+        Will take only reads that have both primers in the correct position
+        and with the correct sequence. Will also trim the primers once found.
+        &#34;&#34;&#34;
+        # This will return a generator object with a length property #
+        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                    self.primer_mismatches)
+        # Write #
+        self.primers_fastq.write(self.primer_gen(all_reads))
 
-    # N base #
+    #------------------------------ N bases ----------------------------------#
+    def n_base_gen(self, reads):
+        for r in reads:
+            if &#39;N&#39; in r: continue
+            yield r
+
     def n_base_filter(self):
-        def good_n_base_iterator(reads):
-            for r in reads:
-                if &#39;N&#39; in r: continue
-                yield r
-        self.n_base_fasta.write(good_n_base_iterator(self.primers_fasta))
+        self.n_base_fastq.write(self.n_base_gen(self.primers_fastq))
 
-    # Length #
+    #------------------------------- Length ----------------------------------#
+    def len_gen(self, reads, verbose=False):
+        for r in reads:
+            if self.min_read_len &gt; 0:
+                if len(r.seq) &lt; self.min_read_len:
+                    if verbose: print(&#34;Discard&#34;)
+                    continue
+            if self.max_read_len &gt; 0:
+                if len(r.seq) &gt; self.max_read_len:
+                    if verbose: print(&#34;Discard&#34;)
+                    continue
+            if verbose: print(&#34;Keep&#34;)
+            yield r
+
     def len_filter(self):
-        def good_len_iterator(reads, verbose=False):
-            for r in reads:
-                if self.min_read_length &gt; 0:
-                    if len(r.seq) &lt; self.min_read_length:
-                        if verbose: print(&#34;Discard&#34;)
-                        continue
-                if self.max_read_length &gt; 0:
-                    if len(r.seq) &gt; self.max_read_length:
-                        if verbose: print(&#34;Discard&#34;)
-                        continue
-                if verbose: print(&#34;Keep&#34;)
-                yield r
-        self.length_fasta.write(good_len_iterator(self.n_base_fasta))
+        # Optionally bypass this step #
+        if self.min_read_len is None and self.max_read_len is None:
+            self.length_fastq.copy(self.n_base_fastq)
+        # Perform the length filtering #
+        self.length_fastq.write(self.len_gen(self.n_base_fastq))
 
-    #-------------------------------------------------------------------------#
+    #-------------------------------- Score ----------------------------------#
+    def score_gen(self, reads):
+        # Parameters #
+        window    = self.phred_window_size
+        threshold = self.phred_threshold
+        # Loop #
+        for r in reads:
+            quality = pandas.Series(r.letter_annotations[&#39;phred_quality&#39;])
+            rolling = quality.rolling(window).mean().dropna().tolist()
+            if any(score &lt; threshold for score in rolling): continue
+            yield r
+
+    def score_filter(self):
+        # Optionally bypass this step #
+        if self.phred_window_size is None or self.phred_threshold is None:
+            self.score_fastq.copy(self.length_fastq)
+        # Perform the score filtering #
+        self.score_fastq.write(self.score_gen(self.length_fastq))
+
+    #------------------------------ Debugging --------------------------------#
     @property_cached
     def primer_positions(self):
-        &#34;&#34;&#34;Useful for diagnostics.&#34;&#34;&#34;
+        &#34;&#34;&#34;Useful for diagnostics. Returns the primer positions counts.&#34;&#34;&#34;
         # Count positions #
         all_fwd_pos, all_rev_pos = Counter(), Counter()
-        parse_primers = lambda: self.input.parse_primers(self.primers, self.primer_mismatches, revcompl=True)
-        for r in parse_primers():
-            if r.fwd_start_pos is not None: all_fwd_pos.update((r.fwd_start_pos,))
-            if r.rev_start_pos is not None: all_rev_pos.update((r.rev_start_pos,))
+        # Make a generator #
+        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                    self.primer_mismatches)
+        # Iterate over the generator #
+        for r in all_reads():
+            if r.fwd_start_pos is not None:
+                all_fwd_pos.update((r.fwd_start_pos,))
+            if r.rev_start_pos is not None:
+                all_rev_pos.update((r.rev_start_pos,))
         # Return results #
         return all_fwd_pos, all_rev_pos
 
@@ -186,7 +276,7 @@ class SeqFilter(object):
         Return True if the filtering was run already and the results are
         stored on the filesystem. Return False if it was not yet run.
         &#34;&#34;&#34;
-        return bool(self.renamed_fasta)
+        return bool(self.renamed_fastq)
 
     @property_cached
     def results(self):
@@ -205,12 +295,13 @@ class SeqFilterResults(object):
         # Reference to the SeqFilter instance #
         self.parent = parent
         # The intermediary steps #
-        self.primers_fasta = parent.primers_fasta
-        self.n_base_fasta  = parent.n_base_fasta
-        self.length_fasta  = parent.length_fasta
-        self.renamed_fasta = parent.renamed_fasta
+        self.primers_fastq = parent.primers_fastq
+        self.n_base_fastq  = parent.n_base_fastq
+        self.length_fastq  = parent.length_fastq
+        self.score_fastq   = parent.score_fastq
+        self.renamed_fastq = parent.renamed_fastq
         # The final result #
-        self.clean = self.renamed_fasta</code></pre>
+        self.clean = self.renamed_fastq</code></pre>
 </details>
 </section>
 <section>
@@ -224,7 +315,7 @@ class SeqFilterResults(object):
 <dl>
 <dt id="pacmill.filtering.seq_filter.SeqFilter"><code class="flex name class">
 <span>class <span class="ident">SeqFilter</span></span>
-<span>(</span><span>input, result_dir, sample_name, primers)</span>
+<span>(</span><span>sample)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This class takes care of filtering sequences from a FASTA or FASTQ file
@@ -236,28 +327,38 @@ depending on certain criteria.</p>
 <p>Check that the primers have the sequence they should have.</p>
 </li>
 <li>
-<p>Filter based on N bases.</p>
+<p>Filter based on presence of N bases.</p>
 </li>
 <li>
 <p>Filter based on maximum and minimum sequence lengths.</p>
+</li>
+<li>
+<p>Filter based on the minimum PHRED score of a sliding window.</p>
 </li>
 </ul>
 <p>You can adjust several parameters:</p>
 <ul>
 <li>primer_mismatches: Number of mismatches allowed before discarding.</li>
 <li>primer_max_dist:
-Maximum distance for primer presence before discarding.
-(Counted in base pairs from sequence start)</li>
+Maximum distance for primer presence before
+discarding (counted in base pairs from sequence
+start or end).</li>
 <li>min_read_length:
-Minimum sequence length</li>
+Minimum sequence length.</li>
 <li>max_read_length:
-Maximum sequence length</li>
-</ul></div>
+Maximum sequence length.</li>
+<li>phred_window_size: The size of the rolling window (in base pairs) inside
+which scores are averaged.</li>
+<li>phred_threshold:
+The quality score cutoff point for the average score
+within any window.</li>
+</ul>
+<p>The final cleaned FASTQ is available at <code>self.results.clean</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class SeqFilter(object):
+<pre><code class="python">class SeqFilter:
     &#34;&#34;&#34;
     This class takes care of filtering sequences from a FASTA or FASTQ file
     depending on certain criteria.
@@ -266,122 +367,211 @@ Maximum sequence length</li>
        * Check that the primers are found where they should be found.
        * Check that the primers have the sequence they should have.
 
-    - Filter based on N bases.
+    - Filter based on presence of N bases.
 
     - Filter based on maximum and minimum sequence lengths.
+
+    - Filter based on the minimum PHRED score of a sliding window.
 
     You can adjust several parameters:
 
     * primer_mismatches: Number of mismatches allowed before discarding.
-    * primer_max_dist:   Maximum distance for primer presence before discarding.
-                         (Counted in base pairs from sequence start)
-    * min_read_length:   Minimum sequence length
-    * max_read_length:   Maximum sequence length
+    * primer_max_dist:   Maximum distance for primer presence before
+                         discarding (counted in base pairs from sequence
+                         start or end).
+    * min_read_length:   Minimum sequence length.
+    * max_read_length:   Maximum sequence length.
+    * phred_window_size: The size of the rolling window (in base pairs) inside
+                         which scores are averaged.
+    * phred_threshold:   The quality score cutoff point for the average score
+                         within any window.
+
+    The final cleaned FASTQ is available at `self.results.clean`
     &#34;&#34;&#34;
 
     # Attributes #
     short_name = &#39;seq_filter&#39;
 
-    # Parameters #
-    primer_mismatches = 2
-    primer_max_dist   = 70
-    min_read_length   = None
-    max_read_length   = None
-
-    # Paths #
-    all_paths = &#34;&#34;&#34;
-                /primers.fasta
-                /n_base.fasta
-                /length.fasta
-                /region.fasta
-                /renamed.fasta
-                &#34;&#34;&#34;
+    # Default parameters #
+    primer_mismatches = None
+    primer_max_dist   = None
+    min_read_len      = None
+    max_read_len      = None
+    phred_window_size = None
+    phred_threshold   = None
 
     def __repr__(self):
-        return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.input)
+        return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.sample)
 
-    def __init__(self, input, result_dir, sample_name, primers):
-        # Save attributes #
-        self.input       = input
-        self.result_dir  = result_dir
-        self.sample_name = sample_name
-        self.primers     = primers
-        # Auto paths #
-        self.base_dir = self.result_dir + self.short_name + &#39;/&#39;
-        self.p = AutoPaths(self.base_dir, self.all_paths)
+    def __init__(self, sample):
+        # Save the reference to a sample object #
+        self.sample = sample
         # The different files #
-        self.primers_fasta = FASTA(self.p.primers)
-        self.n_base_fasta  = FASTA(self.p.n_base)
-        self.length_fasta  = FASTA(self.p.length)
-        self.renamed_fasta = FASTA(self.p.renamed)
+        self.primers_fastq = FASTQ(self.autopaths.primers)
+        self.n_base_fastq  = FASTQ(self.autopaths.n_base)
+        self.length_fastq  = FASTQ(self.autopaths.length)
+        self.score_fastq   = FASTQ(self.autopaths.score)
+        self.renamed_fastq = FASTQ(self.autopaths.renamed)
         # The final result #
-        self.clean = self.renamed_fasta
+        self.clean = self.renamed_fastq
 
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /primers.fastq
+                /n_base.fastq
+                /length.fastq
+                /score.fastq
+                /renamed.fastq
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.sample.autopaths.filtered_dir, self.all_paths)
+
+    #-------------------------------- Running --------------------------------#
     def __call__(self, verbose=False):
         # Message #
-        if verbose: print(&#34;Filtering sample &#39;%s&#39;&#34; % self.sample_name)
+        if verbose: print(&#34;Filtering sample &#39;%s&#39;&#34; % self.sample.short_name)
         # Primers #
         self.primer_filter()
         # N bases #
         self.n_base_filter()
         # Length #
         self.len_filter()
+        # Score #
+        self.score_filter()
         # Rename with a number #
-        self.length_fasta.rename_with_num(self.sample_name + &#39;:&#39;, self.renamed_fasta)
+        self.score_fastq.rename_with_num(self.sample.short_name + &#39;:&#39;,
+                                         self.renamed_fastq)
         # Check #
-        if len(self.length_fasta) == 0:
-            raise Exception(&#34;No results left after filtering the sample &#39;%s&#39;&#34; % self.sample_name)
+        if len(self.score_fastq) == 0:
+            msg = &#34;No results left after filtering the sample &#39;%s&#39;.&#34;
+            raise Exception(msg % self.sample.short_name)
         # Return #
         return self.results.clean
 
-    # Primers #
+    #-------------------------------- Primers --------------------------------#
+    def primer_gen(self, reads, verbose=False, debug=False):
+        &#34;&#34;&#34;
+        We will uses regex patterns to search every read for both primers.
+        We will record the start and end positions of primers when they are
+        found. Both the forward and reverse primers are searched for.
+        Both the original sequences and their reverse complements are
+        searched for, in case the read is on the opposite strand.
+        &#34;&#34;&#34;
+        # Select verbosity #
+        import tqdm
+        wrapper = tqdm.tqdm if verbose else lambda x: x
+        # Shorter name for the distance allowed #
+        dist = self.primer_max_dist
+        # Loop #
+        for r in wrapper(reads):
+            # Use this for debugging purposes #
+            if debug: print(r.pretty_visualization)
+            # Did we find both primers? #
+            fwd_found = r.fwd_srt is not None or r.fwd_rc_srt is not None
+            rev_found = r.rev_srt is not None or r.rev_rc_srt is not None
+            # Skip reads that don&#39;t pass this criteria #
+            if not fwd_found or not rev_found: continue
+            # These situations should not occur, could be long chimeras #
+            if r.fwd_srt is not None    and r.rev_srt is not None:    continue
+            if r.fwd_rc_srt is not None and r.rev_rc_srt is not None: continue
+            # We are in a forward sequence situation #
+            if r.fwd_srt is not None and r.rev_rc_srt is not None:
+                if dist and r.fwd_srt                 &gt; dist: continue
+                if dist and len(r.seq) - r.rev_rc_end &gt; dist: continue
+                out = r.read[r.fwd_end:r.rev_rc_srt]
+                if len(out) == 0: continue
+            # We are in a reverse complemented situation #
+            if r.fwd_rc_srt is not None and r.rev_srt is not None:
+                if dist and r.rev_srt                 &gt; dist: continue
+                if dist and len(r.seq) - r.fwd_rc_end &gt; dist: continue
+                out = r.read[r.rev_end:r.fwd_rc_srt].reverse_complement()
+                if len(out) == 0: continue
+            # Return #
+            yield out
+
     def primer_filter(self):
-        &#34;&#34;&#34;Will take only reads that have both primers and will trim the primers.&#34;&#34;&#34;
-        def good_primer_iterator(reads):
-            for r in reads:
-                if r.fwd_start_pos is None or r.rev_start_pos is None: continue
-                if r.fwd_start_pos &gt; self.primer_max_dist:             continue
-                if r.rev_start_pos &lt; -self.primer_max_dist:            continue
-                yield r.read[r.fwd_end_pos:r.rev_end_pos]
-        # Useful function, returns a GenWithLength #
-        parse_primers = lambda: self.input.parse_primers(self.primers, self.primer_mismatches, revcompl=True)
-        # Do it #
-        self.primers_fasta.write(good_primer_iterator(parse_primers()))
+        &#34;&#34;&#34;
+        Will take only reads that have both primers in the correct position
+        and with the correct sequence. Will also trim the primers once found.
+        &#34;&#34;&#34;
+        # This will return a generator object with a length property #
+        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                    self.primer_mismatches)
+        # Write #
+        self.primers_fastq.write(self.primer_gen(all_reads))
 
-    # N base #
+    #------------------------------ N bases ----------------------------------#
+    def n_base_gen(self, reads):
+        for r in reads:
+            if &#39;N&#39; in r: continue
+            yield r
+
     def n_base_filter(self):
-        def good_n_base_iterator(reads):
-            for r in reads:
-                if &#39;N&#39; in r: continue
-                yield r
-        self.n_base_fasta.write(good_n_base_iterator(self.primers_fasta))
+        self.n_base_fastq.write(self.n_base_gen(self.primers_fastq))
 
-    # Length #
+    #------------------------------- Length ----------------------------------#
+    def len_gen(self, reads, verbose=False):
+        for r in reads:
+            if self.min_read_len &gt; 0:
+                if len(r.seq) &lt; self.min_read_len:
+                    if verbose: print(&#34;Discard&#34;)
+                    continue
+            if self.max_read_len &gt; 0:
+                if len(r.seq) &gt; self.max_read_len:
+                    if verbose: print(&#34;Discard&#34;)
+                    continue
+            if verbose: print(&#34;Keep&#34;)
+            yield r
+
     def len_filter(self):
-        def good_len_iterator(reads, verbose=False):
-            for r in reads:
-                if self.min_read_length &gt; 0:
-                    if len(r.seq) &lt; self.min_read_length:
-                        if verbose: print(&#34;Discard&#34;)
-                        continue
-                if self.max_read_length &gt; 0:
-                    if len(r.seq) &gt; self.max_read_length:
-                        if verbose: print(&#34;Discard&#34;)
-                        continue
-                if verbose: print(&#34;Keep&#34;)
-                yield r
-        self.length_fasta.write(good_len_iterator(self.n_base_fasta))
+        # Optionally bypass this step #
+        if self.min_read_len is None and self.max_read_len is None:
+            self.length_fastq.copy(self.n_base_fastq)
+        # Perform the length filtering #
+        self.length_fastq.write(self.len_gen(self.n_base_fastq))
 
-    #-------------------------------------------------------------------------#
+    #-------------------------------- Score ----------------------------------#
+    def score_gen(self, reads):
+        # Parameters #
+        window    = self.phred_window_size
+        threshold = self.phred_threshold
+        # Loop #
+        for r in reads:
+            quality = pandas.Series(r.letter_annotations[&#39;phred_quality&#39;])
+            rolling = quality.rolling(window).mean().dropna().tolist()
+            if any(score &lt; threshold for score in rolling): continue
+            yield r
+
+    def score_filter(self):
+        # Optionally bypass this step #
+        if self.phred_window_size is None or self.phred_threshold is None:
+            self.score_fastq.copy(self.length_fastq)
+        # Perform the score filtering #
+        self.score_fastq.write(self.score_gen(self.length_fastq))
+
+    #------------------------------ Debugging --------------------------------#
     @property_cached
     def primer_positions(self):
-        &#34;&#34;&#34;Useful for diagnostics.&#34;&#34;&#34;
+        &#34;&#34;&#34;Useful for diagnostics. Returns the primer positions counts.&#34;&#34;&#34;
         # Count positions #
         all_fwd_pos, all_rev_pos = Counter(), Counter()
-        parse_primers = lambda: self.input.parse_primers(self.primers, self.primer_mismatches, revcompl=True)
-        for r in parse_primers():
-            if r.fwd_start_pos is not None: all_fwd_pos.update((r.fwd_start_pos,))
-            if r.rev_start_pos is not None: all_rev_pos.update((r.rev_start_pos,))
+        # Make a generator #
+        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                    self.primer_mismatches)
+        # Iterate over the generator #
+        for r in all_reads():
+            if r.fwd_start_pos is not None:
+                all_fwd_pos.update((r.fwd_start_pos,))
+            if r.rev_start_pos is not None:
+                all_rev_pos.update((r.rev_start_pos,))
         # Return results #
         return all_fwd_pos, all_rev_pos
 
@@ -391,7 +581,7 @@ Maximum sequence length</li>
         Return True if the filtering was run already and the results are
         stored on the filesystem. Return False if it was not yet run.
         &#34;&#34;&#34;
-        return bool(self.renamed_fasta)
+        return bool(self.renamed_fastq)
 
     @property_cached
     def results(self):
@@ -409,11 +599,19 @@ Maximum sequence length</li>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="pacmill.filtering.seq_filter.SeqFilter.max_read_length"><code class="name">var <span class="ident">max_read_length</span></code></dt>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.max_read_len"><code class="name">var <span class="ident">max_read_len</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="pacmill.filtering.seq_filter.SeqFilter.min_read_length"><code class="name">var <span class="ident">min_read_length</span></code></dt>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.min_read_len"><code class="name">var <span class="ident">min_read_len</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.phred_threshold"><code class="name">var <span class="ident">phred_threshold</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.phred_window_size"><code class="name">var <span class="ident">phred_window_size</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -432,9 +630,11 @@ Maximum sequence length</li>
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="pacmill.filtering.seq_filter.SeqFilter.primer_positions"><code class="name">var <span class="ident">primer_positions</span></code></dt>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.autopaths"><code class="name">var <span class="ident">autopaths</span></code></dt>
 <dd>
-<div class="desc"><p>Useful for diagnostics.</p></div>
+<div class="desc"><p>The AutoPaths object is used for quickly assessing the filesystem paths
+of various file inputs/outputs and directories.
+See <a href="https://github.com/xapple/autopaths#autopaths-object">https://github.com/xapple/autopaths#autopaths-object</a></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -445,6 +645,38 @@ Maximum sequence length</li>
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.primer_positions"><code class="name">var <span class="ident">primer_positions</span></code></dt>
+<dd>
+<div class="desc"><p>Useful for diagnostics. Returns the primer positions counts.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -475,6 +707,8 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -503,19 +737,34 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def len_filter(self):
-    def good_len_iterator(reads, verbose=False):
-        for r in reads:
-            if self.min_read_length &gt; 0:
-                if len(r.seq) &lt; self.min_read_length:
-                    if verbose: print(&#34;Discard&#34;)
-                    continue
-            if self.max_read_length &gt; 0:
-                if len(r.seq) &gt; self.max_read_length:
-                    if verbose: print(&#34;Discard&#34;)
-                    continue
-            if verbose: print(&#34;Keep&#34;)
-            yield r
-    self.length_fasta.write(good_len_iterator(self.n_base_fasta))</code></pre>
+    # Optionally bypass this step #
+    if self.min_read_len is None and self.max_read_len is None:
+        self.length_fastq.copy(self.n_base_fastq)
+    # Perform the length filtering #
+    self.length_fastq.write(self.len_gen(self.n_base_fastq))</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.len_gen"><code class="name flex">
+<span>def <span class="ident">len_gen</span></span>(<span>self, reads, verbose=False)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def len_gen(self, reads, verbose=False):
+    for r in reads:
+        if self.min_read_len &gt; 0:
+            if len(r.seq) &lt; self.min_read_len:
+                if verbose: print(&#34;Discard&#34;)
+                continue
+        if self.max_read_len &gt; 0:
+            if len(r.seq) &gt; self.max_read_len:
+                if verbose: print(&#34;Discard&#34;)
+                continue
+        if verbose: print(&#34;Keep&#34;)
+        yield r</code></pre>
 </details>
 </dd>
 <dt id="pacmill.filtering.seq_filter.SeqFilter.n_base_filter"><code class="name flex">
@@ -528,34 +777,136 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def n_base_filter(self):
-    def good_n_base_iterator(reads):
-        for r in reads:
-            if &#39;N&#39; in r: continue
-            yield r
-    self.n_base_fasta.write(good_n_base_iterator(self.primers_fasta))</code></pre>
+    self.n_base_fastq.write(self.n_base_gen(self.primers_fastq))</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.n_base_gen"><code class="name flex">
+<span>def <span class="ident">n_base_gen</span></span>(<span>self, reads)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def n_base_gen(self, reads):
+    for r in reads:
+        if &#39;N&#39; in r: continue
+        yield r</code></pre>
 </details>
 </dd>
 <dt id="pacmill.filtering.seq_filter.SeqFilter.primer_filter"><code class="name flex">
 <span>def <span class="ident">primer_filter</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Will take only reads that have both primers and will trim the primers.</p></div>
+<div class="desc"><p>Will take only reads that have both primers in the correct position
+and with the correct sequence. Will also trim the primers once found.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def primer_filter(self):
-    &#34;&#34;&#34;Will take only reads that have both primers and will trim the primers.&#34;&#34;&#34;
-    def good_primer_iterator(reads):
-        for r in reads:
-            if r.fwd_start_pos is None or r.rev_start_pos is None: continue
-            if r.fwd_start_pos &gt; self.primer_max_dist:             continue
-            if r.rev_start_pos &lt; -self.primer_max_dist:            continue
-            yield r.read[r.fwd_end_pos:r.rev_end_pos]
-    # Useful function, returns a GenWithLength #
-    parse_primers = lambda: self.input.parse_primers(self.primers, self.primer_mismatches, revcompl=True)
-    # Do it #
-    self.primers_fasta.write(good_primer_iterator(parse_primers()))</code></pre>
+    &#34;&#34;&#34;
+    Will take only reads that have both primers in the correct position
+    and with the correct sequence. Will also trim the primers once found.
+    &#34;&#34;&#34;
+    # This will return a generator object with a length property #
+    all_reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                self.primer_mismatches)
+    # Write #
+    self.primers_fastq.write(self.primer_gen(all_reads))</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.primer_gen"><code class="name flex">
+<span>def <span class="ident">primer_gen</span></span>(<span>self, reads, verbose=False, debug=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>We will uses regex patterns to search every read for both primers.
+We will record the start and end positions of primers when they are
+found. Both the forward and reverse primers are searched for.
+Both the original sequences and their reverse complements are
+searched for, in case the read is on the opposite strand.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def primer_gen(self, reads, verbose=False, debug=False):
+    &#34;&#34;&#34;
+    We will uses regex patterns to search every read for both primers.
+    We will record the start and end positions of primers when they are
+    found. Both the forward and reverse primers are searched for.
+    Both the original sequences and their reverse complements are
+    searched for, in case the read is on the opposite strand.
+    &#34;&#34;&#34;
+    # Select verbosity #
+    import tqdm
+    wrapper = tqdm.tqdm if verbose else lambda x: x
+    # Shorter name for the distance allowed #
+    dist = self.primer_max_dist
+    # Loop #
+    for r in wrapper(reads):
+        # Use this for debugging purposes #
+        if debug: print(r.pretty_visualization)
+        # Did we find both primers? #
+        fwd_found = r.fwd_srt is not None or r.fwd_rc_srt is not None
+        rev_found = r.rev_srt is not None or r.rev_rc_srt is not None
+        # Skip reads that don&#39;t pass this criteria #
+        if not fwd_found or not rev_found: continue
+        # These situations should not occur, could be long chimeras #
+        if r.fwd_srt is not None    and r.rev_srt is not None:    continue
+        if r.fwd_rc_srt is not None and r.rev_rc_srt is not None: continue
+        # We are in a forward sequence situation #
+        if r.fwd_srt is not None and r.rev_rc_srt is not None:
+            if dist and r.fwd_srt                 &gt; dist: continue
+            if dist and len(r.seq) - r.rev_rc_end &gt; dist: continue
+            out = r.read[r.fwd_end:r.rev_rc_srt]
+            if len(out) == 0: continue
+        # We are in a reverse complemented situation #
+        if r.fwd_rc_srt is not None and r.rev_srt is not None:
+            if dist and r.rev_srt                 &gt; dist: continue
+            if dist and len(r.seq) - r.fwd_rc_end &gt; dist: continue
+            out = r.read[r.rev_end:r.fwd_rc_srt].reverse_complement()
+            if len(out) == 0: continue
+        # Return #
+        yield out</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.score_filter"><code class="name flex">
+<span>def <span class="ident">score_filter</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def score_filter(self):
+    # Optionally bypass this step #
+    if self.phred_window_size is None or self.phred_threshold is None:
+        self.score_fastq.copy(self.length_fastq)
+    # Perform the score filtering #
+    self.score_fastq.write(self.score_gen(self.length_fastq))</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.seq_filter.SeqFilter.score_gen"><code class="name flex">
+<span>def <span class="ident">score_gen</span></span>(<span>self, reads)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def score_gen(self, reads):
+    # Parameters #
+    window    = self.phred_window_size
+    threshold = self.phred_threshold
+    # Loop #
+    for r in reads:
+        quality = pandas.Series(r.letter_annotations[&#39;phred_quality&#39;])
+        rolling = quality.rolling(window).mean().dropna().tolist()
+        if any(score &lt; threshold for score in rolling): continue
+        yield r</code></pre>
 </details>
 </dd>
 </dl>
@@ -576,12 +927,13 @@ documentation was unable to correctly traverse a decorated property.</p></div>
         # Reference to the SeqFilter instance #
         self.parent = parent
         # The intermediary steps #
-        self.primers_fasta = parent.primers_fasta
-        self.n_base_fasta  = parent.n_base_fasta
-        self.length_fasta  = parent.length_fasta
-        self.renamed_fasta = parent.renamed_fasta
+        self.primers_fastq = parent.primers_fastq
+        self.n_base_fastq  = parent.n_base_fastq
+        self.length_fastq  = parent.length_fastq
+        self.score_fastq   = parent.score_fastq
+        self.renamed_fastq = parent.renamed_fastq
         # The final result #
-        self.clean = self.renamed_fasta</code></pre>
+        self.clean = self.renamed_fastq</code></pre>
 </details>
 </dd>
 </dl>
@@ -604,15 +956,23 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <h4><code><a title="pacmill.filtering.seq_filter.SeqFilter" href="#pacmill.filtering.seq_filter.SeqFilter">SeqFilter</a></code></h4>
 <ul class="two-column">
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.all_paths" href="#pacmill.filtering.seq_filter.SeqFilter.all_paths">all_paths</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.autopaths" href="#pacmill.filtering.seq_filter.SeqFilter.autopaths">autopaths</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.len_filter" href="#pacmill.filtering.seq_filter.SeqFilter.len_filter">len_filter</a></code></li>
-<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.max_read_length" href="#pacmill.filtering.seq_filter.SeqFilter.max_read_length">max_read_length</a></code></li>
-<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.min_read_length" href="#pacmill.filtering.seq_filter.SeqFilter.min_read_length">min_read_length</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.len_gen" href="#pacmill.filtering.seq_filter.SeqFilter.len_gen">len_gen</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.max_read_len" href="#pacmill.filtering.seq_filter.SeqFilter.max_read_len">max_read_len</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.min_read_len" href="#pacmill.filtering.seq_filter.SeqFilter.min_read_len">min_read_len</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.n_base_filter" href="#pacmill.filtering.seq_filter.SeqFilter.n_base_filter">n_base_filter</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.n_base_gen" href="#pacmill.filtering.seq_filter.SeqFilter.n_base_gen">n_base_gen</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.phred_threshold" href="#pacmill.filtering.seq_filter.SeqFilter.phred_threshold">phred_threshold</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.phred_window_size" href="#pacmill.filtering.seq_filter.SeqFilter.phred_window_size">phred_window_size</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.primer_filter" href="#pacmill.filtering.seq_filter.SeqFilter.primer_filter">primer_filter</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.primer_gen" href="#pacmill.filtering.seq_filter.SeqFilter.primer_gen">primer_gen</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.primer_max_dist" href="#pacmill.filtering.seq_filter.SeqFilter.primer_max_dist">primer_max_dist</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.primer_mismatches" href="#pacmill.filtering.seq_filter.SeqFilter.primer_mismatches">primer_mismatches</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.primer_positions" href="#pacmill.filtering.seq_filter.SeqFilter.primer_positions">primer_positions</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.results" href="#pacmill.filtering.seq_filter.SeqFilter.results">results</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.score_filter" href="#pacmill.filtering.seq_filter.SeqFilter.score_filter">score_filter</a></code></li>
+<li><code><a title="pacmill.filtering.seq_filter.SeqFilter.score_gen" href="#pacmill.filtering.seq_filter.SeqFilter.score_gen">score_gen</a></code></li>
 <li><code><a title="pacmill.filtering.seq_filter.SeqFilter.short_name" href="#pacmill.filtering.seq_filter.SeqFilter.short_name">short_name</a></code></li>
 </ul>
 </li>

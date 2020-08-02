@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.3" />
+<title>pacmill.taxonomy.taxa_tables API documentation</title>
+<meta name="description" content="Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js" integrity="sha256-eOgo0OtLL4cdq7RdwRUiGKLX9XsIJ7nGhWEKbohmVAQ=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pacmill.taxonomy.taxa_tables</code></h1>
+</header>
+<section id="section-intro">
+<p>Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+&#34;&#34;&#34;
+Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio
+&#34;&#34;&#34;
+
+# Built-in modules #
+from collections import defaultdict
+
+# Internal modules #
+from pacmill.taxonomy.taxa_graphs import TaxaBarstack
+
+# First party modules #
+from plumbing.cache import property_cached
+
+# Third party modules #
+import pandas
+
+###############################################################################
+class TaxaTable(object):
+    &#34;&#34;&#34;
+    Takes the OTU table along with the taxonomic assignment results to
+    generate taxa tables at different ranks.
+    &#34;&#34;&#34;
+
+    def __repr__(self):
+        msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
+        return msg % (self.__class__.__name__, self.otu_table)
+
+    def __init__(self, otu_table, taxonomy, base_dir):
+        # Attributes #
+        self.otu_table = otu_table
+        self.taxonomy  = taxonomy
+        self.base_dir  = base_dir
+        # Short cuts #
+        self.assignments = self.taxonomy.results.assignments
+        self.rank_names  = self.taxonomy.database.rank_names
+        self.otu_df      = self.otu_table.df
+
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /taxa_table_domain.tsv
+                /taxa_table_kingdom.tsv
+                /taxa_table_phylum.tsv
+                /taxa_table_class.tsv
+                /taxa_table_order.tsv
+                /taxa_table_family.tsv
+                /taxa_table_tribe.tsv
+                /taxa_table_genus.tsv
+                /taxa_table_species.tsv
+                /graphs/
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.base_dir, self.all_paths)
+
+    #------------------------------ Running ----------------------------------#
+    def __call__(self, verbose=False):
+        # Message #
+        if verbose: print(&#34;Making all taxa tables in &#39;%s&#39;&#34; % self.base_dir)
+        # Make directory #
+        self.base_dir.create_if_not_exists()
+        # Do it #
+        for i, rank_name in enumerate(self.rank_names):
+            table = self.taxa_table_at_rank(i)
+            tsv   = self.name_to_path(rank_name)
+            table.to_csv(tsv.path, sep=&#39;\t&#39;, encoding=&#39;utf-8&#39;)
+        # Return #
+        return self.base_dir
+
+    def name_to_path(self, rank_name):
+        &#34;&#34;&#34;Given a rank&#39;s name, return the path to the tsv file.&#34;&#34;&#34;
+        return self.base_dir + &#39;taxa_table_&#39; + rank_name.lower() + &#39;.tsv&#39;
+
+    def taxa_table_at_rank(self, rank):
+        # Build a new frame #
+        result = defaultdict(lambda: defaultdict(int))
+        # Loop over samples, then over OTUs #
+        for sample_name, column in self.otu_df.T.iterrows():
+            for otu_name, count in column.iteritems():
+                # Because mothur renames OTUs #
+                otu_name   = otu_name.replace(&#39;:&#39;, &#39;_&#39;)
+                # Retrieve a tuple unless it was discarded by barrnap #
+                assignment = self.assignments.get(otu_name)
+                # Get the assignment at this specific rank #
+                if assignment is None:        taxa_term = &#34;Unassigned&#34;
+                elif rank &gt;= len(assignment): taxa_term = &#34;Unassigned&#34;
+                elif assignment[rank] == &#39;&#39;:  taxa_term = &#34;Unassigned&#34;
+                else:                         taxa_term = assignment[rank]
+                # Add the count we had #
+                result[taxa_term][sample_name] += count
+        # Fill the holes #
+        result = pandas.DataFrame(result)
+        result = result.fillna(0)
+        result = result.astype(int)
+        # Sort the table by sum #
+        sums = result.sum()
+        sums = sums.sort_values(ascending=False)
+        result = result.reindex(sums.keys(), axis=1)
+        # Return #
+        return result
+
+    #------------------------------- Results ---------------------------------#
+    def __bool__(self):
+        &#34;&#34;&#34;
+        Return True if the taxa tables were created already and the results
+        are stored on the filesystem. Return False if it was not yet run.
+        &#34;&#34;&#34;
+        return self.autopaths.phylum.exists
+
+    @property_cached
+    def results(self):
+        # Check it was run #
+        if not self:
+            msg = &#34;You can&#39;t access results from taxa tables &#34; \
+                  &#34;before generating them.&#34;
+            raise Exception(msg)
+        # Return the results #
+        return TaxaTableResults(self)
+
+###############################################################################
+class TaxaTableResults(object):
+
+    def __init__(self, parent):
+        self.parent      = parent
+        self.taxa_tables = parent
+
+    def load_table(self, path):
+        &#34;&#34;&#34;Shortcut function to `pandas.read_csv`.&#34;&#34;&#34;
+        return pandas.read_csv(path, sep=&#39;\t&#39;, index_col=0, encoding=&#39;utf-8&#39;)
+
+    @property_cached
+    def taxa_tables_by_rank(self):
+        &#34;&#34;&#34;Return DataFrames in a list, one for each rank.&#34;&#34;&#34;
+        return [self.load_table(self.parent.name_to_path(n))
+                for n in self.parent.rank_names]
+
+    @property_cached
+    def graphs(self):
+        &#34;&#34;&#34;
+        The result is an object whose attributes are all the TaxaBarstack
+        graphs (one at each rank) initialized with this instance as only
+        argument. The graphs are also accessible in a list attribute named
+        `by_rank`.
+        &#34;&#34;&#34;
+        # Make a dummy object #
+        result = type(&#39;Dummy&#39;, (), {})
+        # Create a list attribute to hold each rank #
+        result.by_rank = []
+        # Loop over ranks #
+        for i, rank_name in enumerate(self.parent.rank_names):
+            # The attributes of the graph we will create #
+            attrs = dict(base_rank  = i,
+                         label      = rank_name,
+                         short_name = &#39;taxa_barstack_&#39; + rank_name.lower())
+            # Create a graph type class for this specific rank #
+            clss = type(&#34;Composition&#34; + rank_name, (TaxaBarstack,), attrs)
+            # Instantiate the graph #
+            graph = clss(self, base_dir=self.parent.autopaths.graphs_dir)
+            # Add it as an attribute of our result #
+            setattr(result, graph.short_name, graph)
+            # Add it also to the list #
+            result.by_rank.append(graph)
+        # Return #
+        return result</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTable"><code class="flex name class">
+<span>class <span class="ident">TaxaTable</span></span>
+<span>(</span><span>otu_table, taxonomy, base_dir)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Takes the OTU table along with the taxonomic assignment results to
+generate taxa tables at different ranks.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TaxaTable(object):
+    &#34;&#34;&#34;
+    Takes the OTU table along with the taxonomic assignment results to
+    generate taxa tables at different ranks.
+    &#34;&#34;&#34;
+
+    def __repr__(self):
+        msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
+        return msg % (self.__class__.__name__, self.otu_table)
+
+    def __init__(self, otu_table, taxonomy, base_dir):
+        # Attributes #
+        self.otu_table = otu_table
+        self.taxonomy  = taxonomy
+        self.base_dir  = base_dir
+        # Short cuts #
+        self.assignments = self.taxonomy.results.assignments
+        self.rank_names  = self.taxonomy.database.rank_names
+        self.otu_df      = self.otu_table.df
+
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /taxa_table_domain.tsv
+                /taxa_table_kingdom.tsv
+                /taxa_table_phylum.tsv
+                /taxa_table_class.tsv
+                /taxa_table_order.tsv
+                /taxa_table_family.tsv
+                /taxa_table_tribe.tsv
+                /taxa_table_genus.tsv
+                /taxa_table_species.tsv
+                /graphs/
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.base_dir, self.all_paths)
+
+    #------------------------------ Running ----------------------------------#
+    def __call__(self, verbose=False):
+        # Message #
+        if verbose: print(&#34;Making all taxa tables in &#39;%s&#39;&#34; % self.base_dir)
+        # Make directory #
+        self.base_dir.create_if_not_exists()
+        # Do it #
+        for i, rank_name in enumerate(self.rank_names):
+            table = self.taxa_table_at_rank(i)
+            tsv   = self.name_to_path(rank_name)
+            table.to_csv(tsv.path, sep=&#39;\t&#39;, encoding=&#39;utf-8&#39;)
+        # Return #
+        return self.base_dir
+
+    def name_to_path(self, rank_name):
+        &#34;&#34;&#34;Given a rank&#39;s name, return the path to the tsv file.&#34;&#34;&#34;
+        return self.base_dir + &#39;taxa_table_&#39; + rank_name.lower() + &#39;.tsv&#39;
+
+    def taxa_table_at_rank(self, rank):
+        # Build a new frame #
+        result = defaultdict(lambda: defaultdict(int))
+        # Loop over samples, then over OTUs #
+        for sample_name, column in self.otu_df.T.iterrows():
+            for otu_name, count in column.iteritems():
+                # Because mothur renames OTUs #
+                otu_name   = otu_name.replace(&#39;:&#39;, &#39;_&#39;)
+                # Retrieve a tuple unless it was discarded by barrnap #
+                assignment = self.assignments.get(otu_name)
+                # Get the assignment at this specific rank #
+                if assignment is None:        taxa_term = &#34;Unassigned&#34;
+                elif rank &gt;= len(assignment): taxa_term = &#34;Unassigned&#34;
+                elif assignment[rank] == &#39;&#39;:  taxa_term = &#34;Unassigned&#34;
+                else:                         taxa_term = assignment[rank]
+                # Add the count we had #
+                result[taxa_term][sample_name] += count
+        # Fill the holes #
+        result = pandas.DataFrame(result)
+        result = result.fillna(0)
+        result = result.astype(int)
+        # Sort the table by sum #
+        sums = result.sum()
+        sums = sums.sort_values(ascending=False)
+        result = result.reindex(sums.keys(), axis=1)
+        # Return #
+        return result
+
+    #------------------------------- Results ---------------------------------#
+    def __bool__(self):
+        &#34;&#34;&#34;
+        Return True if the taxa tables were created already and the results
+        are stored on the filesystem. Return False if it was not yet run.
+        &#34;&#34;&#34;
+        return self.autopaths.phylum.exists
+
+    @property_cached
+    def results(self):
+        # Check it was run #
+        if not self:
+            msg = &#34;You can&#39;t access results from taxa tables &#34; \
+                  &#34;before generating them.&#34;
+            raise Exception(msg)
+        # Return the results #
+        return TaxaTableResults(self)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTable.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTable.autopaths"><code class="name">var <span class="ident">autopaths</span></code></dt>
+<dd>
+<div class="desc"><p>The AutoPaths object is used for quickly assessing the filesystem paths
+of various file inputs/outputs and directories.
+See <a href="https://github.com/xapple/autopaths#autopaths-object">https://github.com/xapple/autopaths#autopaths-object</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTable.results"><code class="name">var <span class="ident">results</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTable.name_to_path"><code class="name flex">
+<span>def <span class="ident">name_to_path</span></span>(<span>self, rank_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Given a rank's name, return the path to the tsv file.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def name_to_path(self, rank_name):
+    &#34;&#34;&#34;Given a rank&#39;s name, return the path to the tsv file.&#34;&#34;&#34;
+    return self.base_dir + &#39;taxa_table_&#39; + rank_name.lower() + &#39;.tsv&#39;</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTable.taxa_table_at_rank"><code class="name flex">
+<span>def <span class="ident">taxa_table_at_rank</span></span>(<span>self, rank)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def taxa_table_at_rank(self, rank):
+    # Build a new frame #
+    result = defaultdict(lambda: defaultdict(int))
+    # Loop over samples, then over OTUs #
+    for sample_name, column in self.otu_df.T.iterrows():
+        for otu_name, count in column.iteritems():
+            # Because mothur renames OTUs #
+            otu_name   = otu_name.replace(&#39;:&#39;, &#39;_&#39;)
+            # Retrieve a tuple unless it was discarded by barrnap #
+            assignment = self.assignments.get(otu_name)
+            # Get the assignment at this specific rank #
+            if assignment is None:        taxa_term = &#34;Unassigned&#34;
+            elif rank &gt;= len(assignment): taxa_term = &#34;Unassigned&#34;
+            elif assignment[rank] == &#39;&#39;:  taxa_term = &#34;Unassigned&#34;
+            else:                         taxa_term = assignment[rank]
+            # Add the count we had #
+            result[taxa_term][sample_name] += count
+    # Fill the holes #
+    result = pandas.DataFrame(result)
+    result = result.fillna(0)
+    result = result.astype(int)
+    # Sort the table by sum #
+    sums = result.sum()
+    sums = sums.sort_values(ascending=False)
+    result = result.reindex(sums.keys(), axis=1)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTableResults"><code class="flex name class">
+<span>class <span class="ident">TaxaTableResults</span></span>
+<span>(</span><span>parent)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TaxaTableResults(object):
+
+    def __init__(self, parent):
+        self.parent      = parent
+        self.taxa_tables = parent
+
+    def load_table(self, path):
+        &#34;&#34;&#34;Shortcut function to `pandas.read_csv`.&#34;&#34;&#34;
+        return pandas.read_csv(path, sep=&#39;\t&#39;, index_col=0, encoding=&#39;utf-8&#39;)
+
+    @property_cached
+    def taxa_tables_by_rank(self):
+        &#34;&#34;&#34;Return DataFrames in a list, one for each rank.&#34;&#34;&#34;
+        return [self.load_table(self.parent.name_to_path(n))
+                for n in self.parent.rank_names]
+
+    @property_cached
+    def graphs(self):
+        &#34;&#34;&#34;
+        The result is an object whose attributes are all the TaxaBarstack
+        graphs (one at each rank) initialized with this instance as only
+        argument. The graphs are also accessible in a list attribute named
+        `by_rank`.
+        &#34;&#34;&#34;
+        # Make a dummy object #
+        result = type(&#39;Dummy&#39;, (), {})
+        # Create a list attribute to hold each rank #
+        result.by_rank = []
+        # Loop over ranks #
+        for i, rank_name in enumerate(self.parent.rank_names):
+            # The attributes of the graph we will create #
+            attrs = dict(base_rank  = i,
+                         label      = rank_name,
+                         short_name = &#39;taxa_barstack_&#39; + rank_name.lower())
+            # Create a graph type class for this specific rank #
+            clss = type(&#34;Composition&#34; + rank_name, (TaxaBarstack,), attrs)
+            # Instantiate the graph #
+            graph = clss(self, base_dir=self.parent.autopaths.graphs_dir)
+            # Add it as an attribute of our result #
+            setattr(result, graph.short_name, graph)
+            # Add it also to the list #
+            result.by_rank.append(graph)
+        # Return #
+        return result</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTableResults.graphs"><code class="name">var <span class="ident">graphs</span></code></dt>
+<dd>
+<div class="desc"><p>The result is an object whose attributes are all the TaxaBarstack
+graphs (one at each rank) initialized with this instance as only
+argument. The graphs are also accessible in a list attribute named
+<code>by_rank</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTableResults.taxa_tables_by_rank"><code class="name">var <span class="ident">taxa_tables_by_rank</span></code></dt>
+<dd>
+<div class="desc"><p>Return DataFrames in a list, one for each rank.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTableResults.load_table"><code class="name flex">
+<span>def <span class="ident">load_table</span></span>(<span>self, path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Shortcut function to <code>pandas.read_csv</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_table(self, path):
+    &#34;&#34;&#34;Shortcut function to `pandas.read_csv`.&#34;&#34;&#34;
+    return pandas.read_csv(path, sep=&#39;\t&#39;, index_col=0, encoding=&#39;utf-8&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pacmill.taxonomy" href="index.html">pacmill.taxonomy</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable" href="#pacmill.taxonomy.taxa_tables.TaxaTable">TaxaTable</a></code></h4>
+<ul class="">
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.all_paths" href="#pacmill.taxonomy.taxa_tables.TaxaTable.all_paths">all_paths</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.autopaths" href="#pacmill.taxonomy.taxa_tables.TaxaTable.autopaths">autopaths</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.name_to_path" href="#pacmill.taxonomy.taxa_tables.TaxaTable.name_to_path">name_to_path</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.results" href="#pacmill.taxonomy.taxa_tables.TaxaTable.results">results</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.taxa_table_at_rank" href="#pacmill.taxonomy.taxa_tables.TaxaTable.taxa_table_at_rank">taxa_table_at_rank</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pacmill.taxonomy.taxa_tables.TaxaTableResults" href="#pacmill.taxonomy.taxa_tables.TaxaTableResults">TaxaTableResults</a></code></h4>
+<ul class="">
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTableResults.graphs" href="#pacmill.taxonomy.taxa_tables.TaxaTableResults.graphs">graphs</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTableResults.load_table" href="#pacmill.taxonomy.taxa_tables.TaxaTableResults.load_table">load_table</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTableResults.taxa_tables_by_rank" href="#pacmill.taxonomy.taxa_tables.TaxaTableResults.taxa_tables_by_rank">taxa_tables_by_rank</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.3</a>.</p>
+</footer>
+</body>
+</html>

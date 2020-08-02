@@ -43,6 +43,7 @@ Contact at www.sinclair.bio
 # Built-in modules #
 
 # Third party modules #
+import pandas
 
 # First party modules #
 from plumbing.cache import property_cached
@@ -79,25 +80,29 @@ class Sample:
 
     def __init__(self, parent, **kwargs):
         &#34;&#34;&#34;
-        A Sample object takes a dictionary of metadata as input.
+        A Sample object takes a dictionary of metadata as input and a
+        reference to the Project object that creates it.
         Each named parameter will be set as an attribute of this instance
         with the same name. Hence, the attributes of a Sample correspond
         directly to the column headers of the excel metadata file that
         was parsed by the Project object.
         &#34;&#34;&#34;
-        # Keep a reference to the Project object #
+        # Keep a reference to the parent Project object #
         self.parent  = parent
         self.project = parent
         # Record which metadata keys were passed to this sample #
         self.metadata_keys = [k for k in kwargs if not k.startswith(&#34;Unnamed&#34;)]
         # Set the attributes of this instance with the given kwargs #
-        for name, value in kwargs.items(): setattr(self, name, value)
+        for key in self.metadata_keys: setattr(self, key, kwargs[key])
         # We need to transform some attributes #
         self.transform_attrs()
         # We need to validate some attributes #
         self.validate_attrs()
 
     #------------------------------- Methods ---------------------------------#
+    dna_keys = [&#39;fwd_index_seq&#39;, &#39;rev_index_seq&#39;, &#39;fwd_primer_seq&#39;,
+                &#39;rev_primer_seq&#39;]
+
     def transform_attrs(self):
         &#34;&#34;&#34;
         This is where we add and change some attributes based on the
@@ -109,6 +114,13 @@ class Sample:
         self.long_name = self.sample_long_name
         # The sample number can just be called num #
         self.num = int(self.sample_num)
+        # Missing values should be None and not pandas.nan #
+        for key in self.metadata_keys:
+            if pandas.isna(getattr(self, key)): setattr(self, key, None)
+        # If there are spaces in any DNA sequence, remove them #
+        for key in self.dna_keys:
+            seq = getattr(self, key)
+            setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))
 
     def validate_attrs(self):
         &#34;&#34;&#34;
@@ -118,13 +130,13 @@ class Sample:
         # Check the short name contains only alphanumerics and underscore #
         assert self.short_name.isidentifier()
         # Check that all directories always end with a dash (/) #
-        for attribute in self.__dict__:
-            if not attribute.endswith(&#39;_dir&#39;): continue
-            value = getattr(self, attribute)
+        for key in self.metadata_keys:
+            if not key.endswith(&#39;_dir&#39;): continue
+            value = getattr(self, key)
             if not isinstance(value, str) or not value.endswith(&#34;/&#34;):
                 msg = &#34;The `%s` entry of &lt;%s&gt; must end with a slash. &#34; \
-                          &#34;It currently does not: &#39;%s&#39;&#34;
-                msg = msg % (attribute, self.description, value)
+                      &#34;It currently does not: &#39;%s&#39;&#34;
+                msg = msg % (key, self.description, value)
                 raise ValueError(msg)
         # Check that the FASTQ file exists #
         if not self.path.exists:
@@ -132,10 +144,8 @@ class Sample:
                   &#34;It should be located at: &#39;%s&#39;&#34;
             msg = msg % (self.description, self.path)
             raise FileNotFoundError(msg)
-        # Check the DNA sequences #
-        dna_keys = [&#39;fwd_index_seq&#39;, &#39;rev_index_seq&#39;, &#39;fwd_primer_seq&#39;,
-                    &#39;rev_primer_seq&#39;]
-        for key in dna_keys:
+        # Check the DNA sequences are properly formatted #
+        for key in self.dna_keys:
             seq = getattr(self, key)
             if &#39;\n&#39; in seq:
                 msg = &#34;The `%s` entry of &lt;%s&gt; contains illegal &#34; \
@@ -152,29 +162,26 @@ class Sample:
 
     @property_cached
     def path(self):
-        &#34;&#34;&#34;The path to the FASTQ reads file.&#34;&#34;&#34;
+        &#34;&#34;&#34;The path to the raw FASTQ reads file.&#34;&#34;&#34;
         # Join the three components together #
         return Path(self.input_dir + self.suffix_dir + self.fwd_file_name)
 
     @property_cached
-    def fastq(self):
-        &#34;&#34;&#34;
-        The FASTQ object with convenience methods.
-        See https://github.com/xapple/fasta#usage
-        &#34;&#34;&#34;
-        # This class is taken from the `fasta` python package #
-        from fasta import FASTQ
-        fastq = FASTQ(self.path)
-        # Change the location of the first FastQC, as we don&#39;t want to touch
-        # the directory where the original reads are stored on the file system.
-        from fasta.fastqc import FastQC
-        fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
-        # Return #
-        return fastq
+    def percent_lost(self):
+        &#34;&#34;&#34;Once all filtering is done, what fraction of reads were lost.&#34;&#34;&#34;
+        return 100 - 100 * self.chimeras.results.count / self.fastq.count
 
-    #------------------------- Automatic paths -------------------------------#
+    #-------------------------- Automatic paths ------------------------------#
     all_paths = &#34;&#34;&#34;
                 /fastqc/
+                /graphs/raw_len_dist.pdf
+                /graphs/raw_len_hist.pdf
+                /filtered/
+                /barrnap/
+                /barrnap/results.gff
+                /barrnap/has_rrna_gene.fastq
+                /chimeras/cleaned.fasta
+                /chimeras/rejects.fasta
                 /report/cache/
                 /report/sample.pdf
                 &#34;&#34;&#34;
@@ -200,15 +207,82 @@ class Sample:
 
     #---------------------------- Compositions -------------------------------#
     @property_cached
+    def fastq(self):
+        &#34;&#34;&#34;
+        The raw reads FASTQ object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        &#34;&#34;&#34;
+        # This class is taken from the `fasta` python package #
+        from fasta import FASTQ
+        fastq = FASTQ(self.path)
+        # Change the location of the first FastQC, as we don&#39;t want to touch
+        # the directory where the original reads are stored on the file system.
+        # We might simply not have permission to write there.
+        from fasta.fastqc import FastQC
+        fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
+        # Change the location of the length distribution graphs too #
+        fastq.graphs.length_dist.path = self.autopaths.len_dist_pdf
+        fastq.graphs.length_hist.path = self.autopaths.len_hist_pdf
+        # Return #
+        return fastq
+
+    @property_cached
+    def primers(self):
+        &#34;&#34;&#34;
+        Will return an object that holds the two primers of a
+        given sample and has many convenience methods to parse and
+        find the location of a primer inside all sequences.
+        &#34;&#34;&#34;
+        from fasta.primers import TwoPrimers
+        return TwoPrimers(self.fwd_primer_seq, self.rev_primer_seq)
+
+    @property_cached
     def filter(self):
-        &#34;&#34;&#34;Will filter out unwanted sequences.&#34;&#34;&#34;
-        return SeqFilter(self.joiner.results.assembled, self.p.filtered_dir, self.short_name, self.primers)
+        &#34;&#34;&#34;Takes care of filtering out unwanted sequences.&#34;&#34;&#34;
+        # Create filter object #
+        from pacmill.filtering.seq_filter import SeqFilter
+        seq_filter = SeqFilter(self)
+        # Set parameters #
+        seq_filter.primer_mismatches = self.primer_mismatches
+        seq_filter.primer_max_dist   = self.primer_max_dist
+        seq_filter.min_read_len      = self.min_read_len
+        seq_filter.max_read_len      = self.max_read_len
+        seq_filter.phred_window_size = self.phred_window_size
+        seq_filter.phred_threshold   = self.phred_threshold
+        # Return #
+        return seq_filter
+
+    @property_cached
+    def barrnap(self):
+        &#34;&#34;&#34;Takes care of running the Barrnap program.&#34;&#34;&#34;
+        # Get file paths #
+        source   = self.filter.results.clean
+        dest     = self.autopaths.barrnap_gff
+        filtered = self.autopaths.barrnap_fastq
+        # Create barrnap object #
+        from pacmill.filtering.barrnap import Barrnap
+        barrnap = Barrnap(source, dest, filtered)
+        # Return #
+        return barrnap
+
+    @property_cached
+    def chimeras(self):
+        &#34;&#34;&#34;Takes care of removing chimeric reads.&#34;&#34;&#34;
+        # Get file paths #
+        source   = self.barrnap.results
+        cleaned  = self.autopaths.chimeras_cleaned
+        rejects  = self.autopaths.chimeras_rejects
+        # Create chimeras object #
+        from pacmill.filtering.chimeras import Chimeras
+        chimeras = Chimeras(source, cleaned, rejects)
+        # Return #
+        return chimeras
 
     @property_cached
     def report(self):
         &#34;&#34;&#34;
         The SampleReport object is used to produce a PDF document containing
-        all the informations and graphs that concern this sample
+        all the information and graphs that concern this sample
         See https://github.com/xapple/pymarktex#usage
         &#34;&#34;&#34;
         from pacmill.reports.sample import SampleReport
@@ -244,7 +318,8 @@ For instance (non exhaustive list):</p>
 <pre><code>* self.proj: a reference to a Project instance.
 </code></pre>
 <p>Other properties are described in their respective docstrings.</p>
-<p>A Sample object takes a dictionary of metadata as input.
+<p>A Sample object takes a dictionary of metadata as input and a
+reference to the Project object that creates it.
 Each named parameter will be set as an attribute of this instance
 with the same name. Hence, the attributes of a Sample correspond
 directly to the column headers of the excel metadata file that
@@ -281,25 +356,29 @@ was parsed by the Project object.</p></div>
 
     def __init__(self, parent, **kwargs):
         &#34;&#34;&#34;
-        A Sample object takes a dictionary of metadata as input.
+        A Sample object takes a dictionary of metadata as input and a
+        reference to the Project object that creates it.
         Each named parameter will be set as an attribute of this instance
         with the same name. Hence, the attributes of a Sample correspond
         directly to the column headers of the excel metadata file that
         was parsed by the Project object.
         &#34;&#34;&#34;
-        # Keep a reference to the Project object #
+        # Keep a reference to the parent Project object #
         self.parent  = parent
         self.project = parent
         # Record which metadata keys were passed to this sample #
         self.metadata_keys = [k for k in kwargs if not k.startswith(&#34;Unnamed&#34;)]
         # Set the attributes of this instance with the given kwargs #
-        for name, value in kwargs.items(): setattr(self, name, value)
+        for key in self.metadata_keys: setattr(self, key, kwargs[key])
         # We need to transform some attributes #
         self.transform_attrs()
         # We need to validate some attributes #
         self.validate_attrs()
 
     #------------------------------- Methods ---------------------------------#
+    dna_keys = [&#39;fwd_index_seq&#39;, &#39;rev_index_seq&#39;, &#39;fwd_primer_seq&#39;,
+                &#39;rev_primer_seq&#39;]
+
     def transform_attrs(self):
         &#34;&#34;&#34;
         This is where we add and change some attributes based on the
@@ -311,6 +390,13 @@ was parsed by the Project object.</p></div>
         self.long_name = self.sample_long_name
         # The sample number can just be called num #
         self.num = int(self.sample_num)
+        # Missing values should be None and not pandas.nan #
+        for key in self.metadata_keys:
+            if pandas.isna(getattr(self, key)): setattr(self, key, None)
+        # If there are spaces in any DNA sequence, remove them #
+        for key in self.dna_keys:
+            seq = getattr(self, key)
+            setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))
 
     def validate_attrs(self):
         &#34;&#34;&#34;
@@ -320,13 +406,13 @@ was parsed by the Project object.</p></div>
         # Check the short name contains only alphanumerics and underscore #
         assert self.short_name.isidentifier()
         # Check that all directories always end with a dash (/) #
-        for attribute in self.__dict__:
-            if not attribute.endswith(&#39;_dir&#39;): continue
-            value = getattr(self, attribute)
+        for key in self.metadata_keys:
+            if not key.endswith(&#39;_dir&#39;): continue
+            value = getattr(self, key)
             if not isinstance(value, str) or not value.endswith(&#34;/&#34;):
                 msg = &#34;The `%s` entry of &lt;%s&gt; must end with a slash. &#34; \
-                          &#34;It currently does not: &#39;%s&#39;&#34;
-                msg = msg % (attribute, self.description, value)
+                      &#34;It currently does not: &#39;%s&#39;&#34;
+                msg = msg % (key, self.description, value)
                 raise ValueError(msg)
         # Check that the FASTQ file exists #
         if not self.path.exists:
@@ -334,10 +420,8 @@ was parsed by the Project object.</p></div>
                   &#34;It should be located at: &#39;%s&#39;&#34;
             msg = msg % (self.description, self.path)
             raise FileNotFoundError(msg)
-        # Check the DNA sequences #
-        dna_keys = [&#39;fwd_index_seq&#39;, &#39;rev_index_seq&#39;, &#39;fwd_primer_seq&#39;,
-                    &#39;rev_primer_seq&#39;]
-        for key in dna_keys:
+        # Check the DNA sequences are properly formatted #
+        for key in self.dna_keys:
             seq = getattr(self, key)
             if &#39;\n&#39; in seq:
                 msg = &#34;The `%s` entry of &lt;%s&gt; contains illegal &#34; \
@@ -354,29 +438,26 @@ was parsed by the Project object.</p></div>
 
     @property_cached
     def path(self):
-        &#34;&#34;&#34;The path to the FASTQ reads file.&#34;&#34;&#34;
+        &#34;&#34;&#34;The path to the raw FASTQ reads file.&#34;&#34;&#34;
         # Join the three components together #
         return Path(self.input_dir + self.suffix_dir + self.fwd_file_name)
 
     @property_cached
-    def fastq(self):
-        &#34;&#34;&#34;
-        The FASTQ object with convenience methods.
-        See https://github.com/xapple/fasta#usage
-        &#34;&#34;&#34;
-        # This class is taken from the `fasta` python package #
-        from fasta import FASTQ
-        fastq = FASTQ(self.path)
-        # Change the location of the first FastQC, as we don&#39;t want to touch
-        # the directory where the original reads are stored on the file system.
-        from fasta.fastqc import FastQC
-        fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
-        # Return #
-        return fastq
+    def percent_lost(self):
+        &#34;&#34;&#34;Once all filtering is done, what fraction of reads were lost.&#34;&#34;&#34;
+        return 100 - 100 * self.chimeras.results.count / self.fastq.count
 
-    #------------------------- Automatic paths -------------------------------#
+    #-------------------------- Automatic paths ------------------------------#
     all_paths = &#34;&#34;&#34;
                 /fastqc/
+                /graphs/raw_len_dist.pdf
+                /graphs/raw_len_hist.pdf
+                /filtered/
+                /barrnap/
+                /barrnap/results.gff
+                /barrnap/has_rrna_gene.fastq
+                /chimeras/cleaned.fasta
+                /chimeras/rejects.fasta
                 /report/cache/
                 /report/sample.pdf
                 &#34;&#34;&#34;
@@ -402,15 +483,82 @@ was parsed by the Project object.</p></div>
 
     #---------------------------- Compositions -------------------------------#
     @property_cached
+    def fastq(self):
+        &#34;&#34;&#34;
+        The raw reads FASTQ object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        &#34;&#34;&#34;
+        # This class is taken from the `fasta` python package #
+        from fasta import FASTQ
+        fastq = FASTQ(self.path)
+        # Change the location of the first FastQC, as we don&#39;t want to touch
+        # the directory where the original reads are stored on the file system.
+        # We might simply not have permission to write there.
+        from fasta.fastqc import FastQC
+        fastq.fastqc = FastQC(fastq, self.autopaths.fastqc_dir)
+        # Change the location of the length distribution graphs too #
+        fastq.graphs.length_dist.path = self.autopaths.len_dist_pdf
+        fastq.graphs.length_hist.path = self.autopaths.len_hist_pdf
+        # Return #
+        return fastq
+
+    @property_cached
+    def primers(self):
+        &#34;&#34;&#34;
+        Will return an object that holds the two primers of a
+        given sample and has many convenience methods to parse and
+        find the location of a primer inside all sequences.
+        &#34;&#34;&#34;
+        from fasta.primers import TwoPrimers
+        return TwoPrimers(self.fwd_primer_seq, self.rev_primer_seq)
+
+    @property_cached
     def filter(self):
-        &#34;&#34;&#34;Will filter out unwanted sequences.&#34;&#34;&#34;
-        return SeqFilter(self.joiner.results.assembled, self.p.filtered_dir, self.short_name, self.primers)
+        &#34;&#34;&#34;Takes care of filtering out unwanted sequences.&#34;&#34;&#34;
+        # Create filter object #
+        from pacmill.filtering.seq_filter import SeqFilter
+        seq_filter = SeqFilter(self)
+        # Set parameters #
+        seq_filter.primer_mismatches = self.primer_mismatches
+        seq_filter.primer_max_dist   = self.primer_max_dist
+        seq_filter.min_read_len      = self.min_read_len
+        seq_filter.max_read_len      = self.max_read_len
+        seq_filter.phred_window_size = self.phred_window_size
+        seq_filter.phred_threshold   = self.phred_threshold
+        # Return #
+        return seq_filter
+
+    @property_cached
+    def barrnap(self):
+        &#34;&#34;&#34;Takes care of running the Barrnap program.&#34;&#34;&#34;
+        # Get file paths #
+        source   = self.filter.results.clean
+        dest     = self.autopaths.barrnap_gff
+        filtered = self.autopaths.barrnap_fastq
+        # Create barrnap object #
+        from pacmill.filtering.barrnap import Barrnap
+        barrnap = Barrnap(source, dest, filtered)
+        # Return #
+        return barrnap
+
+    @property_cached
+    def chimeras(self):
+        &#34;&#34;&#34;Takes care of removing chimeric reads.&#34;&#34;&#34;
+        # Get file paths #
+        source   = self.barrnap.results
+        cleaned  = self.autopaths.chimeras_cleaned
+        rejects  = self.autopaths.chimeras_rejects
+        # Create chimeras object #
+        from pacmill.filtering.chimeras import Chimeras
+        chimeras = Chimeras(source, cleaned, rejects)
+        # Return #
+        return chimeras
 
     @property_cached
     def report(self):
         &#34;&#34;&#34;
         The SampleReport object is used to produce a PDF document containing
-        all the informations and graphs that concern this sample
+        all the information and graphs that concern this sample
         See https://github.com/xapple/pymarktex#usage
         &#34;&#34;&#34;
         from pacmill.reports.sample import SampleReport
@@ -419,6 +567,10 @@ was parsed by the Project object.</p></div>
 <h3>Class variables</h3>
 <dl>
 <dt id="pacmill.core.sample.Sample.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pacmill.core.sample.Sample.dna_keys"><code class="name">var <span class="ident">dna_keys</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -440,6 +592,38 @@ See <a href="https://github.com/xapple/autopaths#autopaths-object">https://githu
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.sample.Sample.barrnap"><code class="name">var <span class="ident">barrnap</span></code></dt>
+<dd>
+<div class="desc"><p>Takes care of running the Barrnap program.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -470,6 +654,38 @@ See <a href="https://github.com/xapple/autopaths#directorypath-object">https://g
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.sample.Sample.chimeras"><code class="name">var <span class="ident">chimeras</span></code></dt>
+<dd>
+<div class="desc"><p>Takes care of removing chimeric reads.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -501,7 +717,7 @@ def description(self):
 </dd>
 <dt id="pacmill.core.sample.Sample.fastq"><code class="name">var <span class="ident">fastq</span></code></dt>
 <dd>
-<div class="desc"><p>The FASTQ object with convenience methods.
+<div class="desc"><p>The raw reads FASTQ object with convenience methods.
 See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fasta#usage</a></p></div>
 <details class="source">
 <summary>
@@ -513,6 +729,8 @@ See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fa
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -530,7 +748,7 @@ See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fa
 </dd>
 <dt id="pacmill.core.sample.Sample.filter"><code class="name">var <span class="ident">filter</span></code></dt>
 <dd>
-<div class="desc"><p>Will filter out unwanted sequences.</p></div>
+<div class="desc"><p>Takes care of filtering out unwanted sequences.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -541,6 +759,8 @@ See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fa
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -558,7 +778,7 @@ See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fa
 </dd>
 <dt id="pacmill.core.sample.Sample.path"><code class="name">var <span class="ident">path</span></code></dt>
 <dd>
-<div class="desc"><p>The path to the FASTQ reads file.</p></div>
+<div class="desc"><p>The path to the raw FASTQ reads file.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -569,6 +789,70 @@ See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fa
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.sample.Sample.percent_lost"><code class="name">var <span class="ident">percent_lost</span></code></dt>
+<dd>
+<div class="desc"><p>Once all filtering is done, what fraction of reads were lost.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.sample.Sample.primers"><code class="name">var <span class="ident">primers</span></code></dt>
+<dd>
+<div class="desc"><p>Will return an object that holds the two primers of a
+given sample and has many convenience methods to parse and
+find the location of a primer inside all sequences.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -587,7 +871,7 @@ See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fa
 <dt id="pacmill.core.sample.Sample.report"><code class="name">var <span class="ident">report</span></code></dt>
 <dd>
 <div class="desc"><p>The SampleReport object is used to produce a PDF document containing
-all the informations and graphs that concern this sample
+all the information and graphs that concern this sample
 See <a href="https://github.com/xapple/pymarktex#usage">https://github.com/xapple/pymarktex#usage</a></p></div>
 <details class="source">
 <summary>
@@ -599,6 +883,8 @@ See <a href="https://github.com/xapple/pymarktex#usage">https://github.com/xappl
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -637,7 +923,14 @@ information in the excel metadata file.</p></div>
     # The sample&#39;s long name can just be called long_name #
     self.long_name = self.sample_long_name
     # The sample number can just be called num #
-    self.num = int(self.sample_num)</code></pre>
+    self.num = int(self.sample_num)
+    # Missing values should be None and not pandas.nan #
+    for key in self.metadata_keys:
+        if pandas.isna(getattr(self, key)): setattr(self, key, None)
+    # If there are spaces in any DNA sequence, remove them #
+    for key in self.dna_keys:
+        seq = getattr(self, key)
+        setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.core.sample.Sample.validate_attrs"><code class="name flex">
@@ -658,13 +951,13 @@ metadata file is consistent and usable.</p></div>
     # Check the short name contains only alphanumerics and underscore #
     assert self.short_name.isidentifier()
     # Check that all directories always end with a dash (/) #
-    for attribute in self.__dict__:
-        if not attribute.endswith(&#39;_dir&#39;): continue
-        value = getattr(self, attribute)
+    for key in self.metadata_keys:
+        if not key.endswith(&#39;_dir&#39;): continue
+        value = getattr(self, key)
         if not isinstance(value, str) or not value.endswith(&#34;/&#34;):
             msg = &#34;The `%s` entry of &lt;%s&gt; must end with a slash. &#34; \
-                      &#34;It currently does not: &#39;%s&#39;&#34;
-            msg = msg % (attribute, self.description, value)
+                  &#34;It currently does not: &#39;%s&#39;&#34;
+            msg = msg % (key, self.description, value)
             raise ValueError(msg)
     # Check that the FASTQ file exists #
     if not self.path.exists:
@@ -672,10 +965,8 @@ metadata file is consistent and usable.</p></div>
               &#34;It should be located at: &#39;%s&#39;&#34;
         msg = msg % (self.description, self.path)
         raise FileNotFoundError(msg)
-    # Check the DNA sequences #
-    dna_keys = [&#39;fwd_index_seq&#39;, &#39;rev_index_seq&#39;, &#39;fwd_primer_seq&#39;,
-                &#39;rev_primer_seq&#39;]
-    for key in dna_keys:
+    # Check the DNA sequences are properly formatted #
+    for key in self.dna_keys:
         seq = getattr(self, key)
         if &#39;\n&#39; in seq:
             msg = &#34;The `%s` entry of &lt;%s&gt; contains illegal &#34; \
@@ -707,11 +998,16 @@ metadata file is consistent and usable.</p></div>
 <ul class="two-column">
 <li><code><a title="pacmill.core.sample.Sample.all_paths" href="#pacmill.core.sample.Sample.all_paths">all_paths</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.autopaths" href="#pacmill.core.sample.Sample.autopaths">autopaths</a></code></li>
+<li><code><a title="pacmill.core.sample.Sample.barrnap" href="#pacmill.core.sample.Sample.barrnap">barrnap</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.base_dir" href="#pacmill.core.sample.Sample.base_dir">base_dir</a></code></li>
+<li><code><a title="pacmill.core.sample.Sample.chimeras" href="#pacmill.core.sample.Sample.chimeras">chimeras</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.description" href="#pacmill.core.sample.Sample.description">description</a></code></li>
+<li><code><a title="pacmill.core.sample.Sample.dna_keys" href="#pacmill.core.sample.Sample.dna_keys">dna_keys</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.fastq" href="#pacmill.core.sample.Sample.fastq">fastq</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.filter" href="#pacmill.core.sample.Sample.filter">filter</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.path" href="#pacmill.core.sample.Sample.path">path</a></code></li>
+<li><code><a title="pacmill.core.sample.Sample.percent_lost" href="#pacmill.core.sample.Sample.percent_lost">percent_lost</a></code></li>
+<li><code><a title="pacmill.core.sample.Sample.primers" href="#pacmill.core.sample.Sample.primers">primers</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.report" href="#pacmill.core.sample.Sample.report">report</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.transform_attrs" href="#pacmill.core.sample.Sample.transform_attrs">transform_attrs</a></code></li>
 <li><code><a title="pacmill.core.sample.Sample.validate_attrs" href="#pacmill.core.sample.Sample.validate_attrs">validate_attrs</a></code></li>

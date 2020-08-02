@@ -47,10 +47,17 @@ import pandas
 
 # First party modules #
 from autopaths import Path
+from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
-from pacmill.core.sample import Sample
+from pacmill.centering.otu_table      import OtuTable
+from pacmill.core.sample              import Sample
+from pacmill.centering.vsearch        import ClusterVsearch
+from pacmill.filtering.barrnap        import Barrnap
+from pacmill.statistics.nmds          import GraphNMDS
+from pacmill.taxonomy.mothur_classify import MothurClassify
+from pacmill.taxonomy.taxa_tables     import TaxaTable
 
 ###############################################################################
 class Project:
@@ -65,7 +72,7 @@ class Project:
     def __len__(self):
         return len(self.samples)
 
-    def __init__(self, short_name, *args):
+    def __init__(self, short_name, *all_xlsx):
         &#34;&#34;&#34;
         A Project object takes:
 
@@ -84,7 +91,6 @@ class Project:
             * self.short_name: the name of this project.
             * self.long_name:  the more lengthy description of this project.
             * self.all_xlsx:   a list of file paths (that are excel files).
-            * self.all_dfs:    a list of pandas dataframes (one for each file).
             * self.metadata:   a pandas dataframe with all metadata
                                for this project combined.
             * self.samples:    a list of Sample objects.
@@ -96,29 +102,38 @@ class Project:
         # Check it contains only alphanumerics and underscore #
         assert self.short_name.isidentifier()
         # You need at least one excel file #
-        assert len(args) &gt; 0
-        # Save all excel file paths as AutoPaths objects #
-        self.all_xlsx = list(map(Path, args))
+        assert len(all_xlsx) &gt; 0
+        # Save all excel file paths as Paths objects #
+        self.all_xlsx = list(map(Path, all_xlsx))
         # Check all the excel paths actually exist #
         assert all(xlsx.exists for xlsx in self.all_xlsx)
-        # Function to read one excel file #
-        read_excel = lambda path: pandas.read_excel(str(path), header=1)
-        # Read them all as data frames #
-        self.all_dfs = [read_excel(path) for path in self.all_xlsx]
-        # If there are several excel files, merge them together #
-        self.metadata = pandas.concat(self.all_dfs, sort=False)
-        # Filter and take only samples that match this project&#39;s short_name #
-        query = f&#39;project_short_name == &#34;{self.short_name}&#34;&#39;
-        self.metadata = self.metadata.query(query).copy()
-        # Remove samples that are not marked as &#34;yes&#34; for &#34;used&#34; #
-        self.metadata = self.metadata.query(&#39;used == &#34;yes&#34;&#39;).copy()
 
     #----------------------------- Properties --------------------------------#
     @property_cached
+    def metadata(self):
+        &#34;&#34;&#34;
+        Return a pandas.DataFrame object describing the metadata of all
+        samples contained in this project.
+        &#34;&#34;&#34;
+        # Function to read one excel file #
+        read_excel = lambda path: pandas.read_excel(str(path), header=1)
+        # Read them all as data frames #
+        all_dfs = [read_excel(path) for path in self.all_xlsx]
+        # If there are several excel files, merge them together #
+        metadata = pandas.concat(all_dfs, sort=False)
+        # Filter and take only samples that match this project&#39;s short_name #
+        query = f&#39;project_short_name == &#34;{self.short_name}&#34;&#39;
+        metadata = metadata.query(query).copy()
+        # Return #
+        return metadata
+
+    @property_cached
     def samples(self):
         &#34;&#34;&#34;Create all the Sample objects.&#34;&#34;&#34;
+        # Remove samples that are not marked as &#34;yes&#34; for &#34;used&#34; #
+        metadata = self.metadata.query(&#39;used == &#34;yes&#34;&#39;).copy()
         # Iterate over all rows of the input #
-        rows = self.metadata.iterrows()
+        rows = metadata.iterrows()
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
         # Add a reference the current project #
@@ -141,7 +156,157 @@ class Project:
             msg = &#34;The project long name is not uniform across samples.&#34;
             raise ValueError(msg)
         # Return #
-        return all_names.pop()</code></pre>
+        return all_names.pop()
+
+    @property_cached
+    def output_dir(self):
+        &#34;&#34;&#34;Get the project&#39;s output directory.&#34;&#34;&#34;
+        # It&#39;s actually contained in the Sample objects #
+        all_output_dirs = set(s.output_dir for s in self)
+        # Check that it doesn&#39;t diverge between samples #
+        if not len(all_output_dirs) == 1:
+            msg = &#34;The project output directory is not uniform across samples.&#34;
+            raise ValueError(msg)
+        # Return #
+        return DirectoryPath(all_output_dirs.pop())
+
+    @property_cached
+    def fasta(self):
+        &#34;&#34;&#34;
+        The reads from all samples combined into the same file accessed through
+        a FASTA object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        &#34;&#34;&#34;
+        from fasta import FASTA
+        return FASTA(self.autopaths.all_reads)
+
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /reads/all_reads.fasta
+                /otus/consensus.fasta
+                /otus/consensus.tsv
+                /barrnap/results.gff
+                /barrnap/only_16s.fasta
+                /taxonomy/
+                /taxa_tables/
+                /graphs/
+                /report/cache/
+                /report/project.pdf
+                /bundle/
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.output_dir, self.all_paths)
+
+    #------------------------------- Methods ---------------------------------#
+    def combine_reads(self, verbose=True, check=False):
+        &#34;&#34;&#34;
+        This method will concatenate all the cleaned reads from every sample
+        within this project into a singe FASTA file for further processing.
+        &#34;&#34;&#34;
+        # Print a message #
+        if verbose:
+            msg = &#34;Combining all reads for project &#39;%s&#39; (%i samples)&#34;
+            msg = msg % (self.short_name, len(self.samples))
+            print(msg)
+        # Get all input paths #
+        inputs = [sample.chimeras.results for sample in self]
+        # Make the command to be run #
+        cmd = &#39;cat %s &gt; %s&#39; % (&#39; &#39;.join(inputs), self.fasta)
+        # We don&#39;t want python to be buffering the text for speed #
+        from shell_command import shell_output
+        shell_output(cmd)
+        # Sanity check the total #
+        if check:
+            before = sum(len(s.chimeras.results) for s in self)
+            after  = self.fasta.count
+            assert before == after
+        # Return #
+        return self.fasta
+
+    #---------------------------- Compositions -------------------------------#
+    @property_cached
+    def otus(self):
+        &#34;&#34;&#34;
+        Takes care of running a single-pass, greedy centroid-based clustering
+        algorithm on all sequences to determine consensus sequences of OTUs.
+        &#34;&#34;&#34;
+        return ClusterVsearch(self.fasta,
+                              self.autopaths.otus_fasta,
+                              self.autopaths.otus_tsv)
+
+    @property_cached
+    def otu_table(self):
+        &#34;&#34;&#34;
+        Takes care of storing a table with OTU as rows and samples as columns
+        and tracks how many sequences where found from each sample in each OTU.
+        Also responsible for drawing graphs of OTU distribution.
+        &#34;&#34;&#34;
+        return OtuTable(self.otus.table)
+
+    @property_cached
+    def barrnap(self):
+        &#34;&#34;&#34;
+        Takes care of extracting the 16S rRNA portion from each OTU sequence
+        in preparation for a similarity search against a taxonomic database.
+        &#34;&#34;&#34;
+        return Barrnap(self.otus.results,
+                       self.autopaths.barrnap_gff,
+                       self.autopaths.barrnap_16s)
+
+    @property_cached
+    def taxonomy(self):
+        &#34;&#34;&#34;
+        Will compare all OTU sequences against a database of curated 16S genes
+        to associate a taxonomic assignment where possible.
+        &#34;&#34;&#34;
+        return MothurClassify(self.barrnap.results,
+                              self.autopaths.taxonomy_dir)
+
+    @property_cached
+    def taxa_tables(self):
+        &#34;&#34;&#34;
+        By using the OTU table along with the taxonomic assignment results,
+        we can generate taxa tables at different ranks.
+        &#34;&#34;&#34;
+        return TaxaTable(self.otu_table,
+                         self.taxonomy,
+                         self.autopaths.taxa_tables_dir)
+
+    @property_cached
+    def nmds_graph(self):
+        &#34;&#34;&#34;
+        Stands for Non-metric multidimensional scaling.
+        Using the information in the OTU table along with a distance metric
+        such as the one developed by Horn 1966 (adapted from Morisita 1959),
+        we can place every sample on a two-dimensional ordination plot.
+        &#34;&#34;&#34;
+        return GraphNMDS(self.otu_table, self.autopaths.graphs_dir)
+
+    @property_cached
+    def report(self):
+        &#34;&#34;&#34;
+        The ProjectReport object is used to produce a PDF document containing
+        all the information and graphs that concern this project.
+        &#34;&#34;&#34;
+        from pacmill.reports.project import ProjectReport
+        return ProjectReport(self, self.autopaths.report_pdf)
+
+    @property_cached
+    def bundle(self):
+        &#34;&#34;&#34;
+        The Bundle object is used to regroup all PDF reports together in
+        the same directory/zip-file for easy distribution to stakeholders.
+        &#34;&#34;&#34;
+        from pacmill.distribute.bundle import Bundle
+        return Bundle(self, self.autopaths.bundle_dir)</code></pre>
 </details>
 </section>
 <section>
@@ -155,7 +320,7 @@ class Project:
 <dl>
 <dt id="pacmill.core.project.Project"><code class="flex name class">
 <span>class <span class="ident">Project</span></span>
-<span>(</span><span>short_name, *args)</span>
+<span>(</span><span>short_name, *all_xlsx)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A Project object regroups several Sample objects together.</p>
@@ -174,7 +339,6 @@ metadata. See example excel file.</li>
 <pre><code>* self.short_name: the name of this project.
 * self.long_name:  the more lengthy description of this project.
 * self.all_xlsx:   a list of file paths (that are excel files).
-* self.all_dfs:    a list of pandas dataframes (one for each file).
 * self.metadata:   a pandas dataframe with all metadata
                    for this project combined.
 * self.samples:    a list of Sample objects.
@@ -196,7 +360,7 @@ metadata. See example excel file.</li>
     def __len__(self):
         return len(self.samples)
 
-    def __init__(self, short_name, *args):
+    def __init__(self, short_name, *all_xlsx):
         &#34;&#34;&#34;
         A Project object takes:
 
@@ -215,7 +379,6 @@ metadata. See example excel file.</li>
             * self.short_name: the name of this project.
             * self.long_name:  the more lengthy description of this project.
             * self.all_xlsx:   a list of file paths (that are excel files).
-            * self.all_dfs:    a list of pandas dataframes (one for each file).
             * self.metadata:   a pandas dataframe with all metadata
                                for this project combined.
             * self.samples:    a list of Sample objects.
@@ -227,29 +390,38 @@ metadata. See example excel file.</li>
         # Check it contains only alphanumerics and underscore #
         assert self.short_name.isidentifier()
         # You need at least one excel file #
-        assert len(args) &gt; 0
-        # Save all excel file paths as AutoPaths objects #
-        self.all_xlsx = list(map(Path, args))
+        assert len(all_xlsx) &gt; 0
+        # Save all excel file paths as Paths objects #
+        self.all_xlsx = list(map(Path, all_xlsx))
         # Check all the excel paths actually exist #
         assert all(xlsx.exists for xlsx in self.all_xlsx)
-        # Function to read one excel file #
-        read_excel = lambda path: pandas.read_excel(str(path), header=1)
-        # Read them all as data frames #
-        self.all_dfs = [read_excel(path) for path in self.all_xlsx]
-        # If there are several excel files, merge them together #
-        self.metadata = pandas.concat(self.all_dfs, sort=False)
-        # Filter and take only samples that match this project&#39;s short_name #
-        query = f&#39;project_short_name == &#34;{self.short_name}&#34;&#39;
-        self.metadata = self.metadata.query(query).copy()
-        # Remove samples that are not marked as &#34;yes&#34; for &#34;used&#34; #
-        self.metadata = self.metadata.query(&#39;used == &#34;yes&#34;&#39;).copy()
 
     #----------------------------- Properties --------------------------------#
     @property_cached
+    def metadata(self):
+        &#34;&#34;&#34;
+        Return a pandas.DataFrame object describing the metadata of all
+        samples contained in this project.
+        &#34;&#34;&#34;
+        # Function to read one excel file #
+        read_excel = lambda path: pandas.read_excel(str(path), header=1)
+        # Read them all as data frames #
+        all_dfs = [read_excel(path) for path in self.all_xlsx]
+        # If there are several excel files, merge them together #
+        metadata = pandas.concat(all_dfs, sort=False)
+        # Filter and take only samples that match this project&#39;s short_name #
+        query = f&#39;project_short_name == &#34;{self.short_name}&#34;&#39;
+        metadata = metadata.query(query).copy()
+        # Return #
+        return metadata
+
+    @property_cached
     def samples(self):
         &#34;&#34;&#34;Create all the Sample objects.&#34;&#34;&#34;
+        # Remove samples that are not marked as &#34;yes&#34; for &#34;used&#34; #
+        metadata = self.metadata.query(&#39;used == &#34;yes&#34;&#39;).copy()
         # Iterate over all rows of the input #
-        rows = self.metadata.iterrows()
+        rows = metadata.iterrows()
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
         # Add a reference the current project #
@@ -272,10 +444,293 @@ metadata. See example excel file.</li>
             msg = &#34;The project long name is not uniform across samples.&#34;
             raise ValueError(msg)
         # Return #
-        return all_names.pop()</code></pre>
+        return all_names.pop()
+
+    @property_cached
+    def output_dir(self):
+        &#34;&#34;&#34;Get the project&#39;s output directory.&#34;&#34;&#34;
+        # It&#39;s actually contained in the Sample objects #
+        all_output_dirs = set(s.output_dir for s in self)
+        # Check that it doesn&#39;t diverge between samples #
+        if not len(all_output_dirs) == 1:
+            msg = &#34;The project output directory is not uniform across samples.&#34;
+            raise ValueError(msg)
+        # Return #
+        return DirectoryPath(all_output_dirs.pop())
+
+    @property_cached
+    def fasta(self):
+        &#34;&#34;&#34;
+        The reads from all samples combined into the same file accessed through
+        a FASTA object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        &#34;&#34;&#34;
+        from fasta import FASTA
+        return FASTA(self.autopaths.all_reads)
+
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /reads/all_reads.fasta
+                /otus/consensus.fasta
+                /otus/consensus.tsv
+                /barrnap/results.gff
+                /barrnap/only_16s.fasta
+                /taxonomy/
+                /taxa_tables/
+                /graphs/
+                /report/cache/
+                /report/project.pdf
+                /bundle/
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.output_dir, self.all_paths)
+
+    #------------------------------- Methods ---------------------------------#
+    def combine_reads(self, verbose=True, check=False):
+        &#34;&#34;&#34;
+        This method will concatenate all the cleaned reads from every sample
+        within this project into a singe FASTA file for further processing.
+        &#34;&#34;&#34;
+        # Print a message #
+        if verbose:
+            msg = &#34;Combining all reads for project &#39;%s&#39; (%i samples)&#34;
+            msg = msg % (self.short_name, len(self.samples))
+            print(msg)
+        # Get all input paths #
+        inputs = [sample.chimeras.results for sample in self]
+        # Make the command to be run #
+        cmd = &#39;cat %s &gt; %s&#39; % (&#39; &#39;.join(inputs), self.fasta)
+        # We don&#39;t want python to be buffering the text for speed #
+        from shell_command import shell_output
+        shell_output(cmd)
+        # Sanity check the total #
+        if check:
+            before = sum(len(s.chimeras.results) for s in self)
+            after  = self.fasta.count
+            assert before == after
+        # Return #
+        return self.fasta
+
+    #---------------------------- Compositions -------------------------------#
+    @property_cached
+    def otus(self):
+        &#34;&#34;&#34;
+        Takes care of running a single-pass, greedy centroid-based clustering
+        algorithm on all sequences to determine consensus sequences of OTUs.
+        &#34;&#34;&#34;
+        return ClusterVsearch(self.fasta,
+                              self.autopaths.otus_fasta,
+                              self.autopaths.otus_tsv)
+
+    @property_cached
+    def otu_table(self):
+        &#34;&#34;&#34;
+        Takes care of storing a table with OTU as rows and samples as columns
+        and tracks how many sequences where found from each sample in each OTU.
+        Also responsible for drawing graphs of OTU distribution.
+        &#34;&#34;&#34;
+        return OtuTable(self.otus.table)
+
+    @property_cached
+    def barrnap(self):
+        &#34;&#34;&#34;
+        Takes care of extracting the 16S rRNA portion from each OTU sequence
+        in preparation for a similarity search against a taxonomic database.
+        &#34;&#34;&#34;
+        return Barrnap(self.otus.results,
+                       self.autopaths.barrnap_gff,
+                       self.autopaths.barrnap_16s)
+
+    @property_cached
+    def taxonomy(self):
+        &#34;&#34;&#34;
+        Will compare all OTU sequences against a database of curated 16S genes
+        to associate a taxonomic assignment where possible.
+        &#34;&#34;&#34;
+        return MothurClassify(self.barrnap.results,
+                              self.autopaths.taxonomy_dir)
+
+    @property_cached
+    def taxa_tables(self):
+        &#34;&#34;&#34;
+        By using the OTU table along with the taxonomic assignment results,
+        we can generate taxa tables at different ranks.
+        &#34;&#34;&#34;
+        return TaxaTable(self.otu_table,
+                         self.taxonomy,
+                         self.autopaths.taxa_tables_dir)
+
+    @property_cached
+    def nmds_graph(self):
+        &#34;&#34;&#34;
+        Stands for Non-metric multidimensional scaling.
+        Using the information in the OTU table along with a distance metric
+        such as the one developed by Horn 1966 (adapted from Morisita 1959),
+        we can place every sample on a two-dimensional ordination plot.
+        &#34;&#34;&#34;
+        return GraphNMDS(self.otu_table, self.autopaths.graphs_dir)
+
+    @property_cached
+    def report(self):
+        &#34;&#34;&#34;
+        The ProjectReport object is used to produce a PDF document containing
+        all the information and graphs that concern this project.
+        &#34;&#34;&#34;
+        from pacmill.reports.project import ProjectReport
+        return ProjectReport(self, self.autopaths.report_pdf)
+
+    @property_cached
+    def bundle(self):
+        &#34;&#34;&#34;
+        The Bundle object is used to regroup all PDF reports together in
+        the same directory/zip-file for easy distribution to stakeholders.
+        &#34;&#34;&#34;
+        from pacmill.distribute.bundle import Bundle
+        return Bundle(self, self.autopaths.bundle_dir)</code></pre>
 </details>
+<h3>Class variables</h3>
+<dl>
+<dt id="pacmill.core.project.Project.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 <h3>Instance variables</h3>
 <dl>
+<dt id="pacmill.core.project.Project.autopaths"><code class="name">var <span class="ident">autopaths</span></code></dt>
+<dd>
+<div class="desc"><p>The AutoPaths object is used for quickly assessing the filesystem paths
+of various file inputs/outputs and directories.
+See <a href="https://github.com/xapple/autopaths#autopaths-object">https://github.com/xapple/autopaths#autopaths-object</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.barrnap"><code class="name">var <span class="ident">barrnap</span></code></dt>
+<dd>
+<div class="desc"><p>Takes care of extracting the 16S rRNA portion from each OTU sequence
+in preparation for a similarity search against a taxonomic database.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.bundle"><code class="name">var <span class="ident">bundle</span></code></dt>
+<dd>
+<div class="desc"><p>The Bundle object is used to regroup all PDF reports together in
+the same directory/zip-file for easy distribution to stakeholders.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.fasta"><code class="name">var <span class="ident">fasta</span></code></dt>
+<dd>
+<div class="desc"><p>The reads from all samples combined into the same file accessed through
+a FASTA object with convenience methods.
+See <a href="https://github.com/xapple/fasta#usage">https://github.com/xapple/fasta#usage</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
 <dt id="pacmill.core.project.Project.long_name"><code class="name">var <span class="ident">long_name</span></code></dt>
 <dd>
 <div class="desc"><p>Get the project's long name which is a string describing the
@@ -290,6 +745,196 @@ project title in a longer fashion than the short name.</p></div>
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.metadata"><code class="name">var <span class="ident">metadata</span></code></dt>
+<dd>
+<div class="desc"><p>Return a pandas.DataFrame object describing the metadata of all
+samples contained in this project.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.nmds_graph"><code class="name">var <span class="ident">nmds_graph</span></code></dt>
+<dd>
+<div class="desc"><p>Stands for Non-metric multidimensional scaling.
+Using the information in the OTU table along with a distance metric
+such as the one developed by Horn 1966 (adapted from Morisita 1959),
+we can place every sample on a two-dimensional ordination plot.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.otu_table"><code class="name">var <span class="ident">otu_table</span></code></dt>
+<dd>
+<div class="desc"><p>Takes care of storing a table with OTU as rows and samples as columns
+and tracks how many sequences where found from each sample in each OTU.
+Also responsible for drawing graphs of OTU distribution.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.otus"><code class="name">var <span class="ident">otus</span></code></dt>
+<dd>
+<div class="desc"><p>Takes care of running a single-pass, greedy centroid-based clustering
+algorithm on all sequences to determine consensus sequences of OTUs.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.output_dir"><code class="name">var <span class="ident">output_dir</span></code></dt>
+<dd>
+<div class="desc"><p>Get the project's output directory.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.report"><code class="name">var <span class="ident">report</span></code></dt>
+<dd>
+<div class="desc"><p>The ProjectReport object is used to produce a PDF document containing
+all the information and graphs that concern this project.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -318,6 +963,8 @@ project title in a longer fashion than the short name.</p></div>
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -331,6 +978,107 @@ project title in a longer fashion than the short name.</p></div>
     instance.__cache__[self.name] = result
     # Return #
     return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.taxa_tables"><code class="name">var <span class="ident">taxa_tables</span></code></dt>
+<dd>
+<div class="desc"><p>By using the OTU table along with the taxonomic assignment results,
+we can generate taxa tables at different ranks.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.core.project.Project.taxonomy"><code class="name">var <span class="ident">taxonomy</span></code></dt>
+<dd>
+<div class="desc"><p>Will compare all OTU sequences against a database of curated 16S genes
+to associate a taxonomic assignment where possible.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pacmill.core.project.Project.combine_reads"><code class="name flex">
+<span>def <span class="ident">combine_reads</span></span>(<span>self, verbose=True, check=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method will concatenate all the cleaned reads from every sample
+within this project into a singe FASTA file for further processing.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def combine_reads(self, verbose=True, check=False):
+    &#34;&#34;&#34;
+    This method will concatenate all the cleaned reads from every sample
+    within this project into a singe FASTA file for further processing.
+    &#34;&#34;&#34;
+    # Print a message #
+    if verbose:
+        msg = &#34;Combining all reads for project &#39;%s&#39; (%i samples)&#34;
+        msg = msg % (self.short_name, len(self.samples))
+        print(msg)
+    # Get all input paths #
+    inputs = [sample.chimeras.results for sample in self]
+    # Make the command to be run #
+    cmd = &#39;cat %s &gt; %s&#39; % (&#39; &#39;.join(inputs), self.fasta)
+    # We don&#39;t want python to be buffering the text for speed #
+    from shell_command import shell_output
+    shell_output(cmd)
+    # Sanity check the total #
+    if check:
+        before = sum(len(s.chimeras.results) for s in self)
+        after  = self.fasta.count
+        assert before == after
+    # Return #
+    return self.fasta</code></pre>
 </details>
 </dd>
 </dl>
@@ -353,9 +1101,23 @@ project title in a longer fashion than the short name.</p></div>
 <ul>
 <li>
 <h4><code><a title="pacmill.core.project.Project" href="#pacmill.core.project.Project">Project</a></code></h4>
-<ul class="">
+<ul class="two-column">
+<li><code><a title="pacmill.core.project.Project.all_paths" href="#pacmill.core.project.Project.all_paths">all_paths</a></code></li>
+<li><code><a title="pacmill.core.project.Project.autopaths" href="#pacmill.core.project.Project.autopaths">autopaths</a></code></li>
+<li><code><a title="pacmill.core.project.Project.barrnap" href="#pacmill.core.project.Project.barrnap">barrnap</a></code></li>
+<li><code><a title="pacmill.core.project.Project.bundle" href="#pacmill.core.project.Project.bundle">bundle</a></code></li>
+<li><code><a title="pacmill.core.project.Project.combine_reads" href="#pacmill.core.project.Project.combine_reads">combine_reads</a></code></li>
+<li><code><a title="pacmill.core.project.Project.fasta" href="#pacmill.core.project.Project.fasta">fasta</a></code></li>
 <li><code><a title="pacmill.core.project.Project.long_name" href="#pacmill.core.project.Project.long_name">long_name</a></code></li>
+<li><code><a title="pacmill.core.project.Project.metadata" href="#pacmill.core.project.Project.metadata">metadata</a></code></li>
+<li><code><a title="pacmill.core.project.Project.nmds_graph" href="#pacmill.core.project.Project.nmds_graph">nmds_graph</a></code></li>
+<li><code><a title="pacmill.core.project.Project.otu_table" href="#pacmill.core.project.Project.otu_table">otu_table</a></code></li>
+<li><code><a title="pacmill.core.project.Project.otus" href="#pacmill.core.project.Project.otus">otus</a></code></li>
+<li><code><a title="pacmill.core.project.Project.output_dir" href="#pacmill.core.project.Project.output_dir">output_dir</a></code></li>
+<li><code><a title="pacmill.core.project.Project.report" href="#pacmill.core.project.Project.report">report</a></code></li>
 <li><code><a title="pacmill.core.project.Project.samples" href="#pacmill.core.project.Project.samples">samples</a></code></li>
+<li><code><a title="pacmill.core.project.Project.taxa_tables" href="#pacmill.core.project.Project.taxa_tables">taxa_tables</a></code></li>
+<li><code><a title="pacmill.core.project.Project.taxonomy" href="#pacmill.core.project.Project.taxonomy">taxonomy</a></code></li>
 </ul>
 </li>
 </ul>

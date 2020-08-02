@@ -50,11 +50,10 @@ from pacmill.reports.template      import Header, Footer
 from plumbing.cache    import property_cached, property_pickled
 from plumbing.common   import split_thousands as thousands
 from pymarktex         import Document
-from pymarktex.figures import DualFigure
+from pymarktex.figures import DualFigure, ScaledFigure
 from autopaths         import Path
 
 # Third party modules #
-import pandas
 
 ###############################################################################
 class SampleReport(Document):
@@ -64,11 +63,12 @@ class SampleReport(Document):
     header_template = Header
     footer_template = Footer
 
-    # Specific title for sample report #
+    # Specific title for the sample report #
     params = {&#39;title&#39;: &#39;Auto-generated sample report&#39;}
 
     def __init__(self, sample, output_path):
         # Reference to parent objects #
+        self.parent  = sample
         self.sample  = sample
         self.project = sample.project
         # The output location #
@@ -121,15 +121,16 @@ class SampleTemplate(ReportTemplate):
                      &#39;project_long_name&#39;]
         # Filter them out #
         keys = [k for k in keys if k not in skip_keys]
-        # Let&#39;s also remove those that have no value (nan) #
-        keys = [k for k in keys if not pandas.isna(getattr(self.sample, k))]
+        # Let&#39;s also remove those that have no value #
+        keys = [k for k in keys if getattr(self.sample, k) is not None]
         # Format them as a bullet list #
-        bullet = lambda k: &#39;* **&#39; + k + &#39;**: &#39; + str(getattr(self.sample, k))
+        value =  lambda k: str(getattr(self.sample, k))
+        bullet = lambda k: &#39;* **`%s`**: `%s`&#39; % (k, value(k))
         result = &#39;\n&#39;.join(bullet(k) for k in keys)
         # Return #
         return result
 
-    #----------------------------- Raw data ----------------------------------#
+    #------------------------------ Quality ----------------------------------#
     def fastq_size(self): return str(self.sample.fastq.size)
 
     @property_pickled
@@ -151,9 +152,24 @@ class SampleTemplate(ReportTemplate):
         # Return #
         return str(DualFigure(*params))
 
+    #------------------------------ Lengths ----------------------------------#
+    @property_pickled
+    def shortest_seq(self):
+        return thousands(min(self.sample.fastq.lengths))
+
+    @property_pickled
+    def longest_seq(self):
+        return thousands(max(self.sample.fastq.lengths))
+
+    def raw_len_dist(self):
+        caption = &#34;Distribution of sequence lengths in original reads.&#34;
+        path    = self.sample.fastq.graphs.length_hist()
+        label   = &#34;raw_len_dist&#34;
+        return str(ScaledFigure(path, caption, label))
+
     #----------------------------- Filtering ---------------------------------#
     def filtering(self):
-        if not self.sample.filter: return False
+        return bool(self.sample.filter)
 
     def primer_max_dist(self):
         return self.sample.filter.primer_max_dist
@@ -163,45 +179,90 @@ class SampleTemplate(ReportTemplate):
 
     @property_pickled
     def primer_discard(self):
-        before = self.sample.count
-        after  = self.sample.filter.results.primers_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.fastq.count
+        after  = self.sample.filter.results.primers_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def primer_left(self):
-        return thousands(len(self.sample.filter.results.primers_fasta))
+        return thousands(self.sample.filter.results.primers_fastq.count)
 
     @property_pickled
     def n_base_discard(self):
-        before = self.sample.filter.results.primers_fasta
-        after  = self.sample.filter.results.n_base_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.filter.results.primers_fastq.count
+        after  = self.sample.filter.results.n_base_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def n_base_left(self):
-        return thousands(len(self.sample.filter.results.n_base_fasta))
+        return thousands(self.sample.filter.results.n_base_fastq.count)
 
     def min_read_length(self):
-        return self.sample.filter.min_read_length
+        return thousands(self.sample.filter.min_read_len)
 
     def max_read_length(self):
-        return self.sample.filter.max_read_length
+        return thousands(self.sample.filter.max_read_len)
 
     @property_pickled
     def length_discard(self):
-        before = self.sample.filter.results.n_base_fasta
-        after  = self.sample.filter.results.length_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.filter.results.n_base_fastq.count
+        after  = self.sample.filter.results.length_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def length_left(self):
-        return thousands(len(self.sample.filter.results.length_fasta))
+        return thousands(self.sample.filter.results.length_fastq.count)
+
+    def phred_window_size(self):
+        return thousands(self.sample.phred_window_size)
+
+    def phred_threshold(self):
+        return thousands(self.sample.phred_threshold)
+
+    @property_pickled
+    def score_discard(self):
+        before = self.sample.filter.results.length_fastq.count
+        after  = self.sample.filter.results.score_fastq.count
+        return thousands(before - after)
+
+    @property_pickled
+    def score_left(self):
+        return thousands(self.sample.filter.results.score_fastq.count)
 
     @property_pickled
     def percent_remaining(self):
-        percent = len(self.sample.filter.results.clean) / len(self.sample)
-        percent *= 100
-        return &#34;%.1f%%&#34; % percent</code></pre>
+        before = self.sample.fastq.count
+        after  = self.sample.filter.results.clean.count
+        percent = 100 * (after / before)
+        return &#34;%.1f%%&#34; % percent
+
+    #------------------------------ Barrnap ----------------------------------#
+    def barrnap(self):
+        return bool(self.sample.barrnap)
+
+    @property_pickled
+    def barrnap_discard(self):
+        before = self.sample.filter.results.clean.count
+        after  = self.sample.barrnap.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def barrnap_left(self):
+        return thousands(self.sample.barrnap.results.count)
+
+    #------------------------------ Chimeras ---------------------------------#
+    def chimeras(self):
+        return bool(self.sample.chimeras)
+
+    @property_pickled
+    def chimeras_discard(self):
+        before = self.sample.barrnap.results.count
+        after  = self.sample.chimeras.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def chimeras_left(self):
+        return thousands(self.sample.chimeras.results.count)</code></pre>
 </details>
 </section>
 <section>
@@ -230,11 +291,12 @@ class SampleTemplate(ReportTemplate):
     header_template = Header
     footer_template = Footer
 
-    # Specific title for sample report #
+    # Specific title for the sample report #
     params = {&#39;title&#39;: &#39;Auto-generated sample report&#39;}
 
     def __init__(self, sample, output_path):
         # Reference to parent objects #
+        self.parent  = sample
         self.sample  = sample
         self.project = sample.project
         # The output location #
@@ -283,6 +345,8 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     an auto-generated documentation, it means the program making the
     documentation was unable to correctly traverse a decorated property.
     &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
     # If called from a class #
     if instance is None: return self
     # Does a cache exist for this instance? #
@@ -365,15 +429,16 @@ documentation was unable to correctly traverse a decorated property.</p></div>
                      &#39;project_long_name&#39;]
         # Filter them out #
         keys = [k for k in keys if k not in skip_keys]
-        # Let&#39;s also remove those that have no value (nan) #
-        keys = [k for k in keys if not pandas.isna(getattr(self.sample, k))]
+        # Let&#39;s also remove those that have no value #
+        keys = [k for k in keys if getattr(self.sample, k) is not None]
         # Format them as a bullet list #
-        bullet = lambda k: &#39;* **&#39; + k + &#39;**: &#39; + str(getattr(self.sample, k))
+        value =  lambda k: str(getattr(self.sample, k))
+        bullet = lambda k: &#39;* **`%s`**: `%s`&#39; % (k, value(k))
         result = &#39;\n&#39;.join(bullet(k) for k in keys)
         # Return #
         return result
 
-    #----------------------------- Raw data ----------------------------------#
+    #------------------------------ Quality ----------------------------------#
     def fastq_size(self): return str(self.sample.fastq.size)
 
     @property_pickled
@@ -395,9 +460,24 @@ documentation was unable to correctly traverse a decorated property.</p></div>
         # Return #
         return str(DualFigure(*params))
 
+    #------------------------------ Lengths ----------------------------------#
+    @property_pickled
+    def shortest_seq(self):
+        return thousands(min(self.sample.fastq.lengths))
+
+    @property_pickled
+    def longest_seq(self):
+        return thousands(max(self.sample.fastq.lengths))
+
+    def raw_len_dist(self):
+        caption = &#34;Distribution of sequence lengths in original reads.&#34;
+        path    = self.sample.fastq.graphs.length_hist()
+        label   = &#34;raw_len_dist&#34;
+        return str(ScaledFigure(path, caption, label))
+
     #----------------------------- Filtering ---------------------------------#
     def filtering(self):
-        if not self.sample.filter: return False
+        return bool(self.sample.filter)
 
     def primer_max_dist(self):
         return self.sample.filter.primer_max_dist
@@ -407,45 +487,90 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 
     @property_pickled
     def primer_discard(self):
-        before = self.sample.count
-        after  = self.sample.filter.results.primers_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.fastq.count
+        after  = self.sample.filter.results.primers_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def primer_left(self):
-        return thousands(len(self.sample.filter.results.primers_fasta))
+        return thousands(self.sample.filter.results.primers_fastq.count)
 
     @property_pickled
     def n_base_discard(self):
-        before = self.sample.filter.results.primers_fasta
-        after  = self.sample.filter.results.n_base_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.filter.results.primers_fastq.count
+        after  = self.sample.filter.results.n_base_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def n_base_left(self):
-        return thousands(len(self.sample.filter.results.n_base_fasta))
+        return thousands(self.sample.filter.results.n_base_fastq.count)
 
     def min_read_length(self):
-        return self.sample.filter.min_read_length
+        return thousands(self.sample.filter.min_read_len)
 
     def max_read_length(self):
-        return self.sample.filter.max_read_length
+        return thousands(self.sample.filter.max_read_len)
 
     @property_pickled
     def length_discard(self):
-        before = self.sample.filter.results.n_base_fasta
-        after  = self.sample.filter.results.length_fasta
-        return thousands(len(before) - len(after))
+        before = self.sample.filter.results.n_base_fastq.count
+        after  = self.sample.filter.results.length_fastq.count
+        return thousands(before - after)
 
     @property_pickled
     def length_left(self):
-        return thousands(len(self.sample.filter.results.length_fasta))
+        return thousands(self.sample.filter.results.length_fastq.count)
+
+    def phred_window_size(self):
+        return thousands(self.sample.phred_window_size)
+
+    def phred_threshold(self):
+        return thousands(self.sample.phred_threshold)
+
+    @property_pickled
+    def score_discard(self):
+        before = self.sample.filter.results.length_fastq.count
+        after  = self.sample.filter.results.score_fastq.count
+        return thousands(before - after)
+
+    @property_pickled
+    def score_left(self):
+        return thousands(self.sample.filter.results.score_fastq.count)
 
     @property_pickled
     def percent_remaining(self):
-        percent = len(self.sample.filter.results.clean) / len(self.sample)
-        percent *= 100
-        return &#34;%.1f%%&#34; % percent</code></pre>
+        before = self.sample.fastq.count
+        after  = self.sample.filter.results.clean.count
+        percent = 100 * (after / before)
+        return &#34;%.1f%%&#34; % percent
+
+    #------------------------------ Barrnap ----------------------------------#
+    def barrnap(self):
+        return bool(self.sample.barrnap)
+
+    @property_pickled
+    def barrnap_discard(self):
+        before = self.sample.filter.results.clean.count
+        after  = self.sample.barrnap.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def barrnap_left(self):
+        return thousands(self.sample.barrnap.results.count)
+
+    #------------------------------ Chimeras ---------------------------------#
+    def chimeras(self):
+        return bool(self.sample.chimeras)
+
+    @property_pickled
+    def chimeras_discard(self):
+        before = self.sample.barrnap.results.count
+        after  = self.sample.chimeras.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def chimeras_left(self):
+        return thousands(self.sample.chimeras.results.count)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -461,6 +586,162 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </dl>
 <h3>Instance variables</h3>
 <dl>
+<dt id="pacmill.reports.sample.SampleTemplate.barrnap_discard"><code class="name">var <span class="ident">barrnap_discard</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.barrnap_left"><code class="name">var <span class="ident">barrnap_left</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.chimeras_discard"><code class="name">var <span class="ident">chimeras_discard</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.chimeras_left"><code class="name">var <span class="ident">chimeras_left</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
 <dt id="pacmill.reports.sample.SampleTemplate.fastq_count"><code class="name">var <span class="ident">fastq_count</span></code></dt>
 <dd>
 <div class="desc"><p>If you see the current source code in a seemingly unrelated part of
@@ -579,6 +860,45 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </details>
 </dd>
 <dt id="pacmill.reports.sample.SampleTemplate.length_left"><code class="name">var <span class="ident">length_left</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.longest_seq"><code class="name">var <span class="ident">longest_seq</span></code></dt>
 <dd>
 <div class="desc"><p>If you see the current source code in a seemingly unrelated part of
 an auto-generated documentation, it means the program making the
@@ -812,6 +1132,123 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     return result</code></pre>
 </details>
 </dd>
+<dt id="pacmill.reports.sample.SampleTemplate.score_discard"><code class="name">var <span class="ident">score_discard</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.score_left"><code class="name">var <span class="ident">score_left</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.shortest_seq"><code class="name">var <span class="ident">shortest_seq</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Methods</h3>
 <dl>
@@ -838,13 +1275,40 @@ current sample.</p></div>
                  &#39;project_long_name&#39;]
     # Filter them out #
     keys = [k for k in keys if k not in skip_keys]
-    # Let&#39;s also remove those that have no value (nan) #
-    keys = [k for k in keys if not pandas.isna(getattr(self.sample, k))]
+    # Let&#39;s also remove those that have no value #
+    keys = [k for k in keys if getattr(self.sample, k) is not None]
     # Format them as a bullet list #
-    bullet = lambda k: &#39;* **&#39; + k + &#39;**: &#39; + str(getattr(self.sample, k))
+    value =  lambda k: str(getattr(self.sample, k))
+    bullet = lambda k: &#39;* **`%s`**: `%s`&#39; % (k, value(k))
     result = &#39;\n&#39;.join(bullet(k) for k in keys)
     # Return #
     return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.barrnap"><code class="name flex">
+<span>def <span class="ident">barrnap</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def barrnap(self):
+    return bool(self.sample.barrnap)</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.chimeras"><code class="name flex">
+<span>def <span class="ident">chimeras</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def chimeras(self):
+    return bool(self.sample.chimeras)</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.sample.SampleTemplate.fastq_size"><code class="name flex">
@@ -892,7 +1356,7 @@ current sample.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def filtering(self):
-    if not self.sample.filter: return False</code></pre>
+    return bool(self.sample.filter)</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.sample.SampleTemplate.max_read_length"><code class="name flex">
@@ -905,7 +1369,7 @@ current sample.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def max_read_length(self):
-    return self.sample.filter.max_read_length</code></pre>
+    return thousands(self.sample.filter.max_read_len)</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.sample.SampleTemplate.min_read_length"><code class="name flex">
@@ -918,7 +1382,7 @@ current sample.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def min_read_length(self):
-    return self.sample.filter.min_read_length</code></pre>
+    return thousands(self.sample.filter.min_read_len)</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.sample.SampleTemplate.mismatches_allowed"><code class="name flex">
@@ -932,6 +1396,32 @@ current sample.</p></div>
 </summary>
 <pre><code class="python">def mismatches_allowed(self):
     return self.sample.filter.primer_mismatches</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.phred_threshold"><code class="name flex">
+<span>def <span class="ident">phred_threshold</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def phred_threshold(self):
+    return thousands(self.sample.phred_threshold)</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.phred_window_size"><code class="name flex">
+<span>def <span class="ident">phred_window_size</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def phred_window_size(self):
+    return thousands(self.sample.phred_window_size)</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.sample.SampleTemplate.primer_max_dist"><code class="name flex">
@@ -981,6 +1471,22 @@ current sample.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def project_short_name(self):    return self.project.short_name</code></pre>
+</details>
+</dd>
+<dt id="pacmill.reports.sample.SampleTemplate.raw_len_dist"><code class="name flex">
+<span>def <span class="ident">raw_len_dist</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def raw_len_dist(self):
+    caption = &#34;Distribution of sequence lengths in original reads.&#34;
+    path    = self.sample.fastq.graphs.length_hist()
+    label   = &#34;raw_len_dist&#34;
+    return str(ScaledFigure(path, caption, label))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.sample.SampleTemplate.sample_long_name"><code class="name flex">
@@ -1039,6 +1545,12 @@ current sample.</p></div>
 <h4><code><a title="pacmill.reports.sample.SampleTemplate" href="#pacmill.reports.sample.SampleTemplate">SampleTemplate</a></code></h4>
 <ul class="">
 <li><code><a title="pacmill.reports.sample.SampleTemplate.all_metadata" href="#pacmill.reports.sample.SampleTemplate.all_metadata">all_metadata</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.barrnap" href="#pacmill.reports.sample.SampleTemplate.barrnap">barrnap</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.barrnap_discard" href="#pacmill.reports.sample.SampleTemplate.barrnap_discard">barrnap_discard</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.barrnap_left" href="#pacmill.reports.sample.SampleTemplate.barrnap_left">barrnap_left</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.chimeras" href="#pacmill.reports.sample.SampleTemplate.chimeras">chimeras</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.chimeras_discard" href="#pacmill.reports.sample.SampleTemplate.chimeras_discard">chimeras_discard</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.chimeras_left" href="#pacmill.reports.sample.SampleTemplate.chimeras_left">chimeras_left</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.delimiters" href="#pacmill.reports.sample.SampleTemplate.delimiters">delimiters</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.fastq_count" href="#pacmill.reports.sample.SampleTemplate.fastq_count">fastq_count</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.fastq_qual" href="#pacmill.reports.sample.SampleTemplate.fastq_qual">fastq_qual</a></code></li>
@@ -1047,20 +1559,27 @@ current sample.</p></div>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.filtering" href="#pacmill.reports.sample.SampleTemplate.filtering">filtering</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.length_discard" href="#pacmill.reports.sample.SampleTemplate.length_discard">length_discard</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.length_left" href="#pacmill.reports.sample.SampleTemplate.length_left">length_left</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.longest_seq" href="#pacmill.reports.sample.SampleTemplate.longest_seq">longest_seq</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.max_read_length" href="#pacmill.reports.sample.SampleTemplate.max_read_length">max_read_length</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.min_read_length" href="#pacmill.reports.sample.SampleTemplate.min_read_length">min_read_length</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.mismatches_allowed" href="#pacmill.reports.sample.SampleTemplate.mismatches_allowed">mismatches_allowed</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.n_base_discard" href="#pacmill.reports.sample.SampleTemplate.n_base_discard">n_base_discard</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.n_base_left" href="#pacmill.reports.sample.SampleTemplate.n_base_left">n_base_left</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.percent_remaining" href="#pacmill.reports.sample.SampleTemplate.percent_remaining">percent_remaining</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.phred_threshold" href="#pacmill.reports.sample.SampleTemplate.phred_threshold">phred_threshold</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.phred_window_size" href="#pacmill.reports.sample.SampleTemplate.phred_window_size">phred_window_size</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.primer_discard" href="#pacmill.reports.sample.SampleTemplate.primer_discard">primer_discard</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.primer_left" href="#pacmill.reports.sample.SampleTemplate.primer_left">primer_left</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.primer_max_dist" href="#pacmill.reports.sample.SampleTemplate.primer_max_dist">primer_max_dist</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.project_long_name" href="#pacmill.reports.sample.SampleTemplate.project_long_name">project_long_name</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.project_other_samples" href="#pacmill.reports.sample.SampleTemplate.project_other_samples">project_other_samples</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.project_short_name" href="#pacmill.reports.sample.SampleTemplate.project_short_name">project_short_name</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.raw_len_dist" href="#pacmill.reports.sample.SampleTemplate.raw_len_dist">raw_len_dist</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.sample_long_name" href="#pacmill.reports.sample.SampleTemplate.sample_long_name">sample_long_name</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.sample_short_name" href="#pacmill.reports.sample.SampleTemplate.sample_short_name">sample_short_name</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.score_discard" href="#pacmill.reports.sample.SampleTemplate.score_discard">score_discard</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.score_left" href="#pacmill.reports.sample.SampleTemplate.score_left">score_left</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.shortest_seq" href="#pacmill.reports.sample.SampleTemplate.shortest_seq">shortest_seq</a></code></li>
 </ul>
 </li>
 </ul>
