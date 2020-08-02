@@ -48,19 +48,16 @@ class GraphNMDS(Graph):
 
     https://github.com/jianshu93/NMDS
 
-    Otherwise we can use rpy2 and the R vegan package.
+    But we are still missing the custom 'Horn' distance metric.
+    So, otherwise we can just use rpy2 and the R vegan package.
     """
 
     short_name = 'nmds_horn'
 
     def plot(self, **kwargs):
-        # We want to pass a transposed version to R #
-        transposed = new_temp_file(suffix='.tsv')
-        self.parent.df.T.to_csv(str(transposed), sep='\t')
-        transposed.prepend('X')
         # Run via R #
         self.capture_r_output()
-        coord = self.run_via_r(transposed.path)
+        coord = self.run_via_r()
         # Data #
         x      = coord['NMDS1'].values
         y      = coord['NMDS2'].values
@@ -108,14 +105,18 @@ class GraphNMDS(Graph):
         rpy2.rinterface_lib.callbacks.consolewrite_print     = add_to_stdout
         rpy2.rinterface_lib.callbacks.consolewrite_warnerror = add_to_stderr
 
-    def run_via_r(self, otu_table_path):
+    def run_via_r(self):
         # Module on demand #
         from rpy2 import robjects
         # Load dataframe #
         robjects.r("library(vegan)")
+        # We want to pass a transposed version of the dataframe to R #
+        transposed = new_temp_file(suffix='.tsv')
+        self.parent.df.T.to_csv(str(transposed), sep='\t')
+        transposed.prepend('X')
         # The command to read the table #
         cmd = "table = read.table('%s', sep='\t', header=TRUE, row.names='X')"
-        robjects.r(cmd % otu_table_path)
+        robjects.r(cmd % transposed)
         # Run computation #
         robjects.r("nmds = metaMDS(table, distance='horn', trymax=200)")
         # Extract result #
