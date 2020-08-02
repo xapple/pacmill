@@ -107,7 +107,7 @@ class Sample:
                 raise ValueError(msg)
         # Check that the FASTQ file exists #
         if not self.path.exists:
-            msg = "The FASTQ file path of <%s> is not found. " \
+            msg = "The FASTQ file path of <%s> cannot be found. " \
                   "It should be located at: '%s'"
             msg = msg % (self.description, self.path)
             raise FileNotFoundError(msg)

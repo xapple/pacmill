@@ -27,7 +27,7 @@ To install the `pacmill` package, simply type the following commands on your ter
 Alternatively, if you want to install it for all users of the system:
 
     $ sudo pip3 install pacmill
-    
+
 These commands will also automatically install all the other python modules on which `pacmill` depends.
 
 ## Usage
@@ -49,7 +49,7 @@ Bellow are some examples to illustrate the various ways there are to use this pa
 To change the text that appears inside the header of the PDF reports generated, you can adjust these three environment variables to your liking. Credit is appreciated where credit is due, but the software has a very permissive license that lets you decide what is best.
 
     $ export PACMILL_HEADER="From the \textbf{pacmill} project"
-    $ export PACMILL_SUBHEADER="Written by consultants at \url{www.sinclair.bio}"" 
+    $ export PACMILL_SUBHEADER="Written by consultants at \url{www.sinclair.bio}""
     $ export PACMILL_LINK="Hosted at \url{www.github.com/xapple/pacmill}"
 
 ## Demo project
@@ -58,7 +58,13 @@ To run the demo project, do the following:
 
     # This example is not completed yet. TODO.
 
-## Extra documentation 
+## Flowchart
+
+<p align="center">
+<img src="docs/flowchart.png?raw=true">
+</p>
+
+## Extra documentation
 
 More documentation is available at:
 

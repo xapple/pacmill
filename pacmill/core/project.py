@@ -46,7 +46,7 @@ class Project:
          * A project `short_name` attribute that will be used to pick only the
            samples that are associated to that particular project.
          * One or more <xlsx> files that describe samples locations and their
-           metadata. See example excel file.
+           metadata. See example excel file for more information.
 
         Once the project is created you can access its attributes such as:
 
@@ -84,7 +84,7 @@ class Project:
         """
         # Function to read one excel file #
         read_excel = lambda path: pandas.read_excel(str(path), header=1)
-        # Read them all as data frames #
+        # Read all excel files as data frames #
         all_dfs = [read_excel(path) for path in self.all_xlsx]
         # If there are several excel files, merge them together #
         metadata = pandas.concat(all_dfs, sort=False)
@@ -136,16 +136,6 @@ class Project:
             raise ValueError(msg)
         # Return #
         return DirectoryPath(all_output_dirs.pop())
-
-    @property_cached
-    def fasta(self):
-        """
-        The reads from all samples combined into the same file accessed through
-        a FASTA object with convenience methods.
-        See https://github.com/xapple/fasta#usage
-        """
-        from fasta import FASTA
-        return FASTA(self.autopaths.all_reads)
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """
@@ -199,6 +189,16 @@ class Project:
         return self.fasta
 
     #---------------------------- Compositions -------------------------------#
+    @property_cached
+    def fasta(self):
+        """
+        The reads from all samples combined into the same file accessed through
+        a FASTA object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        """
+        from fasta import FASTA
+        return FASTA(self.autopaths.all_reads)
+
     @property_cached
     def otus(self):
         """
