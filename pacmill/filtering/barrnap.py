@@ -137,12 +137,12 @@ class Barrnap:
     @property_cached
     def ids_16s(self):
         """Return read IDs for reads that contained a 16S gene."""
-        return self.parse_hits('16S_rRNA')
+        return frozenset(self.parse_hits('16S_rRNA'))
 
     @property_cached
     def ids_23s(self):
-        """Return read IDs for reads that contained a 16S gene."""
-        return self.parse_hits('23S_rRNA')
+        """Return read IDs for reads that contained a 23S gene."""
+        return frozenset(self.parse_hits('23S_rRNA'))
 
     def filter(self, verbose=True):
         """
@@ -155,7 +155,7 @@ class Barrnap:
             msg = "Extracting sequences with both rRNA genes from '%s'"
             print(msg % self.dest)
         # Get those that had both genes #
-        ids_both = set(self.ids_16s) & set(self.ids_23s)
+        ids_both = self.ids_16s & self.ids_23s
         # Extract those IDs #
         FASTQ(self.source).extract_sequences(ids_both, self.filtered, verbose)
         # Return #
