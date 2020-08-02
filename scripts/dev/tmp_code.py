@@ -51,9 +51,11 @@ proj = Project('aj_skin', proj_xls)
 
 #print(proj.taxa_tables())
 
-for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
+#for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
 
-proj.report()
+proj.nmds_graph()
+
+#proj.report()
 
 #proj.bundle()
 #print(proj.bundle.results.rsync)

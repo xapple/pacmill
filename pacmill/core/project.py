@@ -22,6 +22,7 @@ from pacmill.centering.otu_table      import OtuTable
 from pacmill.core.sample              import Sample
 from pacmill.centering.vsearch        import ClusterVsearch
 from pacmill.filtering.barrnap        import Barrnap
+from pacmill.statistics.nmds          import GraphNMDS
 from pacmill.taxonomy.mothur_classify import MothurClassify
 from pacmill.taxonomy.taxa_tables     import TaxaTable
 
@@ -244,8 +245,17 @@ class Project:
         """
         return TaxaTable(self.otu_table,
                          self.taxonomy,
-                         self.samples,
                          self.autopaths.taxa_tables_dir)
+
+    @property_cached
+    def nmds_graph(self):
+        """
+        Stands for Non-metric multidimensional scaling.
+        Using the information in the OTU table along with a distance metric
+        such as the one developed by Horn 1966 (adapted from Morisita 1959),
+        we can place every sample on a two-dimensional ordination plot.
+        """
+        return GraphNMDS(self.otu_table, self.autopaths.graphs_dir)
 
     @property_cached
     def report(self):

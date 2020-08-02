@@ -30,11 +30,10 @@ class TaxaTable(object):
         msg = '<%s object on "%s">'
         return msg % (self.__class__.__name__, self.otu_table)
 
-    def __init__(self, otu_table, taxonomy, samples, base_dir):
+    def __init__(self, otu_table, taxonomy, base_dir):
         # Attributes #
         self.otu_table = otu_table
         self.taxonomy  = taxonomy
-        self.samples   = samples
         self.base_dir  = base_dir
         # Short cuts #
         self.assignments = self.taxonomy.results.assignments

@@ -201,4 +201,10 @@ class ProjectTemplate(ReportTemplate):
 
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
-        return False
+        if len(self.samples) < 2: return False
+        return self.èr
+
+    def otu_nmds(self):
+        caption = "NMDS using the OTU table for %i samples" % len(self.samples)
+        path    = self.project.nmds_graph()
+        return str(ScaledFigure(path, caption))
