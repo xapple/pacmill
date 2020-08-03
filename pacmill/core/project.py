@@ -18,13 +18,6 @@ from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
-from pacmill.centering.otu_table      import OtuTable
-from pacmill.core.sample              import Sample
-from pacmill.centering.vsearch        import ClusterVsearch
-from pacmill.filtering.barrnap        import Barrnap
-from pacmill.statistics.nmds          import GraphNMDS
-from pacmill.taxonomy.mothur_classify import MothurClassify
-from pacmill.taxonomy.taxa_tables     import TaxaTable
 
 ###############################################################################
 class Project:
@@ -105,6 +98,8 @@ class Project:
         metadata = self.metadata.query('used == "yes"').copy()
         # Iterate over all rows of the input #
         rows = metadata.iterrows()
+        # Import object #
+        from pacmill.core.sample import Sample
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
         # Add a reference to the current project #
@@ -209,6 +204,7 @@ class Project:
         Takes care of running a single-pass, greedy centroid-based clustering
         algorithm on all sequences to determine consensus sequences of OTUs.
         """
+        from pacmill.centering.vsearch import ClusterVsearch
         return ClusterVsearch(self.fasta,
                               self.autopaths.otus_fasta,
                               self.autopaths.otus_tsv)
@@ -220,6 +216,7 @@ class Project:
         and tracks how many sequences where found from each sample in each OTU.
         Also responsible for drawing graphs of OTU distribution.
         """
+        from pacmill.centering.otu_table import OtuTable
         return OtuTable(self.otus.table)
 
     @property_cached
@@ -228,6 +225,7 @@ class Project:
         Takes care of extracting the 16S rRNA portion from each OTU sequence
         in preparation for a similarity search against a taxonomic database.
         """
+        from pacmill.filtering.barrnap import Barrnap
         return Barrnap(self.otus.results,
                        self.autopaths.barrnap_gff,
                        self.autopaths.barrnap_16s)
@@ -238,6 +236,7 @@ class Project:
         Will compare all OTU sequences against a database of curated 16S genes
         to associate a taxonomic assignment where possible.
         """
+        from pacmill.taxonomy.mothur_classify import MothurClassify
         return MothurClassify(self.barrnap.results,
                               self.autopaths.taxonomy_dir)
 
@@ -247,6 +246,7 @@ class Project:
         By using the OTU table along with the taxonomic assignment results,
         we can generate taxa tables at different ranks.
         """
+        from pacmill.taxonomy.taxa_tables import TaxaTable
         return TaxaTable(self.otu_table,
                          self.taxonomy,
                          self.autopaths.taxa_tables_dir)
@@ -259,6 +259,7 @@ class Project:
         such as the one developed by Horn 1966 (adapted from Morisita 1959),
         we can place every sample on a two-dimensional ordination plot.
         """
+        from pacmill.statistics.nmds import GraphNMDS
         return GraphNMDS(self.otu_table, self.autopaths.graphs_dir)
 
     @property_cached

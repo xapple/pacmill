@@ -55,9 +55,12 @@ proj = Project(proj_name, proj_xls)
 
 #for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
 
-proj.nmds_graph()
+#proj.nmds_graph()
 
 #proj.report()
 
 #proj.bundle()
 #print(proj.bundle.results.rsync)
+
+from pacmill.demo.sra import DumpSRA
+DumpSRA.install()
