@@ -22,7 +22,7 @@ from pacmill.core.project import Project
 
 # Constants #
 env_name = os.environ.get("PACMILL_PROJ_NAME")
-env_xls = os.environ.get("PACMILL_PROJ_XLS")
+env_xls  = os.environ.get("PACMILL_PROJ_XLS")
 
 ###############################################################################
 if __name__ == "__main__":
@@ -40,10 +40,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Get defaults #
-    if args.proj_name is None: proj_name = env_name
-    if args.proj_name is None: raise Exception("No base project has been set")
-    if args.proj_xls  is None: proj_xls = env_xls
-    if args.proj_xls  is None: raise Exception("No base project has been set")
+    proj_name = env_name or args.proj_name
+    if proj_name is None: raise Exception("No base project has been set")
+    proj_xls = args.proj_xls or env_xls
+    if proj_xls is None: raise Exception("No base project has been set")
 
     # Create project #
     proj = Project(args.proj_name, args.proj_xls)
