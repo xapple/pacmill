@@ -61,6 +61,3 @@ proj = Project(proj_name, proj_xls)
 
 #proj.bundle()
 #print(proj.bundle.results.rsync)
-
-from pacmill.demo.sra import DumpSRA
-DumpSRA.install()

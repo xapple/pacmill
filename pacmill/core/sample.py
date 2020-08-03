@@ -37,7 +37,8 @@ class Sample:
 
     In addition, the Sample object has the following:
 
-        * self.proj: a reference to a Project instance.
+        * self.project: a reference to a Project instance that owns this
+                        sample.
 
     Other properties are described in their respective docstrings.
     """
@@ -87,7 +88,7 @@ class Sample:
         # If there are spaces in any DNA sequence, remove them #
         for key in self.dna_keys:
             seq = getattr(self, key)
-            setattr(self, key, seq.replace(' ', ''))
+            if seq: setattr(self, key, seq.replace(' ', ''))
 
     def validate_attrs(self):
         """
@@ -114,7 +115,7 @@ class Sample:
         # Check the DNA sequences are properly formatted #
         for key in self.dna_keys:
             seq = getattr(self, key)
-            if '\n' in seq:
+            if seq and '\n' in seq:
                 msg = "The `%s` entry of <%s> contains illegal " \
                       "characters, please check: '%s'"
                 msg = msg % (key, self.description, seq)
