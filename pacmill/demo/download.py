@@ -24,10 +24,11 @@ Typically you would run this file from a command line like this:
 if __name__ == "__main__":
     # Import #
     from pacmill.demo.demo_samples import samples
+    # For debugging purposes #
+    if False: samples = samples[3:4]
     # Message #
     print("Downloading the 5 demo samples which are:\n")
-    # Show description #
-    for sample in samples: print('  * ' +  sample.description)
+    print('\n  * '.join(sample.description for sample in samples), '\n')
     # Download #
     for sample in samples: print(sample.download())
     # Extract #
