@@ -157,7 +157,7 @@ class Barrnap:
         # Get those that had both genes #
         ids_both = self.ids_16s & self.ids_23s
         # Extract those IDs #
-        FASTQ(self.source).extract_sequences(ids_both, self.filtered, verbose)
+        FASTQ(self.source).extract_sequences(ids_both, self.filtered)
         # Return #
         return self.filtered
 

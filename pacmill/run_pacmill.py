@@ -55,6 +55,10 @@ if __name__ == "__main__":
     for sample in proj:
         print(sample.fastq.fastqc())
 
+    # Regenerate the graphs for samples #
+    for sample in proj:
+        print(sample.fastq.graphs.length_hist(rerun=True))
+
     # Filter reads in every sample based on several criteria #
     for sample in proj:
         print(sample.filter(verbose=True))
@@ -83,10 +87,6 @@ if __name__ == "__main__":
 
     # Make all taxa tables #
     print(proj.taxa_tables())
-
-    # Regenerate the graphs for samples #
-    for sample in proj:
-        print(sample.fastq.graphs.length_hist(rerun=True))
 
     # Regenerate the graphs for the project #
     print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
