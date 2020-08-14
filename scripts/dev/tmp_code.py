@@ -22,8 +22,8 @@ import os
 from pacmill.core.project import Project
 
 # Constants #
-proj_name = os.environ.get("PACMILL_PROJ_NAME", "No base project has been set")
-proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No base project has been set")
+proj_name = os.environ.get("PACMILL_PROJ_NAME", "No project has been set.")
+proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 
 ###############################################################################
 # Create project #
@@ -59,5 +59,5 @@ proj = Project(proj_name, proj_xls)
 
 #proj.report()
 
-#proj.bundle()
-#print(proj.bundle.results.rsync)
+proj.bundle()
+print(proj.bundle.results.rsync)

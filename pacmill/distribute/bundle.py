@@ -24,6 +24,9 @@ class Bundle:
     A bundle object will regroup various result files and PDF reports from
     one project into a single zip file, useful for delivery
     and distribution.
+
+    Once the bundle is ready, you can simply download it to your local
+    computer with a simple rsync command.
     """
 
     def __init__(self, parent, base_dir, archive=None):
@@ -104,7 +107,7 @@ class BundleResults:
         # Get the destination name #
         name = self.parent.project.short_name + '.zip'
         # Make the command #
-        cmd = 'rsync -avz %s:%s ~/Desktop/pacmill/%s'
+        cmd = 'rsync -avz %s:%s ~/Downloads/pacmill/%s'
         cmd = cmd % (host, gzip, name)
         # Return #
         return cmd

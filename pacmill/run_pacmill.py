@@ -29,7 +29,8 @@ if __name__ == "__main__":
     # Some strings #
     proj_name_help = "Short name of the project to run."
     proj_xls_help  = "The path to the excel metadata file."
-    description    = "Script to run a project through the whole pipeline."
+    description    = "Script to run a given project through the whole" \
+                     " pacmill pipeline."
 
     # Parse the shell arguments #
     parser = argparse.ArgumentParser(description=description)
@@ -39,11 +40,15 @@ if __name__ == "__main__":
                         type=str, nargs='?', default=None)
     args = parser.parse_args()
 
-    # Get defaults #
+    # Get defaults for project name #
     proj_name = env_name or args.proj_name
-    if proj_name is None: raise Exception("No base project has been set")
+    if proj_name is None:
+        raise Exception("No short project name has been given.")
+
+    # Get defaults for project excel file #
     proj_xls = args.proj_xls or env_xls
-    if proj_xls is None: raise Exception("No base project has been set")
+    if proj_xls is None:
+        raise Exception("No excel file path has been given.")
 
     # Create project #
     proj = Project(args.proj_name, args.proj_xls)
@@ -71,7 +76,7 @@ if __name__ == "__main__":
     for sample in proj:
         print(sample.chimeras())
 
-    # Concatenate reads from all samples to one file #
+    # Concatenate reads from all samples into one file #
     print(proj.combine_reads())
 
     # Pick OTUS #
@@ -93,7 +98,8 @@ if __name__ == "__main__":
     print(proj.nmds_graph(rerun=True))
 
     # Regenerate the graphs for taxa bar-stacks #
-    for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
+    for g in proj.taxa_tables.results.graphs.by_rank:
+        print(g(rerun=True))
 
     # Clear the cache #
     for sample in proj:
@@ -105,3 +111,14 @@ if __name__ == "__main__":
 
     # Create the PDF report for the project #
     print(proj.report())
+
+    # Create a bundle for distribution #
+    proj.bundle()
+
+    # Success message #
+    print("The pipeline was successfully run on project '%s'." % proj_name)
+
+    # Bundle message #
+    print("To quickly download the sample and project reports to your local"
+          " computer, you can use the following command:"
+          " \n\n%s\n" % proj.bundle.results.rsync)
