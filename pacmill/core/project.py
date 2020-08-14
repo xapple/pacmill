@@ -225,10 +225,10 @@ class Project:
         Takes care of extracting the 16S rRNA portion from each OTU sequence
         in preparation for a similarity search against a taxonomic database.
         """
-        from pacmill.filtering.barrnap import Barrnap
-        return Barrnap(self.otus.results,
-                       self.autopaths.barrnap_gff,
-                       self.autopaths.barrnap_16s)
+        from pacmill.filtering.barrnap import BarrnapExtract
+        return BarrnapExtract(self.otus.results,
+                              self.autopaths.barrnap_gff,
+                              self.autopaths.barrnap_16s)
 
     @property_cached
     def taxonomy(self):

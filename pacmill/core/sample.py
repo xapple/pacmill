@@ -227,9 +227,9 @@ class Sample:
         source   = self.filter.results.clean
         dest     = self.autopaths.barrnap_gff
         filtered = self.autopaths.barrnap_fastq
-        # Create barrnap object #
-        from pacmill.filtering.barrnap import Barrnap
-        barrnap = Barrnap(source, dest, filtered)
+        # Create barrnap object for filtering #
+        from pacmill.filtering.barrnap import BarrnapFilter
+        barrnap = BarrnapFilter(source, dest, filtered)
         # Return #
         return barrnap
 

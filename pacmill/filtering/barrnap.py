@@ -32,9 +32,12 @@ class Barrnap:
 
     The output of the program is a GFF3 and looks something like:
 
-        P.marinus  barrnap:0.9  rRNA  353314  354793  0       +  .  Name=16S_rRNA
-        P.marinus  barrnap:0.9  rRNA  355464  358334  0       +  .  Name=23S_rRNA
-        P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
+        P.marinus  barrnap:0.9  rRNA  3314  4793  0       +  .  Name=16S_rRNA
+        P.marinus  barrnap:0.9  rRNA  5464  8334  0       +  .  Name=23S_rRNA
+        P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
+
+    You can either use barrnap in filter mode, or in extract mode.
+    See the two child classes below.
     """
 
     # Proportional length threshold to reject prediction #
@@ -104,7 +107,7 @@ class Barrnap:
               "export PATH=%s/bin:$PATH\n" % bin_dir)
 
     #------------------------------ Running ----------------------------------#
-    def __call__(self, cpus=None, verbose=True):
+    def run(self, cpus=None, verbose=True):
         # Message #
         if verbose: print("Running barrnap on '%s'" % self.source)
         # Check it is installed #
@@ -124,11 +127,45 @@ class Barrnap:
         # Return #
         return self.dest
 
+    #------------------------------- Results ---------------------------------#
+    def __bool__(self):
+        """
+        Return True if the Barrnap software was run already and the results are
+        stored on the filesystem. Return False if it was not yet run.
+        """
+        return self.filtered.exists
+
+    @property_cached
+    def results(self):
+        # Check it was run #
+        if not self:
+            msg = "You can't access results from Barrnap " \
+                  "before running the tool."
+            raise Exception(msg)
+        # Return the results #
+        return self.filtered
+
+###############################################################################
+class BarrnapFilter(Barrnap):
+    """
+    With this subclass, we will filter reads after running barrnap.
+
+    Using the original reads file and the GFF output of barrnap,
+    we will create a new FASTQ file containing only the original reads
+    that had a hit for both rRNA genes on the same read.
+    """
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        self.filter()
+
     #--------------------------- Presence of gene ----------------------------#
-    def parse_hits(self, attr_text):
+    def parse_hit_ids(self, attr_text):
         """
         Using the GFF output of barrnap and the `tag` parser, we retrieve
-        all IDs that contained a given text in their attributes
+        all IDs that contained a given text in their attributes.
         """
         reader = tag.GFF3Reader(infilename=self.dest)
         reader = tag.select.features(reader, type='rRNA')
@@ -137,19 +174,14 @@ class Barrnap:
     @property_cached
     def ids_16s(self):
         """Return read IDs for reads that contained a 16S gene."""
-        return frozenset(self.parse_hits('16S_rRNA'))
+        return frozenset(self.parse_hit_ids('16S_rRNA'))
 
     @property_cached
     def ids_23s(self):
         """Return read IDs for reads that contained a 23S gene."""
-        return frozenset(self.parse_hits('23S_rRNA'))
+        return frozenset(self.parse_hit_ids('23S_rRNA'))
 
     def filter(self, verbose=True):
-        """
-        Using the original reads file and the GFF output of barrnap,
-        we will create a new FASTQ file containing only the original reads
-        that had a hit for both rRNA genes on the same read.
-        """
         # Message #
         if verbose:
             msg = "Extracting sequences with both rRNA genes from '%s'"
@@ -161,13 +193,24 @@ class Barrnap:
         # Return #
         return self.filtered
 
+###############################################################################
+class BarrnapExtract(Barrnap):
+    """
+    With this subclass, we will extract reads regions after running barrnap.
+
+    Using the original reads file and the GFF output of
+    barrnap, we will create a new FASTA file containing only the portion of
+    the original reads that contains the 16S rRNA gene.
+    """
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        self.extract()
+
     #--------------------------- Location of gene ----------------------------#
     def extract(self, verbose=True):
-        """
-        Alternatively, using the original reads file and the GFF output of
-        barrnap, we will create a new FASTA file containing only the portion of
-        the original reads that contains the 16S rRNA gene.
-        """
         # Message #
         if verbose:
             msg = "Extracting the 16S rRNA portion of sequences from '%s'"
@@ -188,22 +231,4 @@ class Barrnap:
         # Write new FASTA file #
         self.filtered.write(only_16s_portion(self.source))
         # Return #
-        return self.filtered
-
-    #------------------------------- Results ---------------------------------#
-    def __bool__(self):
-        """
-        Return True if the Barrnap software was run already and the results are
-        stored on the filesystem. Return False if it was not yet run.
-        """
-        return self.filtered.exists
-
-    @property_cached
-    def results(self):
-        # Check it was run #
-        if not self:
-            msg = "You can't access results from Barrnap " \
-                  "before running the tool."
-            raise Exception(msg)
-        # Return the results #
         return self.filtered

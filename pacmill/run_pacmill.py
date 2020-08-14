@@ -66,7 +66,6 @@ if __name__ == "__main__":
     # Detect presence of rRNA genes #
     for sample in proj:
         print(sample.barrnap())
-        print(sample.barrnap.filter())
 
     # Remove chimeric reads #
     for sample in proj:
@@ -80,7 +79,6 @@ if __name__ == "__main__":
 
     # Extract 16S location within OTUs #
     print(proj.barrnap())
-    print(proj.barrnap.extract())
 
     # Assign taxonomy #
     print(proj.taxonomy())
