@@ -224,18 +224,38 @@ class SeqFilter:
     def primer_positions(self):
         """Useful for diagnostics. Returns the primer positions counts."""
         # Count positions #
-        all_fwd_pos, all_rev_pos = Counter(), Counter()
+        all_fwd_pos,    all_rev_pos    = Counter(), Counter()
+        all_fwd_rc_pos, all_rev_rc_pos = Counter(), Counter()
         # Make a generator #
-        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
-                                                    self.primer_mismatches)
+        reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                self.primer_mismatches)
+        # Select verbosity #
+        verbose = True
+        import tqdm
+        wrapper = tqdm.tqdm if verbose else lambda x: x
         # Iterate over the generator #
-        for r in all_reads():
-            if r.fwd_start_pos is not None:
-                all_fwd_pos.update((r.fwd_start_pos,))
-            if r.rev_start_pos is not None:
-                all_rev_pos.update((r.rev_start_pos,))
+        for r in wrapper(reads):
+            # Did we find both primers? #
+            fwd_found = r.fwd_srt is not None or r.fwd_rc_srt is not None
+            rev_found = r.rev_srt is not None or r.rev_rc_srt is not None
+            # Skip reads that don't pass this criteria #
+            if not fwd_found or not rev_found: continue
+            # Use this for debugging purposes #
+            if False: print(r.pretty_visualization)
+            # These situations should not occur, could be long chimeras #
+            if r.fwd_srt is not None    and r.rev_srt is not None:    continue
+            if r.fwd_rc_srt is not None and r.rev_rc_srt is not None: continue
+            # Add counts #
+            if r.fwd_srt is not None:
+                all_fwd_pos.update((r.fwd_srt,))
+            if r.rev_srt is not None:
+                all_rev_pos.update((r.rev_srt,))
+            if r.fwd_rc_srt is not None:
+                all_fwd_rc_pos.update((r.fwd_rc_srt,))
+            if r.rev_rc_srt is not None:
+                all_rev_rc_pos.update((r.rev_rc_srt,))
         # Return results #
-        return all_fwd_pos, all_rev_pos
+        return all_fwd_pos, all_rev_pos, all_fwd_rc_pos, all_rev_rc_pos
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
