@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.4" />
-<title>pacmill.filtering API documentation</title>
-<meta name="description" content="" />
+<title>pacmill.demo.download API documentation</title>
+<meta name="description" content="Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css" crossorigin>
@@ -19,38 +21,66 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>pacmill.filtering</code></h1>
+<h1 class="title">Module <code>pacmill.demo.download</code></h1>
 </header>
 <section id="section-intro">
+<p>Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio</p>
+<p>This script will download the raw input data for the demonstration project
+of the <code><a title="pacmill" href="../index.html">pacmill</a></code> pipeline.</p>
+<p>Typically you would run this file from a command line like this:</p>
+<pre><code>ipython3 -i -- ~/deploy/pacmill/demo/download.py
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+&#34;&#34;&#34;
+Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio
+
+This script will download the raw input data for the demonstration project
+of the `pacmill` pipeline.
+
+Typically you would run this file from a command line like this:
+
+    ipython3 -i -- ~/deploy/pacmill/demo/download.py
+&#34;&#34;&#34;
+
+# Built-in modules #
+
+# Internal modules #
+
+# Constants #
+
+###############################################################################
+if __name__ == &#34;__main__&#34;:
+    # Import #
+    from pacmill.demo.demo_samples import samples
+    # For debugging purposes #
+    if False: samples = samples[3:4]
+    # Message #
+    print(&#34;Downloading the 5 demo samples which are:\n&#34;)
+    print(&#39;\n  * &#39;.join(sample.description for sample in samples), &#39;\n&#39;)
+    # Download #
+    for sample in samples: print(sample.download())
+    # Extract #
+    for sample in samples: print(sample.extract())
+    # Compress #
+    print(&#34;Compressing FASTQ files.&#34;)
+    for sample in samples: print(sample.fastq.compress(remove_orig=True))
+    # Remove the sra archive #
+    for sample in samples: sample.path_sra.remove()
+    # Success #
+    print(&#34;Done.&#34;)</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="pacmill.filtering.barrnap" href="barrnap.html">pacmill.filtering.barrnap</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-<dt><code class="name"><a title="pacmill.filtering.chimeras" href="chimeras.html">pacmill.filtering.chimeras</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-<dt><code class="name"><a title="pacmill.filtering.mothur_uchime" href="mothur_uchime.html">pacmill.filtering.mothur_uchime</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-<dt><code class="name"><a title="pacmill.filtering.seq_filter" href="seq_filter.html">pacmill.filtering.seq_filter</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -67,15 +97,7 @@ Contact at www.sinclair.bio</p></div>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="pacmill" href="../index.html">pacmill</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="pacmill.filtering.barrnap" href="barrnap.html">pacmill.filtering.barrnap</a></code></li>
-<li><code><a title="pacmill.filtering.chimeras" href="chimeras.html">pacmill.filtering.chimeras</a></code></li>
-<li><code><a title="pacmill.filtering.mothur_uchime" href="mothur_uchime.html">pacmill.filtering.mothur_uchime</a></code></li>
-<li><code><a title="pacmill.filtering.seq_filter" href="seq_filter.html">pacmill.filtering.seq_filter</a></code></li>
+<li><code><a title="pacmill.demo" href="index.html">pacmill.demo</a></code></li>
 </ul>
 </li>
 </ul>

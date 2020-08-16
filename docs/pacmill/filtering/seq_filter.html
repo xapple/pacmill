@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.3" />
+<meta name="generator" content="pdoc 0.8.4" />
 <title>pacmill.filtering.seq_filter API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
@@ -257,18 +257,38 @@ class SeqFilter:
     def primer_positions(self):
         &#34;&#34;&#34;Useful for diagnostics. Returns the primer positions counts.&#34;&#34;&#34;
         # Count positions #
-        all_fwd_pos, all_rev_pos = Counter(), Counter()
+        all_fwd_pos,    all_rev_pos    = Counter(), Counter()
+        all_fwd_rc_pos, all_rev_rc_pos = Counter(), Counter()
         # Make a generator #
-        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
-                                                    self.primer_mismatches)
+        reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                self.primer_mismatches)
+        # Select verbosity #
+        verbose = True
+        import tqdm
+        wrapper = tqdm.tqdm if verbose else lambda x: x
         # Iterate over the generator #
-        for r in all_reads():
-            if r.fwd_start_pos is not None:
-                all_fwd_pos.update((r.fwd_start_pos,))
-            if r.rev_start_pos is not None:
-                all_rev_pos.update((r.rev_start_pos,))
+        for r in wrapper(reads):
+            # Did we find both primers? #
+            fwd_found = r.fwd_srt is not None or r.fwd_rc_srt is not None
+            rev_found = r.rev_srt is not None or r.rev_rc_srt is not None
+            # Skip reads that don&#39;t pass this criteria #
+            if not fwd_found or not rev_found: continue
+            # Use this for debugging purposes #
+            if False: print(r.pretty_visualization)
+            # These situations should not occur, could be long chimeras #
+            if r.fwd_srt is not None    and r.rev_srt is not None:    continue
+            if r.fwd_rc_srt is not None and r.rev_rc_srt is not None: continue
+            # Add counts #
+            if r.fwd_srt is not None:
+                all_fwd_pos.update((r.fwd_srt,))
+            if r.rev_srt is not None:
+                all_rev_pos.update((r.rev_srt,))
+            if r.fwd_rc_srt is not None:
+                all_fwd_rc_pos.update((r.fwd_rc_srt,))
+            if r.rev_rc_srt is not None:
+                all_rev_rc_pos.update((r.rev_rc_srt,))
         # Return results #
-        return all_fwd_pos, all_rev_pos
+        return all_fwd_pos, all_rev_pos, all_fwd_rc_pos, all_rev_rc_pos
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
@@ -289,7 +309,7 @@ class SeqFilter:
         return SeqFilterResults(self)
 
 ###############################################################################
-class SeqFilterResults(object):
+class SeqFilterResults:
 
     def __init__(self, parent):
         # Reference to the SeqFilter instance #
@@ -562,18 +582,38 @@ within any window.</li>
     def primer_positions(self):
         &#34;&#34;&#34;Useful for diagnostics. Returns the primer positions counts.&#34;&#34;&#34;
         # Count positions #
-        all_fwd_pos, all_rev_pos = Counter(), Counter()
+        all_fwd_pos,    all_rev_pos    = Counter(), Counter()
+        all_fwd_rc_pos, all_rev_rc_pos = Counter(), Counter()
         # Make a generator #
-        all_reads = self.sample.fastq.parse_primers(self.sample.primers,
-                                                    self.primer_mismatches)
+        reads = self.sample.fastq.parse_primers(self.sample.primers,
+                                                self.primer_mismatches)
+        # Select verbosity #
+        verbose = True
+        import tqdm
+        wrapper = tqdm.tqdm if verbose else lambda x: x
         # Iterate over the generator #
-        for r in all_reads():
-            if r.fwd_start_pos is not None:
-                all_fwd_pos.update((r.fwd_start_pos,))
-            if r.rev_start_pos is not None:
-                all_rev_pos.update((r.rev_start_pos,))
+        for r in wrapper(reads):
+            # Did we find both primers? #
+            fwd_found = r.fwd_srt is not None or r.fwd_rc_srt is not None
+            rev_found = r.rev_srt is not None or r.rev_rc_srt is not None
+            # Skip reads that don&#39;t pass this criteria #
+            if not fwd_found or not rev_found: continue
+            # Use this for debugging purposes #
+            if False: print(r.pretty_visualization)
+            # These situations should not occur, could be long chimeras #
+            if r.fwd_srt is not None    and r.rev_srt is not None:    continue
+            if r.fwd_rc_srt is not None and r.rev_rc_srt is not None: continue
+            # Add counts #
+            if r.fwd_srt is not None:
+                all_fwd_pos.update((r.fwd_srt,))
+            if r.rev_srt is not None:
+                all_rev_pos.update((r.rev_srt,))
+            if r.fwd_rc_srt is not None:
+                all_fwd_rc_pos.update((r.fwd_rc_srt,))
+            if r.rev_rc_srt is not None:
+                all_rev_rc_pos.update((r.rev_rc_srt,))
         # Return results #
-        return all_fwd_pos, all_rev_pos
+        return all_fwd_pos, all_rev_pos, all_fwd_rc_pos, all_rev_rc_pos
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
@@ -921,7 +961,7 @@ searched for, in case the read is on the opposite strand.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class SeqFilterResults(object):
+<pre><code class="python">class SeqFilterResults:
 
     def __init__(self, parent):
         # Reference to the SeqFilter instance #
@@ -985,7 +1025,7 @@ searched for, in case the read is on the opposite strand.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.3</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
 </footer>
 </body>
 </html>

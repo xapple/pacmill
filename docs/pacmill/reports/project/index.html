@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.3" />
+<meta name="generator" content="pdoc 0.8.4" />
 <title>pacmill.reports.project API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
@@ -116,8 +116,7 @@ class ProjectTemplate(ReportTemplate):
     def input_length_dist(self):
         caption = &#34;Distribution of sequence lengths at input&#34;
         path    = self.project.fasta.graphs.length_hist()
-        label   = &#34;input_length_dist&#34;
-        return str(ScaledFigure(path, caption, label))
+        return str(ScaledFigure(path, caption, &#34;input_length_dist&#34;))
 
     #----------------------------- Summary table -----------------------------#
     def sample_table(self):
@@ -157,17 +156,17 @@ class ProjectTemplate(ReportTemplate):
     def otu_sums_graph(self):
         caption = &#34;Distribution of OTU presence per OTU&#34;
         path    = self.project.otu_table.graphs.otu_sums_graph()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, &#39;otu_sums_graph&#39;))
 
     def sample_sums_graph(self):
         caption = &#34;Distribution of OTU presence per sample&#34;
         path    = self.project.otu_table.graphs.sample_sums_graph()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, &#39;sample_sums_graph&#39;))
 
     def cumulative_presence(self):
         caption = &#34;Cumulative number of reads by OTU presence&#34;
         path    = self.project.otu_table.graphs.cumulative_presence()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, &#39;cumulative_presence&#39;))
 
     #------------------------------ Barrnap ----------------------------------#
     def barrnap(self):
@@ -235,12 +234,12 @@ class ProjectTemplate(ReportTemplate):
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
         if len(self.samples) &lt; 2: return False
-        return self.èr
+        return bool(self.project.nmds_graph)
 
     def otu_nmds(self):
         caption = &#34;NMDS using the OTU table for %i samples&#34; % len(self.samples)
-        path    = self.project.nmds_graph()
-        return str(ScaledFigure(path, caption))</code></pre>
+        graph   = self.project.nmds_graph()
+        return str(ScaledFigure(graph, caption, &#39;otu_nmds&#39;))</code></pre>
 </details>
 </section>
 <section>
@@ -402,8 +401,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     def input_length_dist(self):
         caption = &#34;Distribution of sequence lengths at input&#34;
         path    = self.project.fasta.graphs.length_hist()
-        label   = &#34;input_length_dist&#34;
-        return str(ScaledFigure(path, caption, label))
+        return str(ScaledFigure(path, caption, &#34;input_length_dist&#34;))
 
     #----------------------------- Summary table -----------------------------#
     def sample_table(self):
@@ -443,17 +441,17 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     def otu_sums_graph(self):
         caption = &#34;Distribution of OTU presence per OTU&#34;
         path    = self.project.otu_table.graphs.otu_sums_graph()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, &#39;otu_sums_graph&#39;))
 
     def sample_sums_graph(self):
         caption = &#34;Distribution of OTU presence per sample&#34;
         path    = self.project.otu_table.graphs.sample_sums_graph()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, &#39;sample_sums_graph&#39;))
 
     def cumulative_presence(self):
         caption = &#34;Cumulative number of reads by OTU presence&#34;
         path    = self.project.otu_table.graphs.cumulative_presence()
-        return str(ScaledFigure(path, caption))
+        return str(ScaledFigure(path, caption, &#39;cumulative_presence&#39;))
 
     #------------------------------ Barrnap ----------------------------------#
     def barrnap(self):
@@ -521,12 +519,12 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
         if len(self.samples) &lt; 2: return False
-        return self.èr
+        return bool(self.project.nmds_graph)
 
     def otu_nmds(self):
         caption = &#34;NMDS using the OTU table for %i samples&#34; % len(self.samples)
-        path    = self.project.nmds_graph()
-        return str(ScaledFigure(path, caption))</code></pre>
+        graph   = self.project.nmds_graph()
+        return str(ScaledFigure(graph, caption, &#39;otu_nmds&#39;))</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -620,7 +618,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </summary>
 <pre><code class="python">def comparison(self):
     if len(self.samples) &lt; 2: return False
-    return self.èr</code></pre>
+    return bool(self.project.nmds_graph)</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.project.ProjectTemplate.count_samples"><code class="name flex">
@@ -661,7 +659,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <pre><code class="python">def cumulative_presence(self):
     caption = &#34;Cumulative number of reads by OTU presence&#34;
     path    = self.project.otu_table.graphs.cumulative_presence()
-    return str(ScaledFigure(path, caption))</code></pre>
+    return str(ScaledFigure(path, caption, &#39;cumulative_presence&#39;))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.project.ProjectTemplate.input_length_dist"><code class="name flex">
@@ -676,8 +674,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <pre><code class="python">def input_length_dist(self):
     caption = &#34;Distribution of sequence lengths at input&#34;
     path    = self.project.fasta.graphs.length_hist()
-    label   = &#34;input_length_dist&#34;
-    return str(ScaledFigure(path, caption, label))</code></pre>
+    return str(ScaledFigure(path, caption, &#34;input_length_dist&#34;))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.project.ProjectTemplate.level_one_barstack"><code class="name flex">
@@ -765,8 +762,8 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </summary>
 <pre><code class="python">def otu_nmds(self):
     caption = &#34;NMDS using the OTU table for %i samples&#34; % len(self.samples)
-    path    = self.project.nmds_graph()
-    return str(ScaledFigure(path, caption))</code></pre>
+    graph   = self.project.nmds_graph()
+    return str(ScaledFigure(graph, caption, &#39;otu_nmds&#39;))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.project.ProjectTemplate.otu_sums_graph"><code class="name flex">
@@ -781,7 +778,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <pre><code class="python">def otu_sums_graph(self):
     caption = &#34;Distribution of OTU presence per OTU&#34;
     path    = self.project.otu_table.graphs.otu_sums_graph()
-    return str(ScaledFigure(path, caption))</code></pre>
+    return str(ScaledFigure(path, caption, &#39;otu_sums_graph&#39;))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.project.ProjectTemplate.otus"><code class="name flex">
@@ -861,7 +858,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <pre><code class="python">def sample_sums_graph(self):
     caption = &#34;Distribution of OTU presence per sample&#34;
     path    = self.project.otu_table.graphs.sample_sums_graph()
-    return str(ScaledFigure(path, caption))</code></pre>
+    return str(ScaledFigure(path, caption, &#39;sample_sums_graph&#39;))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.project.ProjectTemplate.sample_table"><code class="name flex">
@@ -992,7 +989,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.3</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
 </footer>
 </body>
 </html>

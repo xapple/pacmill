@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.3" />
+<meta name="generator" content="pdoc 0.8.4" />
 <title>pacmill.filtering.barrnap API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
@@ -65,9 +65,12 @@ class Barrnap:
 
     The output of the program is a GFF3 and looks something like:
 
-        P.marinus  barrnap:0.9  rRNA  353314  354793  0       +  .  Name=16S_rRNA
-        P.marinus  barrnap:0.9  rRNA  355464  358334  0       +  .  Name=23S_rRNA
-        P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
+        P.marinus  barrnap:0.9  rRNA  3314  4793  0       +  .  Name=16S_rRNA
+        P.marinus  barrnap:0.9  rRNA  5464  8334  0       +  .  Name=23S_rRNA
+        P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
+
+    You can either use barrnap in filter mode, or in extract mode.
+    See the two child classes below.
     &#34;&#34;&#34;
 
     # Proportional length threshold to reject prediction #
@@ -137,7 +140,7 @@ class Barrnap:
               &#34;export PATH=%s/bin:$PATH\n&#34; % bin_dir)
 
     #------------------------------ Running ----------------------------------#
-    def __call__(self, cpus=None, verbose=True):
+    def run(self, cpus=None, verbose=True):
         # Message #
         if verbose: print(&#34;Running barrnap on &#39;%s&#39;&#34; % self.source)
         # Check it is installed #
@@ -157,37 +160,90 @@ class Barrnap:
         # Return #
         return self.dest
 
+    #------------------------------- Results ---------------------------------#
+    def __bool__(self):
+        &#34;&#34;&#34;
+        Return True if the Barrnap software was run already and the results are
+        stored on the filesystem. Return False if it was not yet run.
+        &#34;&#34;&#34;
+        return self.filtered.exists
+
+    @property_cached
+    def results(self):
+        # Check it was run #
+        if not self:
+            msg = &#34;You can&#39;t access results from Barrnap &#34; \
+                  &#34;before running the tool.&#34;
+            raise Exception(msg)
+        # Return the results #
+        return self.filtered
+
+###############################################################################
+class BarrnapFilter(Barrnap):
+    &#34;&#34;&#34;
+    With this subclass, we will filter reads after running barrnap.
+
+    Using the original reads file and the GFF output of barrnap,
+    we will create a new FASTQ file containing only the original reads
+    that had a hit for both rRNA genes on the same read.
+    &#34;&#34;&#34;
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        self.filter()
+
+    #--------------------------- Presence of gene ----------------------------#
+    def parse_hit_ids(self, attr_text):
+        &#34;&#34;&#34;
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        all IDs that contained a given text in their attributes.
+        &#34;&#34;&#34;
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+        return [rec.seqid for rec in reader if attr_text in rec.attributes]
+
+    @property_cached
+    def ids_16s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 16S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;16S_rRNA&#39;))
+
+    @property_cached
+    def ids_23s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 23S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;23S_rRNA&#39;))
+
     def filter(self, verbose=True):
-        &#34;&#34;&#34;
-        Using the original reads file and the GFF output of barrnap,
-        we will create a new FASTQ file containing only the original reads
-        that had a hit for both rRNA genes on the same read.
-        &#34;&#34;&#34;
         # Message #
         if verbose:
             msg = &#34;Extracting sequences with both rRNA genes from &#39;%s&#39;&#34;
             print(msg % self.dest)
-        # Get IDs that passed (only for 16S) #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        ids_16s = [rec.seqid for rec in reader if &#39;16S_rRNA&#39; in rec.attributes]
-        # Get IDs that passed (only for 23S) #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        ids_23s = [rec.seqid for rec in reader if &#39;23S_rRNA&#39; in rec.attributes]
         # Get those that had both genes #
-        ids_both = set(ids_16s) &amp; set(ids_23s)
+        ids_both = self.ids_16s &amp; self.ids_23s
         # Extract those IDs #
-        FASTQ(self.source).extract_sequences(ids_both, self.filtered, verbose)
+        FASTQ(self.source).extract_sequences(ids_both, self.filtered)
         # Return #
         return self.filtered
 
+###############################################################################
+class BarrnapExtract(Barrnap):
+    &#34;&#34;&#34;
+    With this subclass, we will extract reads regions after running barrnap.
+
+    Using the original reads file and the GFF output of
+    barrnap, we will create a new FASTA file containing only the portion of
+    the original reads that contains the 16S rRNA gene.
+    &#34;&#34;&#34;
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        self.extract()
+
+    #--------------------------- Location of gene ----------------------------#
     def extract(self, verbose=True):
-        &#34;&#34;&#34;
-        Alternatively, using the original reads file and the GFF output of
-        barrnap, we will create a new FASTA file containing only the portion of
-        the original reads that contains the 16S rRNA gene.
-        &#34;&#34;&#34;
         # Message #
         if verbose:
             msg = &#34;Extracting the 16S rRNA portion of sequences from &#39;%s&#39;&#34;
@@ -208,24 +264,6 @@ class Barrnap:
         # Write new FASTA file #
         self.filtered.write(only_16s_portion(self.source))
         # Return #
-        return self.filtered
-
-    #------------------------------- Results ---------------------------------#
-    def __bool__(self):
-        &#34;&#34;&#34;
-        Return True if the Barrnap software was run already and the results are
-        stored on the filesystem. Return False if it was not yet run.
-        &#34;&#34;&#34;
-        return self.filtered.exists
-
-    @property_cached
-    def results(self):
-        # Check it was run #
-        if not self:
-            msg = &#34;You can&#39;t access results from Barrnap &#34; \
-                  &#34;before running the tool.&#34;
-            raise Exception(msg)
-        # Return the results #
         return self.filtered</code></pre>
 </details>
 </section>
@@ -248,10 +286,12 @@ See <a href="https://github.com/tseemann/barrnap">https://github.com/tseemann/ba
 Barrnap predicts the presence and location of ribosomal RNA genes in
 genomes. Expects version 0.9.</p>
 <p>The output of the program is a GFF3 and looks something like:</p>
-<pre><code>P.marinus  barrnap:0.9  rRNA  353314  354793  0       +  .  Name=16S_rRNA
-P.marinus  barrnap:0.9  rRNA  355464  358334  0       +  .  Name=23S_rRNA
-P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
-</code></pre></div>
+<pre><code>P.marinus  barrnap:0.9  rRNA  3314  4793  0       +  .  Name=16S_rRNA
+P.marinus  barrnap:0.9  rRNA  5464  8334  0       +  .  Name=23S_rRNA
+P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
+</code></pre>
+<p>You can either use barrnap in filter mode, or in extract mode.
+See the two child classes below.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -265,9 +305,12 @@ P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
 
     The output of the program is a GFF3 and looks something like:
 
-        P.marinus  barrnap:0.9  rRNA  353314  354793  0       +  .  Name=16S_rRNA
-        P.marinus  barrnap:0.9  rRNA  355464  358334  0       +  .  Name=23S_rRNA
-        P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
+        P.marinus  barrnap:0.9  rRNA  3314  4793  0       +  .  Name=16S_rRNA
+        P.marinus  barrnap:0.9  rRNA  5464  8334  0       +  .  Name=23S_rRNA
+        P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
+
+    You can either use barrnap in filter mode, or in extract mode.
+    See the two child classes below.
     &#34;&#34;&#34;
 
     # Proportional length threshold to reject prediction #
@@ -337,7 +380,7 @@ P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
               &#34;export PATH=%s/bin:$PATH\n&#34; % bin_dir)
 
     #------------------------------ Running ----------------------------------#
-    def __call__(self, cpus=None, verbose=True):
+    def run(self, cpus=None, verbose=True):
         # Message #
         if verbose: print(&#34;Running barrnap on &#39;%s&#39;&#34; % self.source)
         # Check it is installed #
@@ -357,59 +400,6 @@ P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
         # Return #
         return self.dest
 
-    def filter(self, verbose=True):
-        &#34;&#34;&#34;
-        Using the original reads file and the GFF output of barrnap,
-        we will create a new FASTQ file containing only the original reads
-        that had a hit for both rRNA genes on the same read.
-        &#34;&#34;&#34;
-        # Message #
-        if verbose:
-            msg = &#34;Extracting sequences with both rRNA genes from &#39;%s&#39;&#34;
-            print(msg % self.dest)
-        # Get IDs that passed (only for 16S) #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        ids_16s = [rec.seqid for rec in reader if &#39;16S_rRNA&#39; in rec.attributes]
-        # Get IDs that passed (only for 23S) #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        ids_23s = [rec.seqid for rec in reader if &#39;23S_rRNA&#39; in rec.attributes]
-        # Get those that had both genes #
-        ids_both = set(ids_16s) &amp; set(ids_23s)
-        # Extract those IDs #
-        FASTQ(self.source).extract_sequences(ids_both, self.filtered, verbose)
-        # Return #
-        return self.filtered
-
-    def extract(self, verbose=True):
-        &#34;&#34;&#34;
-        Alternatively, using the original reads file and the GFF output of
-        barrnap, we will create a new FASTA file containing only the portion of
-        the original reads that contains the 16S rRNA gene.
-        &#34;&#34;&#34;
-        # Message #
-        if verbose:
-            msg = &#34;Extracting the 16S rRNA portion of sequences from &#39;%s&#39;&#34;
-            print(msg % self.dest)
-        # Get reads that had a rRNA hit #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        # Make a lookup table for those with 16S hits #
-        lookup = {rec.seqid: (rec.start, rec.end)
-                  for rec in reader if &#39;16S_rRNA&#39; in rec.attributes}
-        # Function to yield only the good part of each read #
-        def only_16s_portion(reads):
-            for r in reads:
-                start_and_end = lookup.get(r.id)
-                if start_and_end is None: continue
-                start, end = start_and_end
-                yield r[start:end]
-        # Write new FASTA file #
-        self.filtered.write(only_16s_portion(self.source))
-        # Return #
-        return self.filtered
-
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
         &#34;&#34;&#34;
@@ -428,6 +418,11 @@ P.marinus  barrnap:0.9  rRNA  358433  358536  9.6e-07 +  .  Name=5S_rRNA
         # Return the results #
         return self.filtered</code></pre>
 </details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="pacmill.filtering.barrnap.BarrnapExtract" href="#pacmill.filtering.barrnap.BarrnapExtract">BarrnapExtract</a></li>
+<li><a title="pacmill.filtering.barrnap.BarrnapFilter" href="#pacmill.filtering.barrnap.BarrnapFilter">BarrnapFilter</a></li>
+</ul>
 <h3>Class variables</h3>
 <dl>
 <dt id="pacmill.filtering.barrnap.Barrnap.apt_packages"><code class="name">var <span class="ident">apt_packages</span></code></dt>
@@ -548,23 +543,106 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="pacmill.filtering.barrnap.Barrnap.extract"><code class="name flex">
-<span>def <span class="ident">extract</span></span>(<span>self, verbose=True)</span>
+<dt id="pacmill.filtering.barrnap.Barrnap.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self, cpus=None, verbose=True)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Alternatively, using the original reads file and the GFF output of
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self, cpus=None, verbose=True):
+    # Message #
+    if verbose: print(&#34;Running barrnap on &#39;%s&#39;&#34; % self.source)
+    # Check it is installed #
+    self.check_installed()
+    # Check version #
+    assert b&#34;0.9&#34; in sh.barrnap(&#39;--version&#39;).stderr
+    # If the input is a FASTQ we need to make a FASTA first #
+    if self.source.endswith(&#39;fastq&#39;):
+        source = new_temp_path(suffix=&#39;.fasta&#39;)
+        FASTQ(self.source).to_fasta(source)
+    else: source = self.source
+    # Number of cores #
+    if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
+    # Run it #
+    sh.barrnap(source, &#39;--threads&#39;, cpus, &#39;--reject&#39;,
+               self.reject_threshold, _out=str(self.dest))
+    # Return #
+    return self.dest</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="pacmill.filtering.barrnap.BarrnapExtract"><code class="flex name class">
+<span>class <span class="ident">BarrnapExtract</span></span>
+<span>(</span><span>source, dest=None, filtered=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>With this subclass, we will extract reads regions after running barrnap.</p>
+<p>Using the original reads file and the GFF output of
 barrnap, we will create a new FASTA file containing only the portion of
 the original reads that contains the 16S rRNA gene.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def extract(self, verbose=True):
+<pre><code class="python">class BarrnapExtract(Barrnap):
     &#34;&#34;&#34;
-    Alternatively, using the original reads file and the GFF output of
+    With this subclass, we will extract reads regions after running barrnap.
+
+    Using the original reads file and the GFF output of
     barrnap, we will create a new FASTA file containing only the portion of
     the original reads that contains the 16S rRNA gene.
     &#34;&#34;&#34;
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        self.extract()
+
+    #--------------------------- Location of gene ----------------------------#
+    def extract(self, verbose=True):
+        # Message #
+        if verbose:
+            msg = &#34;Extracting the 16S rRNA portion of sequences from &#39;%s&#39;&#34;
+            print(msg % self.dest)
+        # Get reads that had a rRNA hit #
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+        # Make a lookup table for those with 16S hits #
+        lookup = {rec.seqid: (rec.start, rec.end)
+                  for rec in reader if &#39;16S_rRNA&#39; in rec.attributes}
+        # Function to yield only the good part of each read #
+        def only_16s_portion(reads):
+            for r in reads:
+                start_and_end = lookup.get(r.id)
+                if start_and_end is None: continue
+                start, end = start_and_end
+                yield r[start:end]
+        # Write new FASTA file #
+        self.filtered.write(only_16s_portion(self.source))
+        # Return #
+        return self.filtered</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="pacmill.filtering.barrnap.BarrnapExtract.extract"><code class="name flex">
+<span>def <span class="ident">extract</span></span>(<span>self, verbose=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract(self, verbose=True):
     # Message #
     if verbose:
         msg = &#34;Extracting the 16S rRNA portion of sequences from &#39;%s&#39;&#34;
@@ -588,44 +666,200 @@ the original reads that contains the 16S rRNA gene.</p></div>
     return self.filtered</code></pre>
 </details>
 </dd>
-<dt id="pacmill.filtering.barrnap.Barrnap.filter"><code class="name flex">
-<span>def <span class="ident">filter</span></span>(<span>self, verbose=True)</span>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.check_installed" href="#pacmill.filtering.barrnap.Barrnap.check_installed">check_installed</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.install" href="#pacmill.filtering.barrnap.Barrnap.install">install</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.results" href="#pacmill.filtering.barrnap.Barrnap.results">results</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="pacmill.filtering.barrnap.BarrnapFilter"><code class="flex name class">
+<span>class <span class="ident">BarrnapFilter</span></span>
+<span>(</span><span>source, dest=None, filtered=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Using the original reads file and the GFF output of barrnap,
+<div class="desc"><p>With this subclass, we will filter reads after running barrnap.</p>
+<p>Using the original reads file and the GFF output of barrnap,
 we will create a new FASTQ file containing only the original reads
 that had a hit for both rRNA genes on the same read.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def filter(self, verbose=True):
+<pre><code class="python">class BarrnapFilter(Barrnap):
     &#34;&#34;&#34;
+    With this subclass, we will filter reads after running barrnap.
+
     Using the original reads file and the GFF output of barrnap,
     we will create a new FASTQ file containing only the original reads
     that had a hit for both rRNA genes on the same read.
     &#34;&#34;&#34;
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        self.filter()
+
+    #--------------------------- Presence of gene ----------------------------#
+    def parse_hit_ids(self, attr_text):
+        &#34;&#34;&#34;
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        all IDs that contained a given text in their attributes.
+        &#34;&#34;&#34;
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+        return [rec.seqid for rec in reader if attr_text in rec.attributes]
+
+    @property_cached
+    def ids_16s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 16S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;16S_rRNA&#39;))
+
+    @property_cached
+    def ids_23s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 23S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;23S_rRNA&#39;))
+
+    def filter(self, verbose=True):
+        # Message #
+        if verbose:
+            msg = &#34;Extracting sequences with both rRNA genes from &#39;%s&#39;&#34;
+            print(msg % self.dest)
+        # Get those that had both genes #
+        ids_both = self.ids_16s &amp; self.ids_23s
+        # Extract those IDs #
+        FASTQ(self.source).extract_sequences(ids_both, self.filtered)
+        # Return #
+        return self.filtered</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pacmill.filtering.barrnap.BarrnapFilter.ids_16s"><code class="name">var <span class="ident">ids_16s</span></code></dt>
+<dd>
+<div class="desc"><p>Return read IDs for reads that contained a 16S gene.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.barrnap.BarrnapFilter.ids_23s"><code class="name">var <span class="ident">ids_23s</span></code></dt>
+<dd>
+<div class="desc"><p>Return read IDs for reads that contained a 23S gene.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="pacmill.filtering.barrnap.BarrnapFilter.filter"><code class="name flex">
+<span>def <span class="ident">filter</span></span>(<span>self, verbose=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def filter(self, verbose=True):
     # Message #
     if verbose:
         msg = &#34;Extracting sequences with both rRNA genes from &#39;%s&#39;&#34;
         print(msg % self.dest)
-    # Get IDs that passed (only for 16S) #
-    reader = tag.GFF3Reader(infilename=self.dest)
-    reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-    ids_16s = [rec.seqid for rec in reader if &#39;16S_rRNA&#39; in rec.attributes]
-    # Get IDs that passed (only for 23S) #
-    reader = tag.GFF3Reader(infilename=self.dest)
-    reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-    ids_23s = [rec.seqid for rec in reader if &#39;23S_rRNA&#39; in rec.attributes]
     # Get those that had both genes #
-    ids_both = set(ids_16s) &amp; set(ids_23s)
+    ids_both = self.ids_16s &amp; self.ids_23s
     # Extract those IDs #
-    FASTQ(self.source).extract_sequences(ids_both, self.filtered, verbose)
+    FASTQ(self.source).extract_sequences(ids_both, self.filtered)
     # Return #
     return self.filtered</code></pre>
 </details>
 </dd>
+<dt id="pacmill.filtering.barrnap.BarrnapFilter.parse_hit_ids"><code class="name flex">
+<span>def <span class="ident">parse_hit_ids</span></span>(<span>self, attr_text)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Using the GFF output of barrnap and the <code>tag</code> parser, we retrieve
+all IDs that contained a given text in their attributes.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_hit_ids(self, attr_text):
+    &#34;&#34;&#34;
+    Using the GFF output of barrnap and the `tag` parser, we retrieve
+    all IDs that contained a given text in their attributes.
+    &#34;&#34;&#34;
+    reader = tag.GFF3Reader(infilename=self.dest)
+    reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+    return [rec.seqid for rec in reader if attr_text in rec.attributes]</code></pre>
+</details>
+</dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.check_installed" href="#pacmill.filtering.barrnap.Barrnap.check_installed">check_installed</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.install" href="#pacmill.filtering.barrnap.Barrnap.install">install</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.results" href="#pacmill.filtering.barrnap.Barrnap.results">results</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -648,12 +882,26 @@ that had a hit for both rRNA genes on the same read.</p></div>
 <ul class="two-column">
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.apt_packages" href="#pacmill.filtering.barrnap.Barrnap.apt_packages">apt_packages</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.check_installed" href="#pacmill.filtering.barrnap.Barrnap.check_installed">check_installed</a></code></li>
-<li><code><a title="pacmill.filtering.barrnap.Barrnap.extract" href="#pacmill.filtering.barrnap.Barrnap.extract">extract</a></code></li>
-<li><code><a title="pacmill.filtering.barrnap.Barrnap.filter" href="#pacmill.filtering.barrnap.Barrnap.filter">filter</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.install" href="#pacmill.filtering.barrnap.Barrnap.install">install</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.reject_threshold" href="#pacmill.filtering.barrnap.Barrnap.reject_threshold">reject_threshold</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.results" href="#pacmill.filtering.barrnap.Barrnap.results">results</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.run" href="#pacmill.filtering.barrnap.Barrnap.run">run</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.zip_url" href="#pacmill.filtering.barrnap.Barrnap.zip_url">zip_url</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pacmill.filtering.barrnap.BarrnapExtract" href="#pacmill.filtering.barrnap.BarrnapExtract">BarrnapExtract</a></code></h4>
+<ul class="">
+<li><code><a title="pacmill.filtering.barrnap.BarrnapExtract.extract" href="#pacmill.filtering.barrnap.BarrnapExtract.extract">extract</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pacmill.filtering.barrnap.BarrnapFilter" href="#pacmill.filtering.barrnap.BarrnapFilter">BarrnapFilter</a></code></h4>
+<ul class="">
+<li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.filter" href="#pacmill.filtering.barrnap.BarrnapFilter.filter">filter</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.ids_16s" href="#pacmill.filtering.barrnap.BarrnapFilter.ids_16s">ids_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.ids_23s" href="#pacmill.filtering.barrnap.BarrnapFilter.ids_23s">ids_23s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.parse_hit_ids" href="#pacmill.filtering.barrnap.BarrnapFilter.parse_hit_ids">parse_hit_ids</a></code></li>
 </ul>
 </li>
 </ul>
@@ -662,7 +910,7 @@ that had a hit for both rRNA genes on the same read.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.3</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
 </footer>
 </body>
 </html>

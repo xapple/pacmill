@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.3" />
+<meta name="generator" content="pdoc 0.8.4" />
 <title>pacmill.statistics.nmds API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
@@ -73,7 +73,7 @@ class GraphNMDS(Graph):
 
     https://scikit-learn.org/stable/auto_examples/manifold/plot_mds.html
 
-    And ecopy provides something that calls scikit learn:
+    And `ecopy` provides something that in turn calls scikit learn:
 
     https://ecopy.readthedocs.io/en/latest/ordination.html
 
@@ -81,18 +81,16 @@ class GraphNMDS(Graph):
 
     https://github.com/jianshu93/NMDS
 
-    Otherwise we can use rpy2 and the R vegan package.
+    But we are still missing the custom &#39;Horn&#39; distance metric.
+    So, otherwise we can just use rpy2 and the R vegan package.
     &#34;&#34;&#34;
 
     short_name = &#39;nmds_horn&#39;
 
     def plot(self, **kwargs):
-        # We want to pass a transposed version to R #
-        transposed = new_temp_file(suffix=&#39;.tsv&#39;)
-        self.parent.df.T.to_csv(str(transposed), sep=&#39;\t&#39;)
-        transposed.prepend(&#39;X&#39;)
         # Run via R #
-        coord = self.run_via_r(transposed.path)
+        self.capture_r_output()
+        coord = self.run_via_r()
         # Data #
         x      = coord[&#39;NMDS1&#39;].values
         y      = coord[&#39;NMDS2&#39;].values
@@ -120,14 +118,38 @@ class GraphNMDS(Graph):
         # Close #
         pyplot.close(fig)
 
-    def run_via_r(self, otu_table_path):
+    def capture_r_output(self):
+        &#34;&#34;&#34;
+        Will cause all the output that normally goes to the R console,
+        to end up instead in a python list.
+        &#34;&#34;&#34;
+        # Import module #
+        import rpy2.rinterface_lib.callbacks
+        # Record output #
+        self.stdout = []
+        self.stderr = []
+        # Dummy functions #
+        def add_to_stdout(line): self.stdout.append(line)
+        def add_to_stderr(line): self.stderr.append(line)
+        # Keep the old functions #
+        self.stdout_orig = rpy2.rinterface_lib.callbacks.consolewrite_print
+        self.stderr_orig = rpy2.rinterface_lib.callbacks.consolewrite_warnerror
+        # Set the call backs #
+        rpy2.rinterface_lib.callbacks.consolewrite_print     = add_to_stdout
+        rpy2.rinterface_lib.callbacks.consolewrite_warnerror = add_to_stderr
+
+    def run_via_r(self):
         # Module on demand #
         from rpy2 import robjects
         # Load dataframe #
         robjects.r(&#34;library(vegan)&#34;)
+        # We want to pass a transposed version of the dataframe to R #
+        transposed = new_temp_file(suffix=&#39;.tsv&#39;)
+        self.parent.df.T.to_csv(str(transposed), sep=&#39;\t&#39;)
+        transposed.prepend(&#39;X&#39;)
         # The command to read the table #
         cmd = &#34;table = read.table(&#39;%s&#39;, sep=&#39;\t&#39;, header=TRUE, row.names=&#39;X&#39;)&#34;
-        robjects.r(cmd % otu_table_path)
+        robjects.r(cmd % transposed)
         # Run computation #
         robjects.r(&#34;nmds = metaMDS(table, distance=&#39;horn&#39;, trymax=200)&#34;)
         # Extract result #
@@ -139,6 +161,14 @@ class GraphNMDS(Graph):
         coord = self.r_matrix_to_dataframe(coord)
         # Return #
         return coord
+
+    @property
+    def stress_value(self):
+        # Check no convergence #
+        full_output = &#39;\n&#39;.join(self.stdout)
+        if &#39;No convergence&#39; in full_output: return &#39;&lt;No convergence&gt;&#39;
+        # Default case #
+        return self.stdout[-1]
 
     def r_matrix_to_dataframe(self, matrix):
         cols = list(matrix.colnames)
@@ -175,11 +205,12 @@ we can place every sample on a two-dimensional ordination plot.</p>
 <a href="https://github.com/qiime2/qiime2/search?q=nmds&amp;unscoped_q=nmds">https://github.com/qiime2/qiime2/search?q=nmds&amp;unscoped_q=nmds</a></p>
 <p>So now scikit learn has an implementation:</p>
 <p><a href="https://scikit-learn.org/stable/auto_examples/manifold/plot_mds.html">https://scikit-learn.org/stable/auto_examples/manifold/plot_mds.html</a></p>
-<p>And ecopy provides something that calls scikit learn:</p>
+<p>And <code>ecopy</code> provides something that in turn calls scikit learn:</p>
 <p><a href="https://ecopy.readthedocs.io/en/latest/ordination.html">https://ecopy.readthedocs.io/en/latest/ordination.html</a></p>
 <p>Another possible implementation:</p>
 <p><a href="https://github.com/jianshu93/NMDS">https://github.com/jianshu93/NMDS</a></p>
-<p>Otherwise we can use rpy2 and the R vegan package.</p></div>
+<p>But we are still missing the custom 'Horn' distance metric.
+So, otherwise we can just use rpy2 and the R vegan package.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -206,7 +237,7 @@ we can place every sample on a two-dimensional ordination plot.</p>
 
     https://scikit-learn.org/stable/auto_examples/manifold/plot_mds.html
 
-    And ecopy provides something that calls scikit learn:
+    And `ecopy` provides something that in turn calls scikit learn:
 
     https://ecopy.readthedocs.io/en/latest/ordination.html
 
@@ -214,18 +245,16 @@ we can place every sample on a two-dimensional ordination plot.</p>
 
     https://github.com/jianshu93/NMDS
 
-    Otherwise we can use rpy2 and the R vegan package.
+    But we are still missing the custom &#39;Horn&#39; distance metric.
+    So, otherwise we can just use rpy2 and the R vegan package.
     &#34;&#34;&#34;
 
     short_name = &#39;nmds_horn&#39;
 
     def plot(self, **kwargs):
-        # We want to pass a transposed version to R #
-        transposed = new_temp_file(suffix=&#39;.tsv&#39;)
-        self.parent.df.T.to_csv(str(transposed), sep=&#39;\t&#39;)
-        transposed.prepend(&#39;X&#39;)
         # Run via R #
-        coord = self.run_via_r(transposed.path)
+        self.capture_r_output()
+        coord = self.run_via_r()
         # Data #
         x      = coord[&#39;NMDS1&#39;].values
         y      = coord[&#39;NMDS2&#39;].values
@@ -253,14 +282,38 @@ we can place every sample on a two-dimensional ordination plot.</p>
         # Close #
         pyplot.close(fig)
 
-    def run_via_r(self, otu_table_path):
+    def capture_r_output(self):
+        &#34;&#34;&#34;
+        Will cause all the output that normally goes to the R console,
+        to end up instead in a python list.
+        &#34;&#34;&#34;
+        # Import module #
+        import rpy2.rinterface_lib.callbacks
+        # Record output #
+        self.stdout = []
+        self.stderr = []
+        # Dummy functions #
+        def add_to_stdout(line): self.stdout.append(line)
+        def add_to_stderr(line): self.stderr.append(line)
+        # Keep the old functions #
+        self.stdout_orig = rpy2.rinterface_lib.callbacks.consolewrite_print
+        self.stderr_orig = rpy2.rinterface_lib.callbacks.consolewrite_warnerror
+        # Set the call backs #
+        rpy2.rinterface_lib.callbacks.consolewrite_print     = add_to_stdout
+        rpy2.rinterface_lib.callbacks.consolewrite_warnerror = add_to_stderr
+
+    def run_via_r(self):
         # Module on demand #
         from rpy2 import robjects
         # Load dataframe #
         robjects.r(&#34;library(vegan)&#34;)
+        # We want to pass a transposed version of the dataframe to R #
+        transposed = new_temp_file(suffix=&#39;.tsv&#39;)
+        self.parent.df.T.to_csv(str(transposed), sep=&#39;\t&#39;)
+        transposed.prepend(&#39;X&#39;)
         # The command to read the table #
         cmd = &#34;table = read.table(&#39;%s&#39;, sep=&#39;\t&#39;, header=TRUE, row.names=&#39;X&#39;)&#34;
-        robjects.r(cmd % otu_table_path)
+        robjects.r(cmd % transposed)
         # Run computation #
         robjects.r(&#34;nmds = metaMDS(table, distance=&#39;horn&#39;, trymax=200)&#34;)
         # Extract result #
@@ -272,6 +325,14 @@ we can place every sample on a two-dimensional ordination plot.</p>
         coord = self.r_matrix_to_dataframe(coord)
         # Return #
         return coord
+
+    @property
+    def stress_value(self):
+        # Check no convergence #
+        full_output = &#39;\n&#39;.join(self.stdout)
+        if &#39;No convergence&#39; in full_output: return &#39;&lt;No convergence&gt;&#39;
+        # Default case #
+        return self.stdout[-1]
 
     def r_matrix_to_dataframe(self, matrix):
         cols = list(matrix.colnames)
@@ -291,8 +352,58 @@ we can place every sample on a two-dimensional ordination plot.</p>
 <div class="desc"></div>
 </dd>
 </dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pacmill.statistics.nmds.GraphNMDS.stress_value"><code class="name">var <span class="ident">stress_value</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def stress_value(self):
+    # Check no convergence #
+    full_output = &#39;\n&#39;.join(self.stdout)
+    if &#39;No convergence&#39; in full_output: return &#39;&lt;No convergence&gt;&#39;
+    # Default case #
+    return self.stdout[-1]</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
+<dt id="pacmill.statistics.nmds.GraphNMDS.capture_r_output"><code class="name flex">
+<span>def <span class="ident">capture_r_output</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Will cause all the output that normally goes to the R console,
+to end up instead in a python list.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def capture_r_output(self):
+    &#34;&#34;&#34;
+    Will cause all the output that normally goes to the R console,
+    to end up instead in a python list.
+    &#34;&#34;&#34;
+    # Import module #
+    import rpy2.rinterface_lib.callbacks
+    # Record output #
+    self.stdout = []
+    self.stderr = []
+    # Dummy functions #
+    def add_to_stdout(line): self.stdout.append(line)
+    def add_to_stderr(line): self.stderr.append(line)
+    # Keep the old functions #
+    self.stdout_orig = rpy2.rinterface_lib.callbacks.consolewrite_print
+    self.stderr_orig = rpy2.rinterface_lib.callbacks.consolewrite_warnerror
+    # Set the call backs #
+    rpy2.rinterface_lib.callbacks.consolewrite_print     = add_to_stdout
+    rpy2.rinterface_lib.callbacks.consolewrite_warnerror = add_to_stderr</code></pre>
+</details>
+</dd>
 <dt id="pacmill.statistics.nmds.GraphNMDS.plot"><code class="name flex">
 <span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
 </code></dt>
@@ -303,12 +414,9 @@ we can place every sample on a two-dimensional ordination plot.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot(self, **kwargs):
-    # We want to pass a transposed version to R #
-    transposed = new_temp_file(suffix=&#39;.tsv&#39;)
-    self.parent.df.T.to_csv(str(transposed), sep=&#39;\t&#39;)
-    transposed.prepend(&#39;X&#39;)
     # Run via R #
-    coord = self.run_via_r(transposed.path)
+    self.capture_r_output()
+    coord = self.run_via_r()
     # Data #
     x      = coord[&#39;NMDS1&#39;].values
     y      = coord[&#39;NMDS2&#39;].values
@@ -355,7 +463,7 @@ we can place every sample on a two-dimensional ordination plot.</p>
 </details>
 </dd>
 <dt id="pacmill.statistics.nmds.GraphNMDS.run_via_r"><code class="name flex">
-<span>def <span class="ident">run_via_r</span></span>(<span>self, otu_table_path)</span>
+<span>def <span class="ident">run_via_r</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -363,14 +471,18 @@ we can place every sample on a two-dimensional ordination plot.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def run_via_r(self, otu_table_path):
+<pre><code class="python">def run_via_r(self):
     # Module on demand #
     from rpy2 import robjects
     # Load dataframe #
     robjects.r(&#34;library(vegan)&#34;)
+    # We want to pass a transposed version of the dataframe to R #
+    transposed = new_temp_file(suffix=&#39;.tsv&#39;)
+    self.parent.df.T.to_csv(str(transposed), sep=&#39;\t&#39;)
+    transposed.prepend(&#39;X&#39;)
     # The command to read the table #
     cmd = &#34;table = read.table(&#39;%s&#39;, sep=&#39;\t&#39;, header=TRUE, row.names=&#39;X&#39;)&#34;
-    robjects.r(cmd % otu_table_path)
+    robjects.r(cmd % transposed)
     # Run computation #
     robjects.r(&#34;nmds = metaMDS(table, distance=&#39;horn&#39;, trymax=200)&#34;)
     # Extract result #
@@ -405,10 +517,12 @@ we can place every sample on a two-dimensional ordination plot.</p>
 <li>
 <h4><code><a title="pacmill.statistics.nmds.GraphNMDS" href="#pacmill.statistics.nmds.GraphNMDS">GraphNMDS</a></code></h4>
 <ul class="">
+<li><code><a title="pacmill.statistics.nmds.GraphNMDS.capture_r_output" href="#pacmill.statistics.nmds.GraphNMDS.capture_r_output">capture_r_output</a></code></li>
 <li><code><a title="pacmill.statistics.nmds.GraphNMDS.plot" href="#pacmill.statistics.nmds.GraphNMDS.plot">plot</a></code></li>
 <li><code><a title="pacmill.statistics.nmds.GraphNMDS.r_matrix_to_dataframe" href="#pacmill.statistics.nmds.GraphNMDS.r_matrix_to_dataframe">r_matrix_to_dataframe</a></code></li>
 <li><code><a title="pacmill.statistics.nmds.GraphNMDS.run_via_r" href="#pacmill.statistics.nmds.GraphNMDS.run_via_r">run_via_r</a></code></li>
 <li><code><a title="pacmill.statistics.nmds.GraphNMDS.short_name" href="#pacmill.statistics.nmds.GraphNMDS.short_name">short_name</a></code></li>
+<li><code><a title="pacmill.statistics.nmds.GraphNMDS.stress_value" href="#pacmill.statistics.nmds.GraphNMDS.stress_value">stress_value</a></code></li>
 </ul>
 </li>
 </ul>
@@ -417,7 +531,7 @@ we can place every sample on a two-dimensional ordination plot.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.3</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
 </footer>
 </body>
 </html>

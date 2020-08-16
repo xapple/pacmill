@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.3" />
+<meta name="generator" content="pdoc 0.8.4" />
 <title>pacmill.core.project API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
@@ -51,13 +51,6 @@ from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
-from pacmill.centering.otu_table      import OtuTable
-from pacmill.core.sample              import Sample
-from pacmill.centering.vsearch        import ClusterVsearch
-from pacmill.filtering.barrnap        import Barrnap
-from pacmill.statistics.nmds          import GraphNMDS
-from pacmill.taxonomy.mothur_classify import MothurClassify
-from pacmill.taxonomy.taxa_tables     import TaxaTable
 
 ###############################################################################
 class Project:
@@ -79,7 +72,7 @@ class Project:
          * A project `short_name` attribute that will be used to pick only the
            samples that are associated to that particular project.
          * One or more &lt;xlsx&gt; files that describe samples locations and their
-           metadata. See example excel file.
+           metadata. See example excel file for more information.
 
         Once the project is created you can access its attributes such as:
 
@@ -100,7 +93,11 @@ class Project:
         # The name of the project #
         self.short_name = short_name.lower()
         # Check it contains only alphanumerics and underscore #
-        assert self.short_name.isidentifier()
+        if not self.short_name.isidentifier():
+            msg = &#34;The short name of a project can only contain &#34; \
+                  &#34;alphanumerical characters and underscores.&#34;    \
+                  &#34;Currently it is: \n\n   `%s`\n&#34;
+            raise ValueError(msg % short_name)
         # You need at least one excel file #
         assert len(all_xlsx) &gt; 0
         # Save all excel file paths as Paths objects #
@@ -117,7 +114,7 @@ class Project:
         &#34;&#34;&#34;
         # Function to read one excel file #
         read_excel = lambda path: pandas.read_excel(str(path), header=1)
-        # Read them all as data frames #
+        # Read all excel files as data frames #
         all_dfs = [read_excel(path) for path in self.all_xlsx]
         # If there are several excel files, merge them together #
         metadata = pandas.concat(all_dfs, sort=False)
@@ -134,9 +131,11 @@ class Project:
         metadata = self.metadata.query(&#39;used == &#34;yes&#34;&#39;).copy()
         # Iterate over all rows of the input #
         rows = metadata.iterrows()
+        # Import object #
+        from pacmill.core.sample import Sample
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
-        # Add a reference the current project #
+        # Add a reference to the current project #
         for sample in samples: sample.parent = self
         # Check we have at least one sample #
         assert len(samples) &gt; 0
@@ -169,16 +168,6 @@ class Project:
             raise ValueError(msg)
         # Return #
         return DirectoryPath(all_output_dirs.pop())
-
-    @property_cached
-    def fasta(self):
-        &#34;&#34;&#34;
-        The reads from all samples combined into the same file accessed through
-        a FASTA object with convenience methods.
-        See https://github.com/xapple/fasta#usage
-        &#34;&#34;&#34;
-        from fasta import FASTA
-        return FASTA(self.autopaths.all_reads)
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = &#34;&#34;&#34;
@@ -233,11 +222,22 @@ class Project:
 
     #---------------------------- Compositions -------------------------------#
     @property_cached
+    def fasta(self):
+        &#34;&#34;&#34;
+        The reads from all samples combined into the same file accessed through
+        a FASTA object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        &#34;&#34;&#34;
+        from fasta import FASTA
+        return FASTA(self.autopaths.all_reads)
+
+    @property_cached
     def otus(self):
         &#34;&#34;&#34;
         Takes care of running a single-pass, greedy centroid-based clustering
         algorithm on all sequences to determine consensus sequences of OTUs.
         &#34;&#34;&#34;
+        from pacmill.centering.vsearch import ClusterVsearch
         return ClusterVsearch(self.fasta,
                               self.autopaths.otus_fasta,
                               self.autopaths.otus_tsv)
@@ -249,6 +249,7 @@ class Project:
         and tracks how many sequences where found from each sample in each OTU.
         Also responsible for drawing graphs of OTU distribution.
         &#34;&#34;&#34;
+        from pacmill.centering.otu_table import OtuTable
         return OtuTable(self.otus.table)
 
     @property_cached
@@ -257,9 +258,10 @@ class Project:
         Takes care of extracting the 16S rRNA portion from each OTU sequence
         in preparation for a similarity search against a taxonomic database.
         &#34;&#34;&#34;
-        return Barrnap(self.otus.results,
-                       self.autopaths.barrnap_gff,
-                       self.autopaths.barrnap_16s)
+        from pacmill.filtering.barrnap import BarrnapExtract
+        return BarrnapExtract(self.otus.results,
+                              self.autopaths.barrnap_gff,
+                              self.autopaths.barrnap_16s)
 
     @property_cached
     def taxonomy(self):
@@ -267,6 +269,7 @@ class Project:
         Will compare all OTU sequences against a database of curated 16S genes
         to associate a taxonomic assignment where possible.
         &#34;&#34;&#34;
+        from pacmill.taxonomy.mothur_classify import MothurClassify
         return MothurClassify(self.barrnap.results,
                               self.autopaths.taxonomy_dir)
 
@@ -276,6 +279,7 @@ class Project:
         By using the OTU table along with the taxonomic assignment results,
         we can generate taxa tables at different ranks.
         &#34;&#34;&#34;
+        from pacmill.taxonomy.taxa_tables import TaxaTable
         return TaxaTable(self.otu_table,
                          self.taxonomy,
                          self.autopaths.taxa_tables_dir)
@@ -288,6 +292,7 @@ class Project:
         such as the one developed by Horn 1966 (adapted from Morisita 1959),
         we can place every sample on a two-dimensional ordination plot.
         &#34;&#34;&#34;
+        from pacmill.statistics.nmds import GraphNMDS
         return GraphNMDS(self.otu_table, self.autopaths.graphs_dir)
 
     @property_cached
@@ -329,7 +334,7 @@ class Project:
 <li>A project <code>short_name</code> attribute that will be used to pick only the
 samples that are associated to that particular project.</li>
 <li>One or more <xlsx> files that describe samples locations and their
-metadata. See example excel file.</li>
+metadata. See example excel file for more information.</li>
 </ul>
 <p>Once the project is created you can access its attributes such as:</p>
 <pre><code>&gt;&gt;&gt; proj = Project('demo_project', '~/test/metadata.xlsx')
@@ -367,7 +372,7 @@ metadata. See example excel file.</li>
          * A project `short_name` attribute that will be used to pick only the
            samples that are associated to that particular project.
          * One or more &lt;xlsx&gt; files that describe samples locations and their
-           metadata. See example excel file.
+           metadata. See example excel file for more information.
 
         Once the project is created you can access its attributes such as:
 
@@ -388,7 +393,11 @@ metadata. See example excel file.</li>
         # The name of the project #
         self.short_name = short_name.lower()
         # Check it contains only alphanumerics and underscore #
-        assert self.short_name.isidentifier()
+        if not self.short_name.isidentifier():
+            msg = &#34;The short name of a project can only contain &#34; \
+                  &#34;alphanumerical characters and underscores.&#34;    \
+                  &#34;Currently it is: \n\n   `%s`\n&#34;
+            raise ValueError(msg % short_name)
         # You need at least one excel file #
         assert len(all_xlsx) &gt; 0
         # Save all excel file paths as Paths objects #
@@ -405,7 +414,7 @@ metadata. See example excel file.</li>
         &#34;&#34;&#34;
         # Function to read one excel file #
         read_excel = lambda path: pandas.read_excel(str(path), header=1)
-        # Read them all as data frames #
+        # Read all excel files as data frames #
         all_dfs = [read_excel(path) for path in self.all_xlsx]
         # If there are several excel files, merge them together #
         metadata = pandas.concat(all_dfs, sort=False)
@@ -422,9 +431,11 @@ metadata. See example excel file.</li>
         metadata = self.metadata.query(&#39;used == &#34;yes&#34;&#39;).copy()
         # Iterate over all rows of the input #
         rows = metadata.iterrows()
+        # Import object #
+        from pacmill.core.sample import Sample
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
-        # Add a reference the current project #
+        # Add a reference to the current project #
         for sample in samples: sample.parent = self
         # Check we have at least one sample #
         assert len(samples) &gt; 0
@@ -457,16 +468,6 @@ metadata. See example excel file.</li>
             raise ValueError(msg)
         # Return #
         return DirectoryPath(all_output_dirs.pop())
-
-    @property_cached
-    def fasta(self):
-        &#34;&#34;&#34;
-        The reads from all samples combined into the same file accessed through
-        a FASTA object with convenience methods.
-        See https://github.com/xapple/fasta#usage
-        &#34;&#34;&#34;
-        from fasta import FASTA
-        return FASTA(self.autopaths.all_reads)
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = &#34;&#34;&#34;
@@ -521,11 +522,22 @@ metadata. See example excel file.</li>
 
     #---------------------------- Compositions -------------------------------#
     @property_cached
+    def fasta(self):
+        &#34;&#34;&#34;
+        The reads from all samples combined into the same file accessed through
+        a FASTA object with convenience methods.
+        See https://github.com/xapple/fasta#usage
+        &#34;&#34;&#34;
+        from fasta import FASTA
+        return FASTA(self.autopaths.all_reads)
+
+    @property_cached
     def otus(self):
         &#34;&#34;&#34;
         Takes care of running a single-pass, greedy centroid-based clustering
         algorithm on all sequences to determine consensus sequences of OTUs.
         &#34;&#34;&#34;
+        from pacmill.centering.vsearch import ClusterVsearch
         return ClusterVsearch(self.fasta,
                               self.autopaths.otus_fasta,
                               self.autopaths.otus_tsv)
@@ -537,6 +549,7 @@ metadata. See example excel file.</li>
         and tracks how many sequences where found from each sample in each OTU.
         Also responsible for drawing graphs of OTU distribution.
         &#34;&#34;&#34;
+        from pacmill.centering.otu_table import OtuTable
         return OtuTable(self.otus.table)
 
     @property_cached
@@ -545,9 +558,10 @@ metadata. See example excel file.</li>
         Takes care of extracting the 16S rRNA portion from each OTU sequence
         in preparation for a similarity search against a taxonomic database.
         &#34;&#34;&#34;
-        return Barrnap(self.otus.results,
-                       self.autopaths.barrnap_gff,
-                       self.autopaths.barrnap_16s)
+        from pacmill.filtering.barrnap import BarrnapExtract
+        return BarrnapExtract(self.otus.results,
+                              self.autopaths.barrnap_gff,
+                              self.autopaths.barrnap_16s)
 
     @property_cached
     def taxonomy(self):
@@ -555,6 +569,7 @@ metadata. See example excel file.</li>
         Will compare all OTU sequences against a database of curated 16S genes
         to associate a taxonomic assignment where possible.
         &#34;&#34;&#34;
+        from pacmill.taxonomy.mothur_classify import MothurClassify
         return MothurClassify(self.barrnap.results,
                               self.autopaths.taxonomy_dir)
 
@@ -564,6 +579,7 @@ metadata. See example excel file.</li>
         By using the OTU table along with the taxonomic assignment results,
         we can generate taxa tables at different ranks.
         &#34;&#34;&#34;
+        from pacmill.taxonomy.taxa_tables import TaxaTable
         return TaxaTable(self.otu_table,
                          self.taxonomy,
                          self.autopaths.taxa_tables_dir)
@@ -576,6 +592,7 @@ metadata. See example excel file.</li>
         such as the one developed by Horn 1966 (adapted from Morisita 1959),
         we can place every sample on a two-dimensional ordination plot.
         &#34;&#34;&#34;
+        from pacmill.statistics.nmds import GraphNMDS
         return GraphNMDS(self.otu_table, self.autopaths.graphs_dir)
 
     @property_cached
@@ -1126,7 +1143,7 @@ within this project into a singe FASTA file for further processing.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.3</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
 </footer>
 </body>
 </html>

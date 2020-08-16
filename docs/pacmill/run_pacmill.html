@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.4" />
-<title>pacmill.filtering API documentation</title>
-<meta name="description" content="" />
+<title>pacmill.run_pacmill API documentation</title>
+<meta name="description" content="Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css" crossorigin>
@@ -19,38 +21,147 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>pacmill.filtering</code></h1>
+<h1 class="title">Module <code>pacmill.run_pacmill</code></h1>
 </header>
 <section id="section-intro">
+<p>Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio</p>
+<p>Script to run the <code><a title="pacmill" href="index.html">pacmill</a></code> pipeline.</p>
+<p>Typically you would run this file from a command line like this:</p>
+<pre><code>ipython3 -i -- ~/deploy/pacmill/scripts/running/run_pacmill.py                    small_test small_test/metadata_small_test.xlsx
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+&#34;&#34;&#34;
+Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio
+
+Script to run the `pacmill` pipeline.
+
+Typically you would run this file from a command line like this:
+
+    ipython3 -i -- ~/deploy/pacmill/scripts/running/run_pacmill.py \
+                   small_test small_test/metadata_small_test.xlsx
+&#34;&#34;&#34;
+
+# Built-in modules #
+import os, argparse
+
+# Internal modules #
+from pacmill.core.project import Project
+
+# Constants #
+env_name = os.environ.get(&#34;PACMILL_PROJ_NAME&#34;)
+env_xls  = os.environ.get(&#34;PACMILL_PROJ_XLS&#34;)
+
+###############################################################################
+if __name__ == &#34;__main__&#34;:
+    # Some strings #
+    proj_name_help = &#34;Short name of the project to run.&#34;
+    proj_xls_help  = &#34;The path to the excel metadata file.&#34;
+    description    = &#34;Script to run a given project through the whole&#34; \
+                     &#34; pacmill pipeline.&#34;
+
+    # Parse the shell arguments #
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(&#34;proj_name&#34;, help=proj_name_help,
+                        type=str, nargs=&#39;?&#39;, default=None)
+    parser.add_argument(&#34;proj_xls&#34;,  help=proj_xls_help,
+                        type=str, nargs=&#39;?&#39;, default=None)
+    args = parser.parse_args()
+
+    # Get defaults for project name #
+    proj_name = env_name or args.proj_name
+    if proj_name is None:
+        raise Exception(&#34;No short project name has been given.&#34;)
+
+    # Get defaults for project excel file #
+    proj_xls = args.proj_xls or env_xls
+    if proj_xls is None:
+        raise Exception(&#34;No excel file path has been given.&#34;)
+
+    # Create project #
+    proj = Project(args.proj_name, args.proj_xls)
+
+    # Validate the format of the FASTQs #
+    for sample in proj: print(sample.fastq.validator())
+
+    # Run FastQC on the samples individually #
+    for sample in proj:
+        print(sample.fastq.fastqc())
+
+    # Regenerate the graphs for samples #
+    for sample in proj:
+        print(sample.fastq.graphs.length_hist(rerun=True))
+
+    # Filter reads in every sample based on several criteria #
+    for sample in proj:
+        print(sample.filter(verbose=True))
+
+    # Detect presence of rRNA genes #
+    for sample in proj:
+        print(sample.barrnap())
+
+    # Remove chimeric reads #
+    for sample in proj:
+        print(sample.chimeras())
+
+    # Concatenate reads from all samples into one file #
+    print(proj.combine_reads())
+
+    # Pick OTUS #
+    print(proj.otus())
+
+    # Extract 16S location within OTUs #
+    print(proj.barrnap())
+
+    # Assign taxonomy #
+    print(proj.taxonomy())
+
+    # Make all taxa tables #
+    print(proj.taxa_tables())
+
+    # Regenerate the graphs for the project #
+    print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
+    print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
+    print(proj.otu_table.graphs.cumulative_presence(rerun=True))
+    print(proj.nmds_graph(rerun=True))
+
+    # Regenerate the graphs for taxa bar-stacks #
+    for g in proj.taxa_tables.results.graphs.by_rank:
+        print(g(rerun=True))
+
+    # Clear the cache #
+    for sample in proj:
+        print(sample.report.template.cache_dir.remove())
+
+    # Create the PDF reports for each sample #
+    for sample in proj:
+        print(sample.report())
+
+    # Create the PDF report for the project #
+    print(proj.report())
+
+    # Create a bundle for distribution #
+    proj.bundle()
+
+    # Success message #
+    print(&#34;The pipeline was successfully run on project &#39;%s&#39;.&#34; % proj_name)
+
+    # Bundle message #
+    print(&#34;To quickly download the sample and project reports to your local&#34;
+          &#34; computer, you can use the following command:&#34;
+          &#34; \n\n%s\n&#34; % proj.bundle.results.rsync)</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="pacmill.filtering.barrnap" href="barrnap.html">pacmill.filtering.barrnap</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-<dt><code class="name"><a title="pacmill.filtering.chimeras" href="chimeras.html">pacmill.filtering.chimeras</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-<dt><code class="name"><a title="pacmill.filtering.mothur_uchime" href="mothur_uchime.html">pacmill.filtering.mothur_uchime</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-<dt><code class="name"><a title="pacmill.filtering.seq_filter" href="seq_filter.html">pacmill.filtering.seq_filter</a></code></dt>
-<dd>
-<div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -67,15 +178,7 @@ Contact at www.sinclair.bio</p></div>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="pacmill" href="../index.html">pacmill</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="pacmill.filtering.barrnap" href="barrnap.html">pacmill.filtering.barrnap</a></code></li>
-<li><code><a title="pacmill.filtering.chimeras" href="chimeras.html">pacmill.filtering.chimeras</a></code></li>
-<li><code><a title="pacmill.filtering.mothur_uchime" href="mothur_uchime.html">pacmill.filtering.mothur_uchime</a></code></li>
-<li><code><a title="pacmill.filtering.seq_filter" href="seq_filter.html">pacmill.filtering.seq_filter</a></code></li>
+<li><code><a title="pacmill" href="index.html">pacmill</a></code></li>
 </ul>
 </li>
 </ul>

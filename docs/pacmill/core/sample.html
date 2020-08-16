@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.3" />
+<meta name="generator" content="pdoc 0.8.4" />
 <title>pacmill.core.sample API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
@@ -70,7 +70,8 @@ class Sample:
 
     In addition, the Sample object has the following:
 
-        * self.proj: a reference to a Project instance.
+        * self.project: a reference to a Project instance that owns this
+                        sample.
 
     Other properties are described in their respective docstrings.
     &#34;&#34;&#34;
@@ -120,7 +121,7 @@ class Sample:
         # If there are spaces in any DNA sequence, remove them #
         for key in self.dna_keys:
             seq = getattr(self, key)
-            setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))
+            if seq: setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))
 
     def validate_attrs(self):
         &#34;&#34;&#34;
@@ -140,14 +141,14 @@ class Sample:
                 raise ValueError(msg)
         # Check that the FASTQ file exists #
         if not self.path.exists:
-            msg = &#34;The FASTQ file path of &lt;%s&gt; is not found. &#34; \
+            msg = &#34;The FASTQ file path of &lt;%s&gt; cannot be found. &#34; \
                   &#34;It should be located at: &#39;%s&#39;&#34;
             msg = msg % (self.description, self.path)
             raise FileNotFoundError(msg)
         # Check the DNA sequences are properly formatted #
         for key in self.dna_keys:
             seq = getattr(self, key)
-            if &#39;\n&#39; in seq:
+            if seq and &#39;\n&#39; in seq:
                 msg = &#34;The `%s` entry of &lt;%s&gt; contains illegal &#34; \
                       &#34;characters, please check: &#39;%s&#39;&#34;
                 msg = msg % (key, self.description, seq)
@@ -259,9 +260,9 @@ class Sample:
         source   = self.filter.results.clean
         dest     = self.autopaths.barrnap_gff
         filtered = self.autopaths.barrnap_fastq
-        # Create barrnap object #
-        from pacmill.filtering.barrnap import Barrnap
-        barrnap = Barrnap(source, dest, filtered)
+        # Create barrnap object for filtering #
+        from pacmill.filtering.barrnap import BarrnapFilter
+        barrnap = BarrnapFilter(source, dest, filtered)
         # Return #
         return barrnap
 
@@ -315,7 +316,8 @@ For instance (non exhaustive list):</p>
 * self.grouping: optional grouping information.
 </code></pre>
 <p>In addition, the Sample object has the following:</p>
-<pre><code>* self.proj: a reference to a Project instance.
+<pre><code>* self.project: a reference to a Project instance that owns this
+                sample.
 </code></pre>
 <p>Other properties are described in their respective docstrings.</p>
 <p>A Sample object takes a dictionary of metadata as input and a
@@ -346,7 +348,8 @@ was parsed by the Project object.</p></div>
 
     In addition, the Sample object has the following:
 
-        * self.proj: a reference to a Project instance.
+        * self.project: a reference to a Project instance that owns this
+                        sample.
 
     Other properties are described in their respective docstrings.
     &#34;&#34;&#34;
@@ -396,7 +399,7 @@ was parsed by the Project object.</p></div>
         # If there are spaces in any DNA sequence, remove them #
         for key in self.dna_keys:
             seq = getattr(self, key)
-            setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))
+            if seq: setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))
 
     def validate_attrs(self):
         &#34;&#34;&#34;
@@ -416,14 +419,14 @@ was parsed by the Project object.</p></div>
                 raise ValueError(msg)
         # Check that the FASTQ file exists #
         if not self.path.exists:
-            msg = &#34;The FASTQ file path of &lt;%s&gt; is not found. &#34; \
+            msg = &#34;The FASTQ file path of &lt;%s&gt; cannot be found. &#34; \
                   &#34;It should be located at: &#39;%s&#39;&#34;
             msg = msg % (self.description, self.path)
             raise FileNotFoundError(msg)
         # Check the DNA sequences are properly formatted #
         for key in self.dna_keys:
             seq = getattr(self, key)
-            if &#39;\n&#39; in seq:
+            if seq and &#39;\n&#39; in seq:
                 msg = &#34;The `%s` entry of &lt;%s&gt; contains illegal &#34; \
                       &#34;characters, please check: &#39;%s&#39;&#34;
                 msg = msg % (key, self.description, seq)
@@ -535,9 +538,9 @@ was parsed by the Project object.</p></div>
         source   = self.filter.results.clean
         dest     = self.autopaths.barrnap_gff
         filtered = self.autopaths.barrnap_fastq
-        # Create barrnap object #
-        from pacmill.filtering.barrnap import Barrnap
-        barrnap = Barrnap(source, dest, filtered)
+        # Create barrnap object for filtering #
+        from pacmill.filtering.barrnap import BarrnapFilter
+        barrnap = BarrnapFilter(source, dest, filtered)
         # Return #
         return barrnap
 
@@ -930,7 +933,7 @@ information in the excel metadata file.</p></div>
     # If there are spaces in any DNA sequence, remove them #
     for key in self.dna_keys:
         seq = getattr(self, key)
-        setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))</code></pre>
+        if seq: setattr(self, key, seq.replace(&#39; &#39;, &#39;&#39;))</code></pre>
 </details>
 </dd>
 <dt id="pacmill.core.sample.Sample.validate_attrs"><code class="name flex">
@@ -961,14 +964,14 @@ metadata file is consistent and usable.</p></div>
             raise ValueError(msg)
     # Check that the FASTQ file exists #
     if not self.path.exists:
-        msg = &#34;The FASTQ file path of &lt;%s&gt; is not found. &#34; \
+        msg = &#34;The FASTQ file path of &lt;%s&gt; cannot be found. &#34; \
               &#34;It should be located at: &#39;%s&#39;&#34;
         msg = msg % (self.description, self.path)
         raise FileNotFoundError(msg)
     # Check the DNA sequences are properly formatted #
     for key in self.dna_keys:
         seq = getattr(self, key)
-        if &#39;\n&#39; in seq:
+        if seq and &#39;\n&#39; in seq:
             msg = &#34;The `%s` entry of &lt;%s&gt; contains illegal &#34; \
                   &#34;characters, please check: &#39;%s&#39;&#34;
             msg = msg % (key, self.description, seq)
@@ -1019,7 +1022,7 @@ metadata file is consistent and usable.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.3</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
 </footer>
 </body>
 </html>
