@@ -85,7 +85,7 @@ def test_primers(seq_filter, fwd_primer, rev_primer, seq, expected,
     reads = [Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(seq), id='pytest_read')]
     # Make a fake FASTQ #
     fastq = FASTQ('/dummy_path.fastq')
-    # Set some attributes (monkeypatch) #
+    # Set some attributes (monkey-patch) #
     fastq.parse = lambda: reads
     fastq.count = 1
     # Call the primer parsing routines #

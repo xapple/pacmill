@@ -23,6 +23,7 @@ import mock, pytest
 @mock.patch.object(Project, '__init__', lambda *args: None)
 def project(tmp_path):
     """Returns a fake Project object ready to be used."""
+    # Make a new instance #
     project = Project('pytest_project')
     # Set the name #
     project.short_name = 'pytest_project'
@@ -36,11 +37,11 @@ def project(tmp_path):
 @mock.patch.object(Sample, 'validate_attrs',  lambda *args: None)
 def sample(project, tmp_path):
     """Returns a fake Sample object ready to be used."""
-    # Remove the constructor and instantiate #
+    # Make a new instance #
     sample = Sample(project)
     # Set the name #
     sample.short_name = 'pytest_sample'
-    # Set the output dir #
+    # Set the output directory #
     sample.output_dir = str(tmp_path)
     # Return #
     return sample

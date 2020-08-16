@@ -64,6 +64,14 @@ To run the demo project, do the following:
 <img src="docs/flowchart.png?raw=true">
 </p>
 
+## Example reports
+
+After running the pipeline on a set of FASTQ files, several PDF reports are auto-generated. Examples of two such reports are given below. The first concerns an individual sample while the second details the results of a project containing several samples.
+
+    # Add demo project Sample report here. TODO.
+
+    # Add demo project Project report here. TODO.
+
 ## Extra documentation
 
 More documentation is available at:
