@@ -3,10 +3,12 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
-    <title>pacmill API documentation</title>
+    <title>pacmill.run_pacmill API documentation</title>
     <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
-Contact at www.sinclair.bio" />
+Contact at www.sinclair.bio
+
+Script to run the `pacmill` pi..." />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
   
@@ -1045,22 +1047,14 @@ table {
     <li class="set"><h3><a href="#header-variables">Module variables</a></h3>
       
   <ul>
-    <li class="mono"><a href="#pacmill.git_repo">git_repo</a></li>
-    <li class="mono"><a href="#pacmill.module_dir">module_dir</a></li>
-    <li class="mono"><a href="#pacmill.project_name">project_name</a></li>
-    <li class="mono"><a href="#pacmill.project_url">project_url</a></li>
-    <li class="mono"><a href="#pacmill.repos_dir">repos_dir</a></li>
+    <li class="mono"><a href="#pacmill.run_pacmill.env_name">env_name</a></li>
+    <li class="mono"><a href="#pacmill.run_pacmill.env_xls">env_xls</a></li>
   </ul>
 
     </li>
 
 
 
-    <li class="set"><h3><a href="#header-submodules">Sub-modules</a></h3>
-      <ul>
-        <li class="mono"><a href="run_pacmill.m.html">pacmill.run_pacmill</a></li>
-      </ul>
-    </li>
     </ul>
   </div>
 
@@ -1072,13 +1066,17 @@ table {
 
 
   <header id="section-intro">
-  <h1 class="title"><span class="name">pacmill</span> module</h1>
+  <h1 class="title"><span class="name">pacmill.run_pacmill</span> module</h1>
   <p>Written by Lucas Sinclair.
 MIT Licensed.
 Contact at www.sinclair.bio</p>
+<p>Script to run the <code>pacmill</code> pipeline.</p>
+<p>Typically you would run this file from a command line like this:</p>
+<div class="codehilite"><pre><span></span><span class="err">ipython3 -i -- ~/deploy/pacmill/scripts/running/run_pacmill.py                    small_test small_test/metadata_small_test.xlsx</span>
+</pre></div>
   
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pacmill', this);">Show source &equiv;</a></p>
-  <div id="source-pacmill" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pacmill.run_pacmill', this);">Show source &equiv;</a></p>
+  <div id="source-pacmill.run_pacmill" class="source">
     <div class="codehilite"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
 
@@ -1086,31 +1084,123 @@ Contact at www.sinclair.bio</p>
 <span class="sd">Written by Lucas Sinclair.</span>
 <span class="sd">MIT Licensed.</span>
 <span class="sd">Contact at www.sinclair.bio</span>
+
+<span class="sd">Script to run the `pacmill` pipeline.</span>
+
+<span class="sd">Typically you would run this file from a command line like this:</span>
+
+<span class="sd">    ipython3 -i -- ~/deploy/pacmill/scripts/running/run_pacmill.py \</span>
+<span class="sd">                   small_test small_test/metadata_small_test.xlsx</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="c1"># Special variables #</span>
-<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;0.2.7&#39;</span>
-
 <span class="c1"># Built-in modules #</span>
-<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">argparse</span>
 
-<span class="c1"># First party modules #</span>
-<span class="kn">from</span> <span class="nn">autopaths</span>    <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">plumbing.git</span> <span class="kn">import</span> <span class="n">GitRepo</span>
+<span class="c1"># Internal modules #</span>
+<span class="kn">from</span> <span class="nn">pacmill.core.project</span> <span class="kn">import</span> <span class="n">Project</span>
 
 <span class="c1"># Constants #</span>
-<span class="n">project_name</span> <span class="o">=</span> <span class="s1">&#39;pacmill&#39;</span>
-<span class="n">project_url</span>  <span class="o">=</span> <span class="s1">&#39;https://github.com/xapple/pacmill&#39;</span>
+<span class="n">env_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PACMILL_PROJ_NAME&quot;</span><span class="p">)</span>
+<span class="n">env_xls</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PACMILL_PROJ_XLS&quot;</span><span class="p">)</span>
 
-<span class="c1"># Get paths to module #</span>
-<span class="bp">self</span>       <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">]</span>
-<span class="n">module_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="c1">###############################################################################</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Some strings #</span>
+    <span class="n">proj_name_help</span> <span class="o">=</span> <span class="s2">&quot;Short name of the project to run.&quot;</span>
+    <span class="n">proj_xls_help</span>  <span class="o">=</span> <span class="s2">&quot;The path to the excel metadata file.&quot;</span>
+    <span class="n">description</span>    <span class="o">=</span> <span class="s2">&quot;Script to run a given project through the whole&quot;</span> \
+                     <span class="s2">&quot; pacmill pipeline.&quot;</span>
 
-<span class="c1"># The repository directory #</span>
-<span class="n">repos_dir</span> <span class="o">=</span> <span class="n">module_dir</span><span class="o">.</span><span class="n">directory</span>
+    <span class="c1"># Parse the shell arguments #</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;proj_name&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">proj_name_help</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;proj_xls&quot;</span><span class="p">,</span>  <span class="n">help</span><span class="o">=</span><span class="n">proj_xls_help</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 
-<span class="c1"># The module is maybe in a git repository #</span>
-<span class="n">git_repo</span> <span class="o">=</span> <span class="n">GitRepo</span><span class="p">(</span><span class="n">repos_dir</span><span class="p">,</span> <span class="n">empty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Get defaults for project name #</span>
+    <span class="n">proj_name</span> <span class="o">=</span> <span class="n">env_name</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">proj_name</span>
+    <span class="k">if</span> <span class="n">proj_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No short project name has been given.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Get defaults for project excel file #</span>
+    <span class="n">proj_xls</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">proj_xls</span> <span class="ow">or</span> <span class="n">env_xls</span>
+    <span class="k">if</span> <span class="n">proj_xls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No excel file path has been given.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create project #</span>
+    <span class="n">proj</span> <span class="o">=</span> <span class="n">Project</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">proj_name</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">proj_xls</span><span class="p">)</span>
+
+    <span class="c1"># Validate the format of the FASTQs #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">fastq</span><span class="o">.</span><span class="n">validator</span><span class="p">())</span>
+
+    <span class="c1"># Run FastQC on the samples individually #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">fastq</span><span class="o">.</span><span class="n">fastqc</span><span class="p">())</span>
+
+    <span class="c1"># Regenerate the graphs for samples #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">fastq</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">length_hist</span><span class="p">(</span><span class="n">rerun</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="c1"># Filter reads in every sample based on several criteria #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="c1"># Detect presence of rRNA genes #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">barrnap</span><span class="p">())</span>
+
+    <span class="c1"># Remove chimeric reads #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">chimeras</span><span class="p">())</span>
+
+    <span class="c1"># Concatenate reads from all samples into one file #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">combine_reads</span><span class="p">())</span>
+
+    <span class="c1"># Pick OTUS #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">otus</span><span class="p">())</span>
+
+    <span class="c1"># Extract 16S location within OTUs #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">barrnap</span><span class="p">())</span>
+
+    <span class="c1"># Assign taxonomy #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">taxonomy</span><span class="p">())</span>
+
+    <span class="c1"># Make all taxa tables #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">taxa_tables</span><span class="p">())</span>
+
+    <span class="c1"># Regenerate the graphs for the project #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">otu_table</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">otu_sums_graph</span><span class="p">(</span><span class="n">rerun</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">otu_table</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">sample_sums_graph</span><span class="p">(</span><span class="n">rerun</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">otu_table</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">cumulative_presence</span><span class="p">(</span><span class="n">rerun</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">nmds_graph</span><span class="p">(</span><span class="n">rerun</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="c1"># Regenerate the graphs for taxa bar-stacks #</span>
+    <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">proj</span><span class="o">.</span><span class="n">taxa_tables</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">by_rank</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">g</span><span class="p">(</span><span class="n">rerun</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="c1"># Clear the cache #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">cache_dir</span><span class="o">.</span><span class="n">remove</span><span class="p">())</span>
+
+    <span class="c1"># Create the PDF reports for each sample #</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">proj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
+
+    <span class="c1"># Create the PDF report for the project #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
+
+    <span class="c1"># Create a bundle for distribution #</span>
+    <span class="n">proj</span><span class="o">.</span><span class="n">bundle</span><span class="p">()</span>
+
+    <span class="c1"># Success message #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The pipeline was successfully run on project &#39;</span><span class="si">%s</span><span class="s2">&#39;.&quot;</span> <span class="o">%</span> <span class="n">proj_name</span><span class="p">)</span>
+
+    <span class="c1"># Bundle message #</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;To quickly download the sample and project reports to your local&quot;</span>
+          <span class="s2">&quot; computer, you can use the following command:&quot;</span>
+          <span class="s2">&quot; </span><span class="se">\n\n</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">proj</span><span class="o">.</span><span class="n">bundle</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">rsync</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -1120,7 +1210,7 @@ Contact at www.sinclair.bio</p>
   <section id="section-items">
     <h2 class="section-title" id="header-variables">Module variables</h2>
       <div class="item">
-      <p id="pacmill.git_repo" class="name">var <span class="ident">git_repo</span></p>
+      <p id="pacmill.run_pacmill.env_name" class="name">var <span class="ident">env_name</span></p>
       
   
   <div class="source_cont">
@@ -1128,31 +1218,7 @@ Contact at www.sinclair.bio</p>
 
       </div>
       <div class="item">
-      <p id="pacmill.module_dir" class="name">var <span class="ident">module_dir</span></p>
-      
-  
-  <div class="source_cont">
-</div>
-
-      </div>
-      <div class="item">
-      <p id="pacmill.project_name" class="name">var <span class="ident">project_name</span></p>
-      
-  
-  <div class="source_cont">
-</div>
-
-      </div>
-      <div class="item">
-      <p id="pacmill.project_url" class="name">var <span class="ident">project_url</span></p>
-      
-  
-  <div class="source_cont">
-</div>
-
-      </div>
-      <div class="item">
-      <p id="pacmill.repos_dir" class="name">var <span class="ident">repos_dir</span></p>
+      <p id="pacmill.run_pacmill.env_xls" class="name">var <span class="ident">env_xls</span></p>
       
   
   <div class="source_cont">
@@ -1162,20 +1228,6 @@ Contact at www.sinclair.bio</p>
 
 
 
-    <h2 class="section-title" id="header-submodules">Sub-modules</h2>
-      <div class="item">
-      <p class="name"><a href="run_pacmill.m.html">pacmill.run_pacmill</a></p>
-      
-  
-    <div class="desc"><p>Written by Lucas Sinclair.
-MIT Licensed.
-Contact at www.sinclair.bio</p>
-<p>Script to run the <code>pacmill</code> pipeline.</p>
-<p>Typically you would run this file from a command line like this:</p>
-<div class="codehilite"><pre><span></span>ipython3 -i -- ~/deploy/pacmill/scripts/running/run_pacmill.py                    small_test small_test/metadata_small_te...
-</pre></div></div>
-
-      </div>
   </section>
 
     </article>
