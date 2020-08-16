@@ -57,7 +57,7 @@ proj = Project(proj_name, proj_xls)
 
 #proj.nmds_graph()
 
-#proj.report()
+proj.report()
 
-proj.bundle()
-print(proj.bundle.results.rsync)
+#proj.bundle()
+#print(proj.bundle.results.rsync)

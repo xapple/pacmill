@@ -183,20 +183,29 @@ class ProjectTemplate(ReportTemplate):
         return table + "\n\n   : Classification summary for OTUs."
 
     #--------------------------- Taxa Table Graphs ---------------------------#
-    def taxa_barstack_at_rank(self, rank, label):
+    def taxa_barstack_at_rank(self, rank, label=None):
+        if label is None: label = "taxa_barstack_%i" % rank
         graphs  = self.project.taxa_tables.results.graphs.by_rank
         graph   = [g for g in graphs if g.base_rank == rank][0]
         caption = "Relative abundances per sample on the '%s' level"
         return str(ScaledFigure(graph(), caption % graph.label, label))
 
-    def level_one_barstack(self):
-        return self.taxa_barstack_at_rank(2, "level_one_barstack")
-
-    def level_two_barstack(self):
-        return self.taxa_barstack_at_rank(3, "level_two_barstack")
-
-    def level_three_barstack(self):
-        return self.taxa_barstack_at_rank(4, "level_three_barstack")
+    def taxa_barstacks(self):
+        # Get the parameter in the excel file #
+        ranks = getattr(self.samples[0], 'taxa_barstacks')
+        # If none are included skip this step #
+        if ranks is None: return "\n"
+        # Split on the comma and remove spaces #
+        ranks = [r.strip() for r in ranks.split(',')]
+        # Convert named ranks to numbered ranks #
+        names = [n.lower() for n in self.project.taxa_tables.rank_names]
+        ranks = [names.index(r) for r in ranks]
+        # Produce as many graphs as needed #
+        graphs = [self.taxa_barstack_at_rank(r) for r in ranks]
+        # Separate graphs with newlines #
+        graphs = '\n\n'.join(graphs)
+        # Return
+        return graphs
 
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
