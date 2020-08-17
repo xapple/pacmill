@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/pacmill.svg)](https://badge.fury.io/py/pacmill)
+
 # `pacmill` version 0.3.3
 
 The `pacmill` python package is a bioinformatics pipeline that is developed to process microbial 16S amplicon sequencing data. It is specialized in the analysis of long reads such as those provided by PacBio sequencers.
