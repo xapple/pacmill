@@ -21,6 +21,7 @@ from pymarktex.figures import DualFigure, ScaledFigure
 from autopaths         import Path
 
 # Third party modules #
+import pandas
 
 ###############################################################################
 class SampleReport(Document):
@@ -230,3 +231,33 @@ class SampleTemplate(ReportTemplate):
     @property_pickled
     def chimeras_left(self):
         return thousands(self.sample.chimeras.results.count)
+
+    #------------------------------ Taxonomy ---------------------------------#
+    def taxonomy(self):
+        return bool(self.project.taxa_tables)
+
+    @property_pickled
+    def taxa_table(self):
+        # Pick the rank #
+        rank_name = "Genus"
+        # Get the rank number #
+        rank = self.project.taxa_tables.rank_names.index(rank_name)
+        # Get the row for this sample #
+        table = self.project.taxa_tables.results.taxa_tables_by_rank[rank]
+        row   = table.loc[self.sample.short_name]
+        row   = row.sort_values(ascending=False)
+        # Make an empty dataframe #
+        df = pandas.DataFrame(index=range(len(row)))
+        # Populate dataframe #
+        df['#']      = range(1, len(row)+1)
+        df['Genera'] = row.index
+        df['Reads']  = [thousands(r) for r in row.values]
+        # Show only most abundant #
+        df = df[0:20]
+        df = dict(df)
+        # Make it as text #
+        from tabulate import tabulate
+        table = tabulate(df, headers="keys", numalign="right", tablefmt="pipe")
+        # Add caption #
+        caption = "The 20 most abundant predicted genera in this sample."
+        return table + "\n\n   : %s" % caption

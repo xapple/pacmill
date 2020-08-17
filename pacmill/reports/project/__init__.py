@@ -149,7 +149,7 @@ class ProjectTemplate(ReportTemplate):
 
     #------------------------------- Taxonomy --------------------------------#
     def taxonomy(self):
-        return bool(self.project.taxonomy)
+        return bool(self.project.taxonomy) and bool(self.project.taxa_tables)
 
     def classify_citation(self):
         return "the '%s' method" % self.project.taxonomy.long_name

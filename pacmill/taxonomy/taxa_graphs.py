@@ -12,7 +12,7 @@ Contact at www.sinclair.bio
 # First party modules #
 from plumbing.cache import property_cached
 from plumbing.graphs import Graph
-from plumbing.graphs.cool_colors import other_colors as cool_colors
+from plumbing.graphs.cool_colors import colors as cool_colors
 from plumbing.graphs.solo_legend import SoloLegend
 
 # Third party modules #
@@ -50,6 +50,8 @@ class TaxaBarstack(Graph):
         for taxa_name, row in df.iterrows():
             pyplot.bar(x_locations,
                        row.values,
+                       linewidth = 0.5,
+                       edgecolor = 'k',
                        bottom = cum_size,
                        color  = legend.label_to_color[row.name])
             # Increase the plotting location for the next bar #
@@ -120,8 +122,11 @@ class TaxaLegend(SoloLegend):
         """Mapping of taxonomic titles to colors as a dictionary."""
         # Get all the taxonomic titles #
         taxa = list(self.df.columns)
+        # Modify the colors so that 'others' are always black #
+        max_taxa = self.parent.parent.max_taxa_displayed - 1
+        colors = cool_colors[:max_taxa] + ['#000000'] + cool_colors[max_taxa:]
         # Assign colors #
         from itertools import cycle
-        result = dict(zip(taxa, cycle(cool_colors)))
+        result = dict(zip(taxa, cycle(colors)))
         # Return #
         return result
