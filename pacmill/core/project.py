@@ -246,10 +246,18 @@ class Project:
         By using the OTU table along with the taxonomic assignment results,
         we can generate taxa tables at different ranks.
         """
+        # Import #
         from pacmill.taxonomy.taxa_tables import TaxaTable
-        return TaxaTable(self.otu_table,
-                         self.taxonomy,
-                         self.autopaths.taxa_tables_dir)
+        # Instantiate #
+        result = TaxaTable(self.otu_table,
+                           self.taxonomy,
+                           self.autopaths.taxa_tables_dir)
+        # Adjust the number of taxa displayed #
+        max_taxa = getattr(self.samples[0], 'max_taxa')
+        if max_taxa: result.max_taxa_displayed = max_taxa
+        # Return #
+        return result
+
 
     @property_cached
     def nmds_graph(self):

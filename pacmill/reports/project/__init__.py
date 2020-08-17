@@ -17,7 +17,7 @@ from pacmill.reports.template      import Header, Footer
 from plumbing.cache    import property_cached
 from plumbing.common   import split_thousands as thousands
 from pymarktex         import Document
-from pymarktex.figures import ScaledFigure
+from pymarktex.figures import ScaledFigure, BareFigure
 from autopaths         import Path
 
 # Third party modules #
@@ -184,11 +184,21 @@ class ProjectTemplate(ReportTemplate):
 
     #--------------------------- Taxa Table Graphs ---------------------------#
     def taxa_barstack_at_rank(self, rank, label=None):
+        # Default label #
         if label is None: label = "taxa_barstack_%i" % rank
-        graphs  = self.project.taxa_tables.results.graphs.by_rank
-        graph   = [g for g in graphs if g.base_rank == rank][0]
+        # Get the graph itself #
+        graphs = self.project.taxa_tables.results.graphs.by_rank
+        graph  = [g for g in graphs if g.base_rank == rank][0]
+        # Get the legend #
+        legends = self.project.taxa_tables.results.graphs.legends
+        legend  = [leg for leg in legends if leg.base_rank == rank][0]
+        # Format the graph #
+        graph  = str(BareFigure(graph()))
+        # Format the legend #
         caption = "Relative abundances per sample on the '%s' level"
-        return str(ScaledFigure(graph(), caption % graph.label, label))
+        legend  = str(ScaledFigure(legend(), caption % legend.label, label))
+        # Combine both graphs #
+        return graph + '\n\n' + legend
 
     def taxa_barstacks(self):
         # Get the parameter in the excel file #

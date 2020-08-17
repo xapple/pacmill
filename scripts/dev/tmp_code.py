@@ -21,6 +21,9 @@ import os
 # Internal modules #
 from pacmill.core.project import Project
 
+# Third party modules #
+from tqdm import tqdm
+
 # Constants #
 proj_name = os.environ.get("PACMILL_PROJ_NAME", "No project has been set.")
 proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
@@ -54,6 +57,13 @@ proj = Project(proj_name, proj_xls)
 #print(proj.taxa_tables())
 
 #for g in proj.taxa_tables.results.graphs.by_rank: print(g(rerun=True))
+
+#proj.taxa_tables.results.graphs.legends[0](rerun=True)
+#proj.taxa_tables.results.graphs.by_rank[0](rerun=True)
+
+for i, rank in tqdm(enumerate(proj.taxa_tables.rank_names)):
+    proj.taxa_tables.results.graphs.by_rank[i](rerun=True)
+    proj.taxa_tables.results.graphs.legends[i](rerun=True)
 
 #proj.nmds_graph()
 
