@@ -221,23 +221,10 @@ class Sample:
         return seq_filter
 
     @property_cached
-    def barrnap(self):
-        """Takes care of running the Barrnap program."""
-        # Get file paths #
-        source   = self.filter.results.clean
-        dest     = self.autopaths.barrnap_gff
-        filtered = self.autopaths.barrnap_fastq
-        # Create barrnap object for filtering #
-        from pacmill.filtering.barrnap import BarrnapFilter
-        barrnap = BarrnapFilter(source, dest, filtered)
-        # Return #
-        return barrnap
-
-    @property_cached
     def chimeras(self):
         """Takes care of removing chimeric reads."""
         # Get file paths #
-        source   = self.barrnap.results
+        source   = self.filter.results.clean
         cleaned  = self.autopaths.chimeras_cleaned
         rejects  = self.autopaths.chimeras_rejects
         # Create chimeras object #
@@ -245,6 +232,19 @@ class Sample:
         chimeras = Chimeras(source, cleaned, rejects)
         # Return #
         return chimeras
+
+    @property_cached
+    def barrnap(self):
+        """Takes care of running the Barrnap program."""
+        # Get file paths #
+        source   = self.chimeras.results
+        dest     = self.autopaths.barrnap_gff
+        filtered = self.autopaths.barrnap_fastq
+        # Create barrnap object for filtering #
+        from pacmill.filtering.barrnap import RemoveITS
+        barrnap = RemoveITS(source, dest, filtered)
+        # Return #
+        return barrnap
 
     @property_cached
     def report(self):

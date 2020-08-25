@@ -173,7 +173,7 @@ class Project:
             msg = msg % (self.short_name, len(self.samples))
             print(msg)
         # Get all input paths #
-        inputs = [sample.chimeras.results for sample in self]
+        inputs = [sample.barrnap.results for sample in self]
         # Make the command to be run #
         cmd = 'cat %s > %s' % (' '.join(inputs), self.fasta)
         # We don't want python to be buffering the text for speed #
@@ -220,24 +220,13 @@ class Project:
         return OtuTable(self.otus.table)
 
     @property_cached
-    def barrnap(self):
-        """
-        Takes care of extracting the 16S rRNA portion from each OTU sequence
-        in preparation for a similarity search against a taxonomic database.
-        """
-        from pacmill.filtering.barrnap import BarrnapExtract
-        return BarrnapExtract(self.otus.results,
-                              self.autopaths.barrnap_gff,
-                              self.autopaths.barrnap_16s)
-
-    @property_cached
     def taxonomy(self):
         """
         Will compare all OTU sequences against a database of curated 16S genes
         to associate a taxonomic assignment where possible.
         """
         from pacmill.taxonomy.mothur_classify import MothurClassify
-        return MothurClassify(self.barrnap.results,
+        return MothurClassify(self.otus.results,
                               self.autopaths.taxonomy_dir)
 
     @property_cached

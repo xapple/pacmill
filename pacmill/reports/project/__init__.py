@@ -135,18 +135,6 @@ class ProjectTemplate(ReportTemplate):
         path    = self.project.otu_table.graphs.cumulative_presence()
         return str(ScaledFigure(path, caption, 'cumulative_presence'))
 
-    #------------------------------ Barrnap ----------------------------------#
-    def barrnap(self):
-        return bool(self.project.barrnap)
-
-    def barrnap_discard(self):
-        before = self.project.otus.results.count
-        after  = self.project.barrnap.results.count
-        return thousands(before - after)
-
-    def barrnap_left(self):
-        return thousands(self.project.barrnap.results.count)
-
     #------------------------------- Taxonomy --------------------------------#
     def taxonomy(self):
         return bool(self.project.taxonomy) and bool(self.project.taxa_tables)

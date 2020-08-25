@@ -71,11 +71,26 @@ The filtering on this sample has not been performed yet. Please run the pipeline
 
 -------
 
+Chimera Detection
+-----------------
+
+{{#chimeras}}
+    In this step, we run every sequence through the `vsearch --uchime3_denovo` algorithm to detect the presence of any chimeras.
+
+    * Checking for chimeras discards {{chimeras_discard}} sequences ({{chimeras_left}} left).
+{{/chimeras}}
+
+{{^chimeras}}
+    The chimeras detection algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
+{{/chimeras}}
+
+-------
+
 Gene Presence with Barrnap
 --------------------------
 
 {{#barrnap}}
-In this step, we run every sequence through the `barrnap` algorithm to detect the presence of any type of rRNA gene (via `nhmmer`). We then only keep raw sequences that had positive hits for both the 16S gene and the 23S gene.
+In this step, we run every sequence through the `barrnap` algorithm to detect the presence of any type of rRNA gene (via `nhmmer`). We then only keep raw sequences that had positive hits for both the 16S gene and the 23S gene. Furthermore, we extract both genes from each sequence and concatenate them together, effectively removing non-coding regions.
 
 * Checking for the presence of rRNA genes further discards {{barrnap_discard}} sequences ({{barrnap_left}} left).
 {{/barrnap}}
@@ -83,21 +98,6 @@ In this step, we run every sequence through the `barrnap` algorithm to detect th
 {{^barrnap}}
 The barrnap algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
 {{/barrnap}}
-
--------
-
-Chimera Detection
------------------
-
-{{#chimeras}}
-In this step, we run every sequence through the `vsearch --uchime3_denovo` algorithm to detect the presence of any chimeras.
-
-* Checking for chimeras discards {{chimeras_discard}} sequences ({{chimeras_left}} left).
-{{/chimeras}}
-
-{{^chimeras}}
-The chimeras detection algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
-{{/chimeras}}
 
 -------
 

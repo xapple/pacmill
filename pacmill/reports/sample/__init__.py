@@ -204,33 +204,33 @@ class SampleTemplate(ReportTemplate):
         percent = 100 * (after / before)
         return "%.1f%%" % percent
 
-    #------------------------------ Barrnap ----------------------------------#
-    def barrnap(self):
-        return bool(self.sample.barrnap)
-
-    @property_pickled
-    def barrnap_discard(self):
-        before = self.sample.filter.results.clean.count
-        after  = self.sample.barrnap.results.count
-        return thousands(before - after)
-
-    @property_pickled
-    def barrnap_left(self):
-        return thousands(self.sample.barrnap.results.count)
-
     #------------------------------ Chimeras ---------------------------------#
     def chimeras(self):
         return bool(self.sample.chimeras)
 
     @property_pickled
     def chimeras_discard(self):
-        before = self.sample.barrnap.results.count
+        before = self.sample.filter.results.clean.count
         after  = self.sample.chimeras.results.count
         return thousands(before - after)
 
     @property_pickled
     def chimeras_left(self):
         return thousands(self.sample.chimeras.results.count)
+
+    #------------------------------ Barrnap ----------------------------------#
+    def barrnap(self):
+        return bool(self.sample.barrnap)
+
+    @property_pickled
+    def barrnap_discard(self):
+        before = self.sample.chimeras.results.count
+        after  = self.sample.barrnap.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def barrnap_left(self):
+        return thousands(self.sample.barrnap.results.count)
 
     #------------------------------ Taxonomy ---------------------------------#
     def taxonomy(self):

@@ -67,21 +67,6 @@ The OTU clustering algorithm has not been run on this project yet. Please run th
 
 -------
 
-Extracting 16S portions
------------------------
-
-{{#barrnap}}
-In this step, we run every sequence through the `barrnap` algorithm to detect the presence of rRNA genes (via `nhmmer`). We then only keep the specific portion of OTU sequences that had a positive hit for the 16S gene.
-
-* Checking for the presence of the 16 rRNA gene discards {{barrnap_discard}} sequences ({{barrnap_left}} left).
-{{/barrnap}}
-
-{{^barrnap}}
-The 16S extraction algorithm has not been run on this project yet. Please run the pipeline and regenerate this report.
-{{/barrnap}}
-
--------
-
 Taxonomic classification
 ------------------------
 
