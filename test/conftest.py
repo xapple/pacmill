@@ -14,8 +14,17 @@ from pacmill.core.project         import Project
 from pacmill.core.sample          import Sample
 from pacmill.filtering.seq_filter import SeqFilter
 
+# First party modules #
+from autopaths.dir_path import DirectoryPath
+
 # Third party modules #
 import mock, pytest
+
+###############################################################################
+@pytest.fixture(scope="module")
+def this_script_dir(request):
+    """Return the directory of the currently running test script."""
+    return DirectoryPath(request.fspath.dirname)
 
 ###############################################################################
 @pytest.fixture

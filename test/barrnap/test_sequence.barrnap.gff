@@ -1,0 +1,3 @@
+##gff-version 3
+aj1_3	barrnap:0.9	rRNA	2	1498	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+aj1_3	barrnap:0.9	rRNA	1718	4383	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
