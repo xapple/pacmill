@@ -16,7 +16,7 @@ Typically you would run this file from a command line like this:
 """
 
 # Built-in modules #
-import os, inspect
+import os
 
 # Internal modules #
 from pacmill.core.project import Project
@@ -29,19 +29,40 @@ proj_name = os.environ.get("PACMILL_PROJ_NAME", "No project has been set.")
 proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 
 ###############################################################################
-# Import #
-from pacmill.filtering.barrnap import RemoveITS
-# This directory #
-from autopaths import Path
-this_file = Path((inspect.stack()[0])[1])
-this_dir  = this_file.directory
-# Get file paths #
-test_fastq = this_dir + '../../test/barrnap/test_sequence.fasta'
-# Create object #
-barrnap = RemoveITS(test_fastq)
-# Run it #
-barrnap()
-# Parse result #
-seq_length = len(barrnap.filtered.first)
-# Assert #
-assert seq_length == 1556
+# Create project #
+proj = Project(proj_name, proj_xls)
+
+#for sample in proj:
+#    print(sample.report())
+#    break
+
+for report in proj.taxonomy.reports.all:
+    print(report())
+
+#proj.otus()
+#proj.taxonomy()
+
+#for tables in proj.taxonomy.tables.all:
+#    for graph in tables.results.graphs.by_rank:
+#        print(graph(rerun=True))
+#    for legend in tables.results.graphs.legends:
+#        print(legend(rerun=True))
+
+#for i, rank in tqdm(enumerate(proj.taxa_tables.rank_names)):
+#    proj.taxa_tables.results.graphs.by_rank[i](rerun=True)
+#    proj.taxa_tables.results.graphs.legends[i](rerun=True)
+
+#print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
+#print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
+#print(proj.otu_table.graphs.cumulative_presence(rerun=True))
+
+#for i, rank in tqdm(enumerate(proj.taxa_tables.rank_names)):
+#    proj.taxa_tables.results.graphs.by_rank[i](rerun=True)
+#    proj.taxa_tables.results.graphs.legends[i](rerun=True)
+
+#proj.nmds_graph()
+
+#proj.report()
+
+#proj.bundle()
+#print(proj.bundle.results.rsync)
