@@ -8,7 +8,7 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
-import os, multiprocessing
+import multiprocessing
 
 # First party modules #
 from fasta import FASTA, FASTQ
@@ -37,7 +37,8 @@ class Barrnap:
         P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
 
     You can either use barrnap in filter mode, or in extract mode.
-    See the two child classes below.
+    In addition, there is a "remove ITS" mode too.
+    See the three child classes below.
     """
 
     # Proportional length threshold to reject prediction #
@@ -57,7 +58,8 @@ class Barrnap:
         self.dest = FilePath(dest)
         # Filtered is a file containing only raw reads with rRNA genes #
         if filtered is None:
-            filtered = self.source.prefix_path + '.barrnap.fastq'
+            extension = self.source.extension
+            filtered  = self.source.prefix_path + '.barrnap' + extension
         # It can be either a FASTA or a FASTQ #
         if filtered.endswith('fasta'): self.filtered = FASTA(filtered)
         else:                          self.filtered = FASTQ(filtered)
@@ -127,6 +129,48 @@ class Barrnap:
         # Return #
         return self.dest
 
+    #-------------------------------- Parsing --------------------------------#
+    def parse_hit_ids(self, attr_text):
+        """
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        all IDs that contained a given text in their attributes.
+        """
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type='rRNA')
+        return [rec.seqid for rec in reader if attr_text in rec.attributes]
+
+    @property_cached
+    def ids_16s(self):
+        """Return read IDs for reads that contained a 16S gene."""
+        return frozenset(self.parse_hit_ids('16S_rRNA'))
+
+    @property_cached
+    def ids_23s(self):
+        """Return read IDs for reads that contained a 23S gene."""
+        return frozenset(self.parse_hit_ids('23S_rRNA'))
+
+    def parse_hit_location(self, attr_text):
+        """
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        the start and end position of rRNA genes.
+        """
+        # Get reads that had a rRNA hit #
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type='rRNA')
+        # Make a lookup table for those with hits #
+        return {rec.seqid: (rec.start, rec.end)
+                for rec in reader if attr_text in rec.attributes}
+
+    @property_cached
+    def loc_16s(self):
+        """Return start and end location of reads that contained a 16S gene."""
+        return self.parse_hit_location('16S_rRNA')
+
+    @property_cached
+    def loc_23s(self):
+        """Return start and end location of reads that contained a 23S gene."""
+        return self.parse_hit_location('23S_rRNA')
+
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
         """
@@ -153,6 +197,8 @@ class BarrnapFilter(Barrnap):
     Using the original reads file and the GFF output of barrnap,
     we will create a new FASTQ file containing only the original reads
     that had a hit for both rRNA genes on the same read.
+
+    The sequences themselves however are not modified.
     """
 
     def __call__(self, cpus=None, verbose=True):
@@ -162,25 +208,6 @@ class BarrnapFilter(Barrnap):
         self.filter()
 
     #--------------------------- Presence of gene ----------------------------#
-    def parse_hit_ids(self, attr_text):
-        """
-        Using the GFF output of barrnap and the `tag` parser, we retrieve
-        all IDs that contained a given text in their attributes.
-        """
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type='rRNA')
-        return [rec.seqid for rec in reader if attr_text in rec.attributes]
-
-    @property_cached
-    def ids_16s(self):
-        """Return read IDs for reads that contained a 16S gene."""
-        return frozenset(self.parse_hit_ids('16S_rRNA'))
-
-    @property_cached
-    def ids_23s(self):
-        """Return read IDs for reads that contained a 23S gene."""
-        return frozenset(self.parse_hit_ids('23S_rRNA'))
-
     def filter(self, verbose=True):
         # Message #
         if verbose:
@@ -215,20 +242,56 @@ class BarrnapExtract(Barrnap):
         if verbose:
             msg = "Extracting the 16S rRNA portion of sequences from '%s'"
             print(msg % self.dest)
-        # Get reads that had a rRNA hit #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type='rRNA')
-        # Make a lookup table for those with 16S hits #
-        lookup = {rec.seqid: (rec.start, rec.end)
-                  for rec in reader if '16S_rRNA' in rec.attributes}
         # Function to yield only the good part of each read #
         def only_16s_portion(reads):
             for r in reads:
-                start_and_end = lookup.get(r.id)
+                start_and_end = self.loc_16s.get(r.id)
                 if start_and_end is None: continue
                 start, end = start_and_end
                 yield r[start:end]
         # Write new FASTA file #
         self.filtered.write(only_16s_portion(self.source))
+        # Return #
+        return self.filtered
+
+###############################################################################
+class RemoveITS(Barrnap):
+    """
+    With this subclass, we will extract the 16S region and the 23S region
+    from every read that had both, and concatenate them one next to
+    each other, effectively removing the ITS regions.
+    """
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        self.remove_its()
+
+    #------------------------ Location of both genes -------------------------#
+    def remove_its(self, verbose=True):
+        # Message #
+        if verbose:
+            msg = "Removing the ITS portion of sequences from '%s'"
+            print(msg % self.dest)
+        # Function to yield concatenated read #
+        def concat_16s_23s(reads):
+            for r in reads:
+                # Retrieve positions #
+                loc_16s = self.loc_16s.get(r.id)
+                loc_23s = self.loc_23s.get(r.id)
+                # Skip this read if no 16S found #
+                if loc_16s is None: continue
+                # Get only the 16S part in a new sequence #
+                start, end = loc_16s
+                seq = r[start:end]
+                # Add the 23S part to sequence if it was found #
+                if loc_23s is not None:
+                    start, end = loc_23s
+                    seq += r[start:end]
+                # Return the newly created sequence #
+                yield seq
+        # Write new FASTA file #
+        self.filtered.write(concat_16s_23s(self.source))
         # Return #
         return self.filtered
