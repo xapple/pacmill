@@ -53,50 +53,50 @@ if __name__ == "__main__":
     # Create project #
     proj = Project(args.proj_name, args.proj_xls)
 
-     # Validate the format of the FASTQs #
-     for sample in proj: print(sample.fastq.validator())
+    # Validate the format of the FASTQs #
+    for sample in proj: print(sample.fastq.validator())
 
-     # Run FastQC on the samples individually #
-     for sample in proj:
-         print(sample.fastq.fastqc())
+    # Run FastQC on the samples individually #
+    for sample in proj:
+        print(sample.fastq.fastqc())
 
-     # Regenerate the graphs for samples #
-     for sample in proj:
-         print(sample.fastq.graphs.length_hist(rerun=True))
+    # Regenerate the graphs for samples #
+    for sample in proj:
+        print(sample.fastq.graphs.length_hist(rerun=True))
 
-     # Filter reads in every sample based on several criteria #
-     for sample in proj:
-         print(sample.filter(verbose=True))
+    # Filter reads in every sample based on several criteria #
+    for sample in proj:
+        print(sample.filter(verbose=True))
 
-     # Remove chimeric reads #
-     for sample in proj:
-         print(sample.chimeras())
+    # Remove chimeric reads #
+    for sample in proj:
+        print(sample.chimeras())
 
-     # Detect presence of rRNA genes #
-     for sample in proj:
-         print(sample.barrnap())
+    # Detect presence of rRNA genes #
+    for sample in proj:
+        print(sample.barrnap())
 
-     # Concatenate reads from all samples into one file #
-     print(proj.combine_reads())
+    # Concatenate reads from all samples into one file #
+    print(proj.combine_reads())
 
-     # Pick OTUS #
-     print(proj.otus())
+    # Pick OTUS #
+    print(proj.otus())
 
-      # Assign taxonomy and make all taxa tables #
-      print(proj.taxonomy())
+    # Assign taxonomy and make all taxa tables #
+    print(proj.taxonomy())
 
-      # Regenerate the graphs for the project #
-      print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
-      print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
-      print(proj.otu_table.graphs.cumulative_presence(rerun=True))
-      print(proj.nmds_graph(rerun=True))
+    # Regenerate the graphs for the project #
+    print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
+    print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
+    print(proj.otu_table.graphs.cumulative_presence(rerun=True))
+    print(proj.nmds_graph(rerun=True))
 
-      # Regenerate the graphs and legends for taxa bar-stacks #
-      for tables in proj.taxonomy.tables.all:
-          for graph in tables.results.graphs.by_rank:
-              print(graph(rerun=True))
-          for legend in tables.results.graphs.legends:
-              print(legend(rerun=True))
+    # Regenerate the graphs and legends for taxa bar-stacks #
+    for tables in proj.taxonomy.tables.all:
+        for graph in tables.results.graphs.by_rank:
+            print(graph(rerun=True))
+        for legend in tables.results.graphs.legends:
+            print(legend(rerun=True))
 
     # Clear the cache #
     for sample in proj:
