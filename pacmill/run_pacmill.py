@@ -68,22 +68,19 @@ if __name__ == "__main__":
     for sample in proj:
         print(sample.filter(verbose=True))
 
-    # Detect presence of rRNA genes #
-    for sample in proj:
-        print(sample.barrnap())
-
     # Remove chimeric reads #
     for sample in proj:
         print(sample.chimeras())
+
+    # Detect presence of rRNA genes #
+    for sample in proj:
+        print(sample.barrnap())
 
     # Concatenate reads from all samples into one file #
     print(proj.combine_reads())
 
     # Pick OTUS #
     print(proj.otus())
-
-    # Extract 16S location within OTUs #
-    print(proj.barrnap())
 
     # Assign taxonomy #
     print(proj.taxonomy())
