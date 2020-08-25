@@ -11,8 +11,13 @@ Contact at www.sinclair.bio
 import os, multiprocessing, shutil
 
 # First party modules #
-from plumbing.cache import property_cached
+from fasta import FASTA
+from autopaths.dir_path       import DirectoryPath
+from autopaths.tmp_path       import new_temp_dir
+from plumbing.cache           import property_cached
 from plumbing.check_cmd_found import check_cmd
+from plumbing.apt_pkg         import get_apt_packages
+from plumbing.scraping        import download_from_url
 
 # Third party modules #
 import sh
@@ -34,26 +39,30 @@ class CrestClassify:
     The publication is here: http://dx.plos.org/10.1371/journal.pone.0049334
     """
 
+    # Constants #
     short_name = 'crest'
-    long_name  = 'LCAClassifier/CREST version 2.0.4'
+    long_name  = 'LCAClassifier/CREST version 3.2.0'
     executable = 'classify'
 
     def __repr__(self):
         msg = '<%s object on "%s">'
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, centers, result_dir):
-        # Parent #
-        self.centers    = centers
-        self.database   = database
-        self.result_dir = result_dir
+    def __init__(self, source, dest_dir):
+        # Source is the FASTA file containing OTU consensus sequences #
+        self.source = FASTA(source)
+        # Destination is a directory that contains all the results #
+        self.dest_dir = DirectoryPath(dest_dir)
+
+    @property_cached
+    def database(self):
         # Find where the database is on the file system #
         self.database_path  = which('classify').physical_path.directory.directory
         self.database_path += 'parts/flatdb/%s/%s.fasta' % (database, database)
 
     #----------------------------- Installing --------------------------------#
-    apt_packages = ['ncbi-blast+']
-    zip_url = "https://github.com/lanzen/CREST/releases/download/3.2.0/" \
+    apt_packages = ['ncbi-blast+', 'python2']
+    tgz_url = "https://github.com/lanzen/CREST/releases/download/3.2.0/" \
               "LCAClassifierV3.2.0.tar.gz"
 
     @classmethod
@@ -78,21 +87,28 @@ class CrestClassify:
         # Make a temporary directory #
         tmp_dir = new_temp_dir()
         # Download tarball #
-        zip_loc = download_from_url(cls.zip_url, tmp_dir, stream=True,
+        tgz_loc = download_from_url(cls.tgz_url, tmp_dir, stream=True,
                                     progress=True)
         # Uncompress #
-        zip_loc.unzip_to(tmp_dir, single=False)
+        tgz_loc.untargz_to(tmp_dir)
         src_dir = tmp_dir.sub_directory
+        # Move it to where the user wants it #
         src_dir.move_to(prefix)
-        # Set executable permissions #
-        bin_loc = src_dir + 'bin/barrnap'
-        bin_loc.permissions.make_executable()
-        bin_loc = src_dir + 'binaries/linux/nhmmer'
-        bin_loc.permissions.make_executable()
+        # This 'bootstrap' stuff can't detect paths it seems, have to cwd #
+        current_dir = os.getcwd()
+        os.chdir(src_dir)
+        # Call the install command - step one #
+        bootstrap_script = src_dir + 'bootstrap.py'
+        sh.python2(bootstrap_script)
+        # Call the install command - step two #
+        buildout_cmd = src_dir + 'bin/buildout'
+        sh.python2(buildout_cmd)
+        # Restore current directory #
+        os.chdir(current_dir)
         # The directory that contains the executable #
         bin_dir = src_dir.with_tilda[:-1].replace('~', '$HOME')
         # Suggest adding to the $PATH #
-        print("\nBarrnap was installed successfully. You should now "
+        print("\nCREST was installed successfully. You should now "
               "add this line to your .bash_profile: \n\n    "
               "export PATH=%s/bin:$PATH\n" % bin_dir)
 
@@ -130,15 +146,15 @@ class CrestClassify:
         return AutoPaths(self.dest_dir, self.all_paths)
 
     #------------------------------ Running ----------------------------------#
-    def run(self, cpus=None):
+    def __call__(self, cpus=None):
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Run #
         sh.blastn('-task',              'megablast',
-                  '-num_threads',       cpus,
-                  '-query',             self.centers,
-                  '-db',                self.database_path,
-                  '-out',               self.p.db_hits,
+                  '-num_threads', cpus,
+                  '-query', self.source,
+                  '-db', self.database_path,
+                  '-out', self.p.db_hits,
                   '-max_target_seqs',   '100',
                   '-outfmt',            '5',
                   _out=self.p.blast_stdout, _err=self.p.blast_stderr)
