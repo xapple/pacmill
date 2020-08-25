@@ -30,4 +30,4 @@ proj = Project(proj_name, proj_xls)
 
 # Copy file to new location directly #
 for sample in proj:
-    sample.barrnap.results.to_fasta(sample.chimeras.cleaned, True)
+    sample.filter.results.clean.to_fasta(sample.chimeras.cleaned, True)
