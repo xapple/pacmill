@@ -34,7 +34,7 @@ class ProjectReport(Document):
     params = {'title': 'Auto-generated project report'}
 
     def __init__(self, project, output_path):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent  = project
         self.project = project
         # The output location #
@@ -57,7 +57,7 @@ class ProjectTemplate(ReportTemplate):
         return '<%s object on %s>' % (self.__class__.__name__, self.parent)
 
     def __init__(self, parent):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent = parent
         self.report = parent
         # Reference to the project object #
@@ -134,76 +134,6 @@ class ProjectTemplate(ReportTemplate):
         caption = "Cumulative number of reads by OTU presence"
         path    = self.project.otu_table.graphs.cumulative_presence()
         return str(ScaledFigure(path, caption, 'cumulative_presence'))
-
-    #------------------------------- Taxonomy --------------------------------#
-    def taxonomy(self):
-        return bool(self.project.taxonomy) and bool(self.project.taxa_tables)
-
-    def classify_citation(self):
-        return "the '%s' method" % self.project.taxonomy.long_name
-
-    def classify_database(self):
-        return "'" + self.project.taxonomy.database.long_name + "'"
-
-    def otu_classified_table(self):
-        # The functions #
-        def rank(i):
-            return "**" + self.project.taxonomy.database.rank_names[i] + "**"
-        def classified(i):
-            return self.project.taxonomy.results.count_assigned[i]
-        def unclassified(i):
-            return self.project.taxonomy.results.count_unassigned[i]
-        # The columns #
-        info = {
-            'Rank':         rank,
-            'Classified':   classified,
-            'Unclassified': unclassified,
-        }
-        # The table contents, row after row #
-        table = [[i+1] + [f(i) for f in info.values()]
-                 for i in range(len(self.project.taxonomy.database.rank_names))]
-        # The title row #
-        headers = ['#'] + list(info.keys())
-        # Make it as text #
-        from tabulate import tabulate
-        table = tabulate(table, headers, numalign="right", tablefmt="pipe")
-        # Add caption #
-        return table + "\n\n   : Classification summary for OTUs."
-
-    #--------------------------- Taxa Table Graphs ---------------------------#
-    def taxa_barstack_at_rank(self, rank, label=None):
-        # Default label #
-        if label is None: label = "taxa_barstack_%i" % rank
-        # Get the graph itself #
-        graphs = self.project.taxa_tables.results.graphs.by_rank
-        graph  = [g for g in graphs if g.base_rank == rank][0]
-        # Get the legend #
-        legends = self.project.taxa_tables.results.graphs.legends
-        legend  = [leg for leg in legends if leg.base_rank == rank][0]
-        # Format the graph #
-        graph  = str(BareFigure(graph()))
-        # Format the legend #
-        caption = "Relative abundances per sample on the '%s' level"
-        legend  = str(ScaledFigure(legend(), caption % legend.label, label))
-        # Combine both graphs #
-        return graph + '\n\n' + legend
-
-    def taxa_barstacks(self):
-        # Get the parameter in the excel file #
-        ranks = getattr(self.samples[0], 'taxa_barstacks')
-        # If none are included skip this step #
-        if ranks is None: return "\n"
-        # Split on the comma and remove spaces #
-        ranks = [r.strip() for r in ranks.split(',')]
-        # Convert named ranks to numbered ranks #
-        names = [n.lower() for n in self.project.taxa_tables.rank_names]
-        ranks = [names.index(r) for r in ranks]
-        # Produce as many graphs as needed #
-        graphs = [self.taxa_barstack_at_rank(r) for r in ranks]
-        # Separate graphs with newlines #
-        graphs = '\n\n'.join(graphs)
-        # Return
-        return graphs
 
     #------------------------------ Comparison -------------------------------#
     def comparison(self):

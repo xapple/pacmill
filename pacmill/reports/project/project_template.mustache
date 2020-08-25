@@ -67,30 +67,6 @@ The OTU clustering algorithm has not been run on this project yet. Please run th
 
 -------
 
-Taxonomic classification
-------------------------
-
-{{#taxonomy}}
-Relying on databases of ribosomal genes such as Silva, we can attempt to classify each OTU and give it an approximative affiliation. This pairs OTU to predicted taxonomic names where possible. This is done using {{classify_citation}} and {{classify_database}}.
-
-Out of our {{barrnap_left}} OTUs that had a hit for 16S rRNA, some remain totally unclassified while others have predictions at different positions in the tree of life. The proportion of classified OTUs is summarized below:
-
-{{otu_classified_table}}
-
-Composition
------------
-We are now able to produce a bar-chart detailing the composition in terms of taxonomy of every one of our samples. Once again, this can be done at several ranks of classification ranging from *Domain*, down to *Species*. At levels that are too deep, such visualization become too crowded and unreadable. This of course depends on the complexity of the samples. Here are plotted different taxonomic levels in the following figures.
-
-{{taxa_barstacks}}
-
-{{/taxonomy}}
-
-{{^taxonomy}}
-The taxonomic classification algorithm has not been run on this project yet. Please run the pipeline and regenerate this report.
-{{/taxonomy}}
-
--------
-
 {{#comparison}}
 
 Comparison

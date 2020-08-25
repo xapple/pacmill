@@ -59,7 +59,7 @@ class SampleTemplate(ReportTemplate):
         return '<%s object on %s>' % (self.__class__.__name__, self.parent)
 
     def __init__(self, parent):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent = parent
         self.report = parent
         # Reference to sample and project objects #
@@ -234,16 +234,18 @@ class SampleTemplate(ReportTemplate):
 
     #------------------------------ Taxonomy ---------------------------------#
     def taxonomy(self):
-        return bool(self.project.taxa_tables)
+        return bool(self.project.taxonomy.tables.silva)
 
     @property_pickled
     def taxa_table(self):
         # Pick the rank #
         rank_name = "Genus"
+        # Get the taxa tables of choice (silva) #
+        tables = self.project.taxonomy.tables.silva
         # Get the rank number #
-        rank = self.project.taxa_tables.rank_names.index(rank_name)
+        rank = tables.rank_names.index(rank_name)
         # Get the row for this sample #
-        table = self.project.taxa_tables.results.taxa_tables_by_rank[rank]
+        table = tables.results.taxa_tables_by_rank[rank]
         row   = table.loc[self.sample.short_name]
         row   = row.sort_values(ascending=False)
         # Make an empty dataframe #
@@ -259,5 +261,6 @@ class SampleTemplate(ReportTemplate):
         from tabulate import tabulate
         table = tabulate(df, headers="keys", numalign="right", tablefmt="pipe")
         # Add caption #
-        caption = "The 20 most abundant predicted genera in this sample."
+        caption = "The 20 most abundant predicted genera in this sample" \
+                  " predicted by silva."
         return table + "\n\n   : %s" % caption

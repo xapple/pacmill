@@ -31,6 +31,9 @@ class MothurClassify:
         mothur "#classify.seqs(fasta=rnammer.$sample.prok.16S.both.fasta,
         reference=silva.nr_v128.align, taxonomy=silva.nr_v128.tax,
         relabund=T, processors=30)"
+
+    This is the method that is implemented by the RDP and is described by
+    Wang et al.
     """
 
     # Constants #
@@ -41,27 +44,22 @@ class MothurClassify:
         msg = '<%s object on "%s">'
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, dest_dir):
+    def __init__(self, source, database, dest_dir):
         # Source is the FASTA file containing OTU consensus sequences #
         self.source = FASTA(source)
+        # Database is an object from the `seqsearch.databases` subpackage #
+        self.database = database
         # Destination is a directory that contains all the results #
         self.dest_dir = DirectoryPath(dest_dir)
-
-    #---------------------------- The database -------------------------------#
-    @property
-    def database(self):
-        """A link to the `SilvaMothur` database object for convenience."""
-        from seqsearch.databases.silva_mothur import silva_mothur
-        return silva_mothur
 
     #----------------------------- Installing --------------------------------#
     def check_installed(self):
         """
-        Try to determine if the Silva database is downloaded and
+        Try to determine if the database chosen is downloaded and
         accessible.
         """
         if not self.database:
-            msg  = "The silva database does not seem to be accessible."
+            msg  = "The taxonomic database does not seem to be accessible."
             msg += " More information follows.\n\n"
             msg += self.database.__doc__
             raise Exception(msg)
@@ -74,6 +72,7 @@ class MothurClassify:
                 /flipped.txt
                 /stdout.txt
                 /stderr.txt
+                /taxa_tables/
                 """
 
     @property_cached
@@ -90,7 +89,8 @@ class MothurClassify:
     def __call__(self, cpus=None, verbose=True):
         # Message #
         if verbose:
-            print("Running taxonomy classification on '%s'" % self.source)
+            message = "Running `%s` taxonomy classification on '%s'"
+            print(message % (self.database.short_name, self.source))
         # Check the database is there #
         self.check_installed()
         # Check mothur is installed #
@@ -158,9 +158,9 @@ class MothurClassify:
     def results(self):
         # Check it was run #
         if not self:
-            msg = "You can't access results from taxonomic classification " \
-                  "before running the tool."
-            raise Exception(msg)
+            msg = "You can't access results from the mothur '%s' taxonomic" \
+                  " classification before running the tool."
+            raise Exception(msg % self.database.short_name)
         # Return the results #
         return MothurClassifyResults(self.autopaths)
 

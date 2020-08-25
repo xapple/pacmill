@@ -220,31 +220,11 @@ class Project:
     @property_cached
     def taxonomy(self):
         """
-        Will compare all OTU sequences against a database of curated 16S genes
-        to associate a taxonomic assignment where possible.
+        Will compare all OTU sequences against several databases of
+        curated 16S genes to associate a taxonomic assignment where possible.
         """
-        from pacmill.taxonomy.mothur_classify import MothurClassify
-        return MothurClassify(self.otus.results,
-                              self.autopaths.taxonomy_dir)
-
-    @property_cached
-    def taxa_tables(self):
-        """
-        By using the OTU table along with the taxonomic assignment results,
-        we can generate taxa tables at different ranks.
-        """
-        # Import #
-        from pacmill.taxonomy.taxa_tables import TaxaTable
-        # Instantiate #
-        result = TaxaTable(self.otu_table,
-                           self.taxonomy,
-                           self.autopaths.taxa_tables_dir)
-        # Adjust the number of taxa displayed #
-        max_taxa = getattr(self.samples[0], 'max_taxa')
-        if max_taxa: result.max_taxa_displayed = max_taxa
-        # Return #
-        return result
-
+        from pacmill.taxonomy.multi_database import MultiTaxDatabases
+        return MultiTaxDatabases(self, self.autopaths.taxonomy_dir)
 
     @property_cached
     def nmds_graph(self):
