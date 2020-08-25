@@ -141,8 +141,6 @@ class Project:
                 /reads/all_reads.fasta
                 /otus/consensus.fasta
                 /otus/consensus.tsv
-                /barrnap/results.gff
-                /barrnap/only_16s.fasta
                 /taxonomy/
                 /taxa_tables/
                 /graphs/

@@ -145,11 +145,10 @@ class Sample:
                 /graphs/raw_len_dist.pdf
                 /graphs/raw_len_hist.pdf
                 /filtered/
-                /barrnap/
-                /barrnap/results.gff
-                /barrnap/has_rrna_gene.fastq
                 /chimeras/cleaned.fasta
                 /chimeras/rejects.fasta
+                /barrnap/results.gff
+                /barrnap/only_genes.fasta
                 /report/cache/
                 /report/sample.pdf
                 """
@@ -239,7 +238,7 @@ class Sample:
         # Get file paths #
         source   = self.chimeras.results
         dest     = self.autopaths.barrnap_gff
-        filtered = self.autopaths.barrnap_fastq
+        filtered = self.autopaths.barrnap_fasta
         # Create barrnap object for filtering #
         from pacmill.filtering.barrnap import RemoveITS
         barrnap = RemoveITS(source, dest, filtered)
