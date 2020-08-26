@@ -44,6 +44,7 @@ class Bundle:
     all_paths = """
                 /projects/report.pdf
                 /samples/
+                /taxonomies/
                 /metadata/samples.xlsx
                 """
 
@@ -70,6 +71,9 @@ class Bundle:
         if not self.project.otus: return
         # Report for project #
         self.project.report.output_path.copy(self.autopaths.report)
+        # Report for taxonomies #
+        for r in self.project.taxonomy.reports.all:
+            r.output_path.copy(self.autopaths.taxonomies_dir)
         # Zip it #
         self.base_dir.zip_to(self.archive)
         # Remove the directory #
