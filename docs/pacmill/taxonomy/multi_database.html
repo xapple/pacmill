@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.4" />
+<title>pacmill.taxonomy.multi_database API documentation</title>
+<meta name="description" content="Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js" integrity="sha256-eOgo0OtLL4cdq7RdwRUiGKLX9XsIJ7nGhWEKbohmVAQ=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pacmill.taxonomy.multi_database</code></h1>
+</header>
+<section id="section-intro">
+<p>Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+&#34;&#34;&#34;
+Written by Lucas Sinclair.
+MIT Licensed.
+Contact at www.sinclair.bio
+&#34;&#34;&#34;
+
+# Built-in modules #
+
+# Internal modules #
+from pacmill.taxonomy.mothur_classify import MothurClassify
+
+# First party modules #
+from plumbing.cache import property_cached
+
+# Third party modules #
+
+###############################################################################
+class MultiTaxDatabases:
+    &#34;&#34;&#34;
+    This object should be attached to a Project object and will enable OTU
+    sequences to be matched for taxonomic assignments on several databases.
+
+    Currently we support:
+
+        * Silva.
+        * Greengenes.
+        * RDP.
+        * CREST.
+    &#34;&#34;&#34;
+
+    def __repr__(self):
+        msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
+        return msg % (self.__class__.__name__, self.proj)
+
+    def __init__(self, proj, base_dir):
+        self.proj     = proj
+        self.base_dir = base_dir
+
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /silva/
+                /greengenes/
+                /rdp/
+                /crest/
+                /reports/
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.base_dir, self.all_paths)
+
+    #------------------------------ Running ----------------------------------#
+    @property_cached
+    def taxonomies(self):
+        return [self.silva, self.greengenes, self.rdp]
+
+    def __call__(self, verbose=True):
+        # Loop over databases #
+        for tax in self.taxonomies:
+            tax(verbose=verbose)
+        # Make all tables #
+        for table in self.tables.all:
+            table(verbose=verbose)
+
+    #---------------------------- Compositions -------------------------------#
+    @property_cached
+    def silva(self):
+        from seqsearch.databases.mothur.silva import silva_mothur
+        return MothurClassify(self.proj.otus.results,
+                              silva_mothur,
+                              self.autopaths.silva_dir)
+
+    @property_cached
+    def greengenes(self):
+        from seqsearch.databases.mothur.greengenes import gg_mothur
+        return MothurClassify(self.proj.otus.results,
+                              gg_mothur,
+                              self.autopaths.greengenes_dir)
+
+    @property_cached
+    def rdp(self):
+        from seqsearch.databases.mothur.rdp import rdp_mothur
+        return MothurClassify(self.proj.otus.results,
+                              rdp_mothur,
+                              self.autopaths.rdp_dir)
+
+    @property_cached
+    def crest(self):
+        from pacmill.taxonomy.crest import CrestClassify
+        return CrestClassify(self.proj.otus.results,
+                            self.autopaths.crest_dir)
+
+    #--------------------------------- Tables --------------------------------#
+    @property_cached
+    def tables(self):
+        &#34;&#34;&#34;
+        By using the OTU table along with the taxonomic assignment results,
+        we can generate taxa tables at different ranks.
+
+        Typically you can access these tables like this:
+
+            &gt;&gt;&gt; print(project.taxonomy.tables.silva)
+            &gt;&gt;&gt; print(project.taxonomy.tables.rdp)
+        &#34;&#34;&#34;
+        # Import #
+        from pacmill.taxonomy.taxa_tables import TaxaTable
+        # Make a dummy object #
+        result = type(&#39;TaxaTablesCollection&#39;, (), {})
+        # Prepare an empty list #
+        result.all = []
+        # Loop over taxonomies #
+        for tax in self.taxonomies:
+            # Instantiate #
+            table = TaxaTable(self.proj.otu_table, tax,
+                              tax.autopaths.taxa_tables_dir)
+            # Adjust the number of taxa displayed #
+            max_taxa = getattr(self.proj.samples[0], &#39;max_taxa&#39;, None)
+            if max_taxa: result.max_taxa_displayed = max_taxa
+            # Set attribute #
+            setattr(result, tax.database.tag, table)
+            # Add it to list #
+            result.all.append(table)
+        # Return #
+        return result
+
+    #-------------------------------- Reports --------------------------------#
+    @property_cached
+    def reports(self):
+        &#34;&#34;&#34;
+        Each different taxonomic classification method has its own PDF
+        report automatically generated.
+        &#34;&#34;&#34;
+        # Import #
+        from pacmill.reports.taxonomy import TaxonomyReport
+        # Make a dummy object #
+        result = type(&#39;TaxaReportCollection&#39;, (), {})
+        # Prepare an empty list #
+        result.all = []
+        # Loop over taxonomies #
+        for tax in self.taxonomies:
+            # Path to report #
+            path =  self.autopaths.reports_dir + tax.database.tag + &#39;.pdf&#39;
+            # Matching taxonomy tables #
+            tables = getattr(self.tables, tax.database.tag)
+            # Instantiate #
+            report = TaxonomyReport(tax, tables, self.proj, path)
+            # Set attribute #
+            setattr(result, tax.short_name, report)
+            # Add it to list #
+            result.all.append(report)
+        # Return #
+        return result</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases"><code class="flex name class">
+<span>class <span class="ident">MultiTaxDatabases</span></span>
+<span>(</span><span>proj, base_dir)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This object should be attached to a Project object and will enable OTU
+sequences to be matched for taxonomic assignments on several databases.</p>
+<p>Currently we support:</p>
+<pre><code>* Silva.
+* Greengenes.
+* RDP.
+* CREST.
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MultiTaxDatabases:
+    &#34;&#34;&#34;
+    This object should be attached to a Project object and will enable OTU
+    sequences to be matched for taxonomic assignments on several databases.
+
+    Currently we support:
+
+        * Silva.
+        * Greengenes.
+        * RDP.
+        * CREST.
+    &#34;&#34;&#34;
+
+    def __repr__(self):
+        msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
+        return msg % (self.__class__.__name__, self.proj)
+
+    def __init__(self, proj, base_dir):
+        self.proj     = proj
+        self.base_dir = base_dir
+
+    #-------------------------- Automatic paths ------------------------------#
+    all_paths = &#34;&#34;&#34;
+                /silva/
+                /greengenes/
+                /rdp/
+                /crest/
+                /reports/
+                &#34;&#34;&#34;
+
+    @property_cached
+    def autopaths(self):
+        &#34;&#34;&#34;
+        The AutoPaths object is used for quickly assessing the filesystem paths
+        of various file inputs/outputs and directories.
+        See https://github.com/xapple/autopaths#autopaths-object
+        &#34;&#34;&#34;
+        from autopaths.auto_paths import AutoPaths
+        return AutoPaths(self.base_dir, self.all_paths)
+
+    #------------------------------ Running ----------------------------------#
+    @property_cached
+    def taxonomies(self):
+        return [self.silva, self.greengenes, self.rdp]
+
+    def __call__(self, verbose=True):
+        # Loop over databases #
+        for tax in self.taxonomies:
+            tax(verbose=verbose)
+        # Make all tables #
+        for table in self.tables.all:
+            table(verbose=verbose)
+
+    #---------------------------- Compositions -------------------------------#
+    @property_cached
+    def silva(self):
+        from seqsearch.databases.mothur.silva import silva_mothur
+        return MothurClassify(self.proj.otus.results,
+                              silva_mothur,
+                              self.autopaths.silva_dir)
+
+    @property_cached
+    def greengenes(self):
+        from seqsearch.databases.mothur.greengenes import gg_mothur
+        return MothurClassify(self.proj.otus.results,
+                              gg_mothur,
+                              self.autopaths.greengenes_dir)
+
+    @property_cached
+    def rdp(self):
+        from seqsearch.databases.mothur.rdp import rdp_mothur
+        return MothurClassify(self.proj.otus.results,
+                              rdp_mothur,
+                              self.autopaths.rdp_dir)
+
+    @property_cached
+    def crest(self):
+        from pacmill.taxonomy.crest import CrestClassify
+        return CrestClassify(self.proj.otus.results,
+                            self.autopaths.crest_dir)
+
+    #--------------------------------- Tables --------------------------------#
+    @property_cached
+    def tables(self):
+        &#34;&#34;&#34;
+        By using the OTU table along with the taxonomic assignment results,
+        we can generate taxa tables at different ranks.
+
+        Typically you can access these tables like this:
+
+            &gt;&gt;&gt; print(project.taxonomy.tables.silva)
+            &gt;&gt;&gt; print(project.taxonomy.tables.rdp)
+        &#34;&#34;&#34;
+        # Import #
+        from pacmill.taxonomy.taxa_tables import TaxaTable
+        # Make a dummy object #
+        result = type(&#39;TaxaTablesCollection&#39;, (), {})
+        # Prepare an empty list #
+        result.all = []
+        # Loop over taxonomies #
+        for tax in self.taxonomies:
+            # Instantiate #
+            table = TaxaTable(self.proj.otu_table, tax,
+                              tax.autopaths.taxa_tables_dir)
+            # Adjust the number of taxa displayed #
+            max_taxa = getattr(self.proj.samples[0], &#39;max_taxa&#39;, None)
+            if max_taxa: result.max_taxa_displayed = max_taxa
+            # Set attribute #
+            setattr(result, tax.database.tag, table)
+            # Add it to list #
+            result.all.append(table)
+        # Return #
+        return result
+
+    #-------------------------------- Reports --------------------------------#
+    @property_cached
+    def reports(self):
+        &#34;&#34;&#34;
+        Each different taxonomic classification method has its own PDF
+        report automatically generated.
+        &#34;&#34;&#34;
+        # Import #
+        from pacmill.reports.taxonomy import TaxonomyReport
+        # Make a dummy object #
+        result = type(&#39;TaxaReportCollection&#39;, (), {})
+        # Prepare an empty list #
+        result.all = []
+        # Loop over taxonomies #
+        for tax in self.taxonomies:
+            # Path to report #
+            path =  self.autopaths.reports_dir + tax.database.tag + &#39;.pdf&#39;
+            # Matching taxonomy tables #
+            tables = getattr(self.tables, tax.database.tag)
+            # Instantiate #
+            report = TaxonomyReport(tax, tables, self.proj, path)
+            # Set attribute #
+            setattr(result, tax.short_name, report)
+            # Add it to list #
+            result.all.append(report)
+        # Return #
+        return result</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.autopaths"><code class="name">var <span class="ident">autopaths</span></code></dt>
+<dd>
+<div class="desc"><p>The AutoPaths object is used for quickly assessing the filesystem paths
+of various file inputs/outputs and directories.
+See <a href="https://github.com/xapple/autopaths#autopaths-object">https://github.com/xapple/autopaths#autopaths-object</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.crest"><code class="name">var <span class="ident">crest</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.greengenes"><code class="name">var <span class="ident">greengenes</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.rdp"><code class="name">var <span class="ident">rdp</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.reports"><code class="name">var <span class="ident">reports</span></code></dt>
+<dd>
+<div class="desc"><p>Each different taxonomic classification method has its own PDF
+report automatically generated.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.silva"><code class="name">var <span class="ident">silva</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.tables"><code class="name">var <span class="ident">tables</span></code></dt>
+<dd>
+<div class="desc"><p>By using the OTU table along with the taxonomic assignment results,
+we can generate taxa tables at different ranks.</p>
+<p>Typically you can access these tables like this:</p>
+<pre><code>&gt;&gt;&gt; print(project.taxonomy.tables.silva)
+&gt;&gt;&gt; print(project.taxonomy.tables.rdp)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.multi_database.MultiTaxDatabases.taxonomies"><code class="name">var <span class="ident">taxonomies</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pacmill.taxonomy" href="index.html">pacmill.taxonomy</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases">MultiTaxDatabases</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.all_paths" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.all_paths">all_paths</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.autopaths" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.autopaths">autopaths</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.crest" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.crest">crest</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.greengenes" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.greengenes">greengenes</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.rdp" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.rdp">rdp</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.reports" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.reports">reports</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.silva" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.silva">silva</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.tables" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.tables">tables</a></code></li>
+<li><code><a title="pacmill.taxonomy.multi_database.MultiTaxDatabases.taxonomies" href="#pacmill.taxonomy.multi_database.MultiTaxDatabases.taxonomies">taxonomies</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
+</footer>
+</body>
+</html>

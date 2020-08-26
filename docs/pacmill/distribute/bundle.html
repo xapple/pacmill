@@ -77,6 +77,7 @@ class Bundle:
     all_paths = &#34;&#34;&#34;
                 /projects/report.pdf
                 /samples/
+                /taxonomies/
                 /metadata/samples.xlsx
                 &#34;&#34;&#34;
 
@@ -103,6 +104,9 @@ class Bundle:
         if not self.project.otus: return
         # Report for project #
         self.project.report.output_path.copy(self.autopaths.report)
+        # Report for taxonomies #
+        for r in self.project.taxonomy.reports.all:
+            r.output_path.copy(self.autopaths.taxonomies_dir)
         # Zip it #
         self.base_dir.zip_to(self.archive)
         # Remove the directory #
@@ -194,6 +198,7 @@ computer with a simple rsync command.</p></div>
     all_paths = &#34;&#34;&#34;
                 /projects/report.pdf
                 /samples/
+                /taxonomies/
                 /metadata/samples.xlsx
                 &#34;&#34;&#34;
 
@@ -220,6 +225,9 @@ computer with a simple rsync command.</p></div>
         if not self.project.otus: return
         # Report for project #
         self.project.report.output_path.copy(self.autopaths.report)
+        # Report for taxonomies #
+        for r in self.project.taxonomy.reports.all:
+            r.output_path.copy(self.autopaths.taxonomies_dir)
         # Zip it #
         self.base_dir.zip_to(self.archive)
         # Remove the directory #

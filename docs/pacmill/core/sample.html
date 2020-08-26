@@ -178,11 +178,10 @@ class Sample:
                 /graphs/raw_len_dist.pdf
                 /graphs/raw_len_hist.pdf
                 /filtered/
-                /barrnap/
-                /barrnap/results.gff
-                /barrnap/has_rrna_gene.fastq
                 /chimeras/cleaned.fasta
                 /chimeras/rejects.fasta
+                /barrnap/results.gff
+                /barrnap/only_genes.fasta
                 /report/cache/
                 /report/sample.pdf
                 &#34;&#34;&#34;
@@ -254,23 +253,10 @@ class Sample:
         return seq_filter
 
     @property_cached
-    def barrnap(self):
-        &#34;&#34;&#34;Takes care of running the Barrnap program.&#34;&#34;&#34;
-        # Get file paths #
-        source   = self.filter.results.clean
-        dest     = self.autopaths.barrnap_gff
-        filtered = self.autopaths.barrnap_fastq
-        # Create barrnap object for filtering #
-        from pacmill.filtering.barrnap import BarrnapFilter
-        barrnap = BarrnapFilter(source, dest, filtered)
-        # Return #
-        return barrnap
-
-    @property_cached
     def chimeras(self):
         &#34;&#34;&#34;Takes care of removing chimeric reads.&#34;&#34;&#34;
         # Get file paths #
-        source   = self.barrnap.results
+        source   = self.filter.results.clean
         cleaned  = self.autopaths.chimeras_cleaned
         rejects  = self.autopaths.chimeras_rejects
         # Create chimeras object #
@@ -278,6 +264,19 @@ class Sample:
         chimeras = Chimeras(source, cleaned, rejects)
         # Return #
         return chimeras
+
+    @property_cached
+    def barrnap(self):
+        &#34;&#34;&#34;Takes care of running the Barrnap program.&#34;&#34;&#34;
+        # Get file paths #
+        source   = self.chimeras.results
+        dest     = self.autopaths.barrnap_gff
+        filtered = self.autopaths.barrnap_fasta
+        # Create barrnap object for filtering #
+        from pacmill.filtering.barrnap import RemoveITS
+        barrnap = RemoveITS(source, dest, filtered)
+        # Return #
+        return barrnap
 
     @property_cached
     def report(self):
@@ -456,11 +455,10 @@ was parsed by the Project object.</p></div>
                 /graphs/raw_len_dist.pdf
                 /graphs/raw_len_hist.pdf
                 /filtered/
-                /barrnap/
-                /barrnap/results.gff
-                /barrnap/has_rrna_gene.fastq
                 /chimeras/cleaned.fasta
                 /chimeras/rejects.fasta
+                /barrnap/results.gff
+                /barrnap/only_genes.fasta
                 /report/cache/
                 /report/sample.pdf
                 &#34;&#34;&#34;
@@ -532,23 +530,10 @@ was parsed by the Project object.</p></div>
         return seq_filter
 
     @property_cached
-    def barrnap(self):
-        &#34;&#34;&#34;Takes care of running the Barrnap program.&#34;&#34;&#34;
-        # Get file paths #
-        source   = self.filter.results.clean
-        dest     = self.autopaths.barrnap_gff
-        filtered = self.autopaths.barrnap_fastq
-        # Create barrnap object for filtering #
-        from pacmill.filtering.barrnap import BarrnapFilter
-        barrnap = BarrnapFilter(source, dest, filtered)
-        # Return #
-        return barrnap
-
-    @property_cached
     def chimeras(self):
         &#34;&#34;&#34;Takes care of removing chimeric reads.&#34;&#34;&#34;
         # Get file paths #
-        source   = self.barrnap.results
+        source   = self.filter.results.clean
         cleaned  = self.autopaths.chimeras_cleaned
         rejects  = self.autopaths.chimeras_rejects
         # Create chimeras object #
@@ -556,6 +541,19 @@ was parsed by the Project object.</p></div>
         chimeras = Chimeras(source, cleaned, rejects)
         # Return #
         return chimeras
+
+    @property_cached
+    def barrnap(self):
+        &#34;&#34;&#34;Takes care of running the Barrnap program.&#34;&#34;&#34;
+        # Get file paths #
+        source   = self.chimeras.results
+        dest     = self.autopaths.barrnap_gff
+        filtered = self.autopaths.barrnap_fasta
+        # Create barrnap object for filtering #
+        from pacmill.filtering.barrnap import RemoveITS
+        barrnap = RemoveITS(source, dest, filtered)
+        # Return #
+        return barrnap
 
     @property_cached
     def report(self):

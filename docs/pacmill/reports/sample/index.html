@@ -54,6 +54,7 @@ from pymarktex.figures import DualFigure, ScaledFigure
 from autopaths         import Path
 
 # Third party modules #
+import pandas
 
 ###############################################################################
 class SampleReport(Document):
@@ -91,7 +92,7 @@ class SampleTemplate(ReportTemplate):
         return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.parent)
 
     def __init__(self, parent):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent = parent
         self.report = parent
         # Reference to sample and project objects #
@@ -236,13 +237,27 @@ class SampleTemplate(ReportTemplate):
         percent = 100 * (after / before)
         return &#34;%.1f%%&#34; % percent
 
+    #------------------------------ Chimeras ---------------------------------#
+    def chimeras(self):
+        return bool(self.sample.chimeras)
+
+    @property_pickled
+    def chimeras_discard(self):
+        before = self.sample.filter.results.clean.count
+        after  = self.sample.chimeras.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def chimeras_left(self):
+        return thousands(self.sample.chimeras.results.count)
+
     #------------------------------ Barrnap ----------------------------------#
     def barrnap(self):
         return bool(self.sample.barrnap)
 
     @property_pickled
     def barrnap_discard(self):
-        before = self.sample.filter.results.clean.count
+        before = self.sample.chimeras.results.count
         after  = self.sample.barrnap.results.count
         return thousands(before - after)
 
@@ -250,19 +265,38 @@ class SampleTemplate(ReportTemplate):
     def barrnap_left(self):
         return thousands(self.sample.barrnap.results.count)
 
-    #------------------------------ Chimeras ---------------------------------#
-    def chimeras(self):
-        return bool(self.sample.chimeras)
+    #------------------------------ Taxonomy ---------------------------------#
+    def taxonomy(self):
+        return bool(self.project.taxonomy.tables.silva)
 
     @property_pickled
-    def chimeras_discard(self):
-        before = self.sample.barrnap.results.count
-        after  = self.sample.chimeras.results.count
-        return thousands(before - after)
-
-    @property_pickled
-    def chimeras_left(self):
-        return thousands(self.sample.chimeras.results.count)</code></pre>
+    def taxa_table(self):
+        # Pick the rank #
+        rank_name = &#34;Genus&#34;
+        # Get the taxa tables of choice (silva) #
+        tables = self.project.taxonomy.tables.silva
+        # Get the rank number #
+        rank = tables.rank_names.index(rank_name)
+        # Get the row for this sample #
+        table = tables.results.taxa_tables_by_rank[rank]
+        row   = table.loc[self.sample.short_name]
+        row   = row.sort_values(ascending=False)
+        # Make an empty dataframe #
+        df = pandas.DataFrame(index=range(len(row)))
+        # Populate dataframe #
+        df[&#39;#&#39;]      = range(1, len(row)+1)
+        df[&#39;Genera&#39;] = row.index
+        df[&#39;Reads&#39;]  = [thousands(r) for r in row.values]
+        # Show only most abundant #
+        df = df[0:20]
+        df = dict(df)
+        # Make it as text #
+        from tabulate import tabulate
+        table = tabulate(df, headers=&#34;keys&#34;, numalign=&#34;right&#34;, tablefmt=&#34;pipe&#34;)
+        # Add caption #
+        caption = &#34;The 20 most abundant predicted genera in this sample&#34; \
+                  &#34; predicted by silva.&#34;
+        return table + &#34;\n\n   : %s&#34; % caption</code></pre>
 </details>
 </section>
 <section>
@@ -399,7 +433,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
         return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.parent)
 
     def __init__(self, parent):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent = parent
         self.report = parent
         # Reference to sample and project objects #
@@ -544,13 +578,27 @@ documentation was unable to correctly traverse a decorated property.</p></div>
         percent = 100 * (after / before)
         return &#34;%.1f%%&#34; % percent
 
+    #------------------------------ Chimeras ---------------------------------#
+    def chimeras(self):
+        return bool(self.sample.chimeras)
+
+    @property_pickled
+    def chimeras_discard(self):
+        before = self.sample.filter.results.clean.count
+        after  = self.sample.chimeras.results.count
+        return thousands(before - after)
+
+    @property_pickled
+    def chimeras_left(self):
+        return thousands(self.sample.chimeras.results.count)
+
     #------------------------------ Barrnap ----------------------------------#
     def barrnap(self):
         return bool(self.sample.barrnap)
 
     @property_pickled
     def barrnap_discard(self):
-        before = self.sample.filter.results.clean.count
+        before = self.sample.chimeras.results.count
         after  = self.sample.barrnap.results.count
         return thousands(before - after)
 
@@ -558,19 +606,38 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     def barrnap_left(self):
         return thousands(self.sample.barrnap.results.count)
 
-    #------------------------------ Chimeras ---------------------------------#
-    def chimeras(self):
-        return bool(self.sample.chimeras)
+    #------------------------------ Taxonomy ---------------------------------#
+    def taxonomy(self):
+        return bool(self.project.taxonomy.tables.silva)
 
     @property_pickled
-    def chimeras_discard(self):
-        before = self.sample.barrnap.results.count
-        after  = self.sample.chimeras.results.count
-        return thousands(before - after)
-
-    @property_pickled
-    def chimeras_left(self):
-        return thousands(self.sample.chimeras.results.count)</code></pre>
+    def taxa_table(self):
+        # Pick the rank #
+        rank_name = &#34;Genus&#34;
+        # Get the taxa tables of choice (silva) #
+        tables = self.project.taxonomy.tables.silva
+        # Get the rank number #
+        rank = tables.rank_names.index(rank_name)
+        # Get the row for this sample #
+        table = tables.results.taxa_tables_by_rank[rank]
+        row   = table.loc[self.sample.short_name]
+        row   = row.sort_values(ascending=False)
+        # Make an empty dataframe #
+        df = pandas.DataFrame(index=range(len(row)))
+        # Populate dataframe #
+        df[&#39;#&#39;]      = range(1, len(row)+1)
+        df[&#39;Genera&#39;] = row.index
+        df[&#39;Reads&#39;]  = [thousands(r) for r in row.values]
+        # Show only most abundant #
+        df = df[0:20]
+        df = dict(df)
+        # Make it as text #
+        from tabulate import tabulate
+        table = tabulate(df, headers=&#34;keys&#34;, numalign=&#34;right&#34;, tablefmt=&#34;pipe&#34;)
+        # Add caption #
+        caption = &#34;The 20 most abundant predicted genera in this sample&#34; \
+                  &#34; predicted by silva.&#34;
+        return table + &#34;\n\n   : %s&#34; % caption</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1249,6 +1316,45 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     return result</code></pre>
 </details>
 </dd>
+<dt id="pacmill.reports.sample.SampleTemplate.taxa_table"><code class="name">var <span class="ident">taxa_table</span></code></dt>
+<dd>
+<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
+an auto-generated documentation, it means the program making the
+documentation was unable to correctly traverse a decorated property.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # Where should we look in the file system ? #
+    path = self.get_pickle_path(instance)
+    # Is the answer already on the file system? #
+    if path.exists:
+        with open(path, &#39;rb&#39;) as handle: result = pickle.load(handle)
+        instance.__cache__[self.name] = result
+        return result
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later in the cache #
+    instance.__cache__[self.name] = result
+    # And also store it on the disk #
+    with open(path, &#39;wb&#39;) as handle: pickle.dump(result, handle)
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Methods</h3>
 <dl>
@@ -1513,6 +1619,19 @@ current sample.</p></div>
 <pre><code class="python">def sample_short_name(self):     return self.sample.short_name</code></pre>
 </details>
 </dd>
+<dt id="pacmill.reports.sample.SampleTemplate.taxonomy"><code class="name flex">
+<span>def <span class="ident">taxonomy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def taxonomy(self):
+    return bool(self.project.taxonomy.tables.silva)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1580,6 +1699,8 @@ current sample.</p></div>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.score_discard" href="#pacmill.reports.sample.SampleTemplate.score_discard">score_discard</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.score_left" href="#pacmill.reports.sample.SampleTemplate.score_left">score_left</a></code></li>
 <li><code><a title="pacmill.reports.sample.SampleTemplate.shortest_seq" href="#pacmill.reports.sample.SampleTemplate.shortest_seq">shortest_seq</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.taxa_table" href="#pacmill.reports.sample.SampleTemplate.taxa_table">taxa_table</a></code></li>
+<li><code><a title="pacmill.reports.sample.SampleTemplate.taxonomy" href="#pacmill.reports.sample.SampleTemplate.taxonomy">taxonomy</a></code></li>
 </ul>
 </li>
 </ul>

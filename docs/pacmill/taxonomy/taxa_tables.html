@@ -44,7 +44,7 @@ Contact at www.sinclair.bio
 from collections import defaultdict
 
 # Internal modules #
-from pacmill.taxonomy.taxa_graphs import TaxaBarstack
+from pacmill.taxonomy.taxa_graphs import TaxaBarstack, TaxaLegend
 
 # First party modules #
 from plumbing.cache import property_cached
@@ -58,6 +58,9 @@ class TaxaTable:
     Takes the OTU table along with the taxonomic assignment results to
     generate taxa tables at different ranks.
     &#34;&#34;&#34;
+
+    # Combine too many taxa together in the graphs #
+    max_taxa_displayed = 18
 
     def __repr__(self):
         msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
@@ -103,7 +106,7 @@ class TaxaTable:
         if verbose: print(&#34;Making all taxa tables in &#39;%s&#39;&#34; % self.base_dir)
         # Make directory #
         self.base_dir.create_if_not_exists()
-        # Do it #
+        # Loop over ranks #
         for i, rank_name in enumerate(self.rank_names):
             table = self.taxa_table_at_rank(i)
             tsv   = self.name_to_path(rank_name)
@@ -185,25 +188,47 @@ class TaxaTableResults:
         graphs (one at each rank) initialized with this instance as only
         argument. The graphs are also accessible in a list attribute named
         `by_rank`.
+
+        Each graph also possesses an associated legend in a separate plot.
+        These are available in the `legends` attribute.
+
+        So to retrieve the taxonomic barstack graph and legend for the
+        phylum rank, you could do the following:
+
+            &gt;&gt;&gt; print(proj.taxa_tables.results.graphs.taxa_barstack_phylum)
+            &gt;&gt;&gt; print(proj.taxa_tables.results.graphs.taxa_legend_phylum)
         &#34;&#34;&#34;
         # Make a dummy object #
         result = type(&#39;Dummy&#39;, (), {})
         # Create a list attribute to hold each rank #
         result.by_rank = []
+        # Create a list attribute to hold each legend #
+        result.legends = []
         # Loop over ranks #
         for i, rank_name in enumerate(self.parent.rank_names):
             # The attributes of the graph we will create #
             attrs = dict(base_rank  = i,
-                         label      = rank_name,
                          short_name = &#39;taxa_barstack_&#39; + rank_name.lower())
             # Create a graph type class for this specific rank #
-            clss = type(&#34;Composition&#34; + rank_name, (TaxaBarstack,), attrs)
+            name = &#34;TaxaBarstack&#34; + rank_name.capitalize()
+            clss = type(name, (TaxaBarstack,), attrs)
             # Instantiate the graph #
             graph = clss(self, base_dir=self.parent.autopaths.graphs_dir)
-            # Add it as an attribute of our result #
-            setattr(result, graph.short_name, graph)
-            # Add it also to the list #
+            # The attributes of the legend we will create #
+            attrs = dict(base_rank  = i,
+                         label      = rank_name,
+                         short_name = &#39;taxa_legend_&#39; + rank_name.lower())
+            # Create a legend type class for this specific rank #
+            name = &#34;TaxaLegend&#34; + rank_name.capitalize()
+            clss = type(name, (TaxaLegend,), attrs)
+            # Instantiate the legend #
+            legend = clss(self, base_dir=self.parent.autopaths.graphs_dir)
+            # Add them as an attribute of our result #
+            setattr(result, graph.short_name,  graph)
+            setattr(result, legend.short_name, legend)
+            # Add them also to the lists #
             result.by_rank.append(graph)
+            result.legends.append(legend)
         # Return #
         return result</code></pre>
 </details>
@@ -233,6 +258,9 @@ generate taxa tables at different ranks.</p></div>
     Takes the OTU table along with the taxonomic assignment results to
     generate taxa tables at different ranks.
     &#34;&#34;&#34;
+
+    # Combine too many taxa together in the graphs #
+    max_taxa_displayed = 18
 
     def __repr__(self):
         msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
@@ -278,7 +306,7 @@ generate taxa tables at different ranks.</p></div>
         if verbose: print(&#34;Making all taxa tables in &#39;%s&#39;&#34; % self.base_dir)
         # Make directory #
         self.base_dir.create_if_not_exists()
-        # Do it #
+        # Loop over ranks #
         for i, rank_name in enumerate(self.rank_names):
             table = self.taxa_table_at_rank(i)
             tsv   = self.name_to_path(rank_name)
@@ -339,6 +367,10 @@ generate taxa tables at different ranks.</p></div>
 <h3>Class variables</h3>
 <dl>
 <dt id="pacmill.taxonomy.taxa_tables.TaxaTable.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pacmill.taxonomy.taxa_tables.TaxaTable.max_taxa_displayed"><code class="name">var <span class="ident">max_taxa_displayed</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -499,25 +531,47 @@ documentation was unable to correctly traverse a decorated property.</p></div>
         graphs (one at each rank) initialized with this instance as only
         argument. The graphs are also accessible in a list attribute named
         `by_rank`.
+
+        Each graph also possesses an associated legend in a separate plot.
+        These are available in the `legends` attribute.
+
+        So to retrieve the taxonomic barstack graph and legend for the
+        phylum rank, you could do the following:
+
+            &gt;&gt;&gt; print(proj.taxa_tables.results.graphs.taxa_barstack_phylum)
+            &gt;&gt;&gt; print(proj.taxa_tables.results.graphs.taxa_legend_phylum)
         &#34;&#34;&#34;
         # Make a dummy object #
         result = type(&#39;Dummy&#39;, (), {})
         # Create a list attribute to hold each rank #
         result.by_rank = []
+        # Create a list attribute to hold each legend #
+        result.legends = []
         # Loop over ranks #
         for i, rank_name in enumerate(self.parent.rank_names):
             # The attributes of the graph we will create #
             attrs = dict(base_rank  = i,
-                         label      = rank_name,
                          short_name = &#39;taxa_barstack_&#39; + rank_name.lower())
             # Create a graph type class for this specific rank #
-            clss = type(&#34;Composition&#34; + rank_name, (TaxaBarstack,), attrs)
+            name = &#34;TaxaBarstack&#34; + rank_name.capitalize()
+            clss = type(name, (TaxaBarstack,), attrs)
             # Instantiate the graph #
             graph = clss(self, base_dir=self.parent.autopaths.graphs_dir)
-            # Add it as an attribute of our result #
-            setattr(result, graph.short_name, graph)
-            # Add it also to the list #
+            # The attributes of the legend we will create #
+            attrs = dict(base_rank  = i,
+                         label      = rank_name,
+                         short_name = &#39;taxa_legend_&#39; + rank_name.lower())
+            # Create a legend type class for this specific rank #
+            name = &#34;TaxaLegend&#34; + rank_name.capitalize()
+            clss = type(name, (TaxaLegend,), attrs)
+            # Instantiate the legend #
+            legend = clss(self, base_dir=self.parent.autopaths.graphs_dir)
+            # Add them as an attribute of our result #
+            setattr(result, graph.short_name,  graph)
+            setattr(result, legend.short_name, legend)
+            # Add them also to the lists #
             result.by_rank.append(graph)
+            result.legends.append(legend)
         # Return #
         return result</code></pre>
 </details>
@@ -528,7 +582,14 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <div class="desc"><p>The result is an object whose attributes are all the TaxaBarstack
 graphs (one at each rank) initialized with this instance as only
 argument. The graphs are also accessible in a list attribute named
-<code>by_rank</code>.</p></div>
+<code>by_rank</code>.</p>
+<p>Each graph also possesses an associated legend in a separate plot.
+These are available in the <code>legends</code> attribute.</p>
+<p>So to retrieve the taxonomic barstack graph and legend for the
+phylum rank, you could do the following:</p>
+<pre><code>&gt;&gt;&gt; print(proj.taxa_tables.results.graphs.taxa_barstack_phylum)
+&gt;&gt;&gt; print(proj.taxa_tables.results.graphs.taxa_legend_phylum)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -623,9 +684,10 @@ argument. The graphs are also accessible in a list attribute named
 <ul>
 <li>
 <h4><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable" href="#pacmill.taxonomy.taxa_tables.TaxaTable">TaxaTable</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.all_paths" href="#pacmill.taxonomy.taxa_tables.TaxaTable.all_paths">all_paths</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.autopaths" href="#pacmill.taxonomy.taxa_tables.TaxaTable.autopaths">autopaths</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.max_taxa_displayed" href="#pacmill.taxonomy.taxa_tables.TaxaTable.max_taxa_displayed">max_taxa_displayed</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.name_to_path" href="#pacmill.taxonomy.taxa_tables.TaxaTable.name_to_path">name_to_path</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.results" href="#pacmill.taxonomy.taxa_tables.TaxaTable.results">results</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_tables.TaxaTable.taxa_table_at_rank" href="#pacmill.taxonomy.taxa_tables.TaxaTable.taxa_table_at_rank">taxa_table_at_rank</a></code></li>

@@ -50,7 +50,7 @@ from pacmill.reports.template      import Header, Footer
 from plumbing.cache    import property_cached
 from plumbing.common   import split_thousands as thousands
 from pymarktex         import Document
-from pymarktex.figures import ScaledFigure
+from pymarktex.figures import ScaledFigure, BareFigure
 from autopaths         import Path
 
 # Third party modules #
@@ -67,7 +67,7 @@ class ProjectReport(Document):
     params = {&#39;title&#39;: &#39;Auto-generated project report&#39;}
 
     def __init__(self, project, output_path):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent  = project
         self.project = project
         # The output location #
@@ -90,7 +90,7 @@ class ProjectTemplate(ReportTemplate):
         return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.parent)
 
     def __init__(self, parent):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent = parent
         self.report = parent
         # Reference to the project object #
@@ -168,69 +168,6 @@ class ProjectTemplate(ReportTemplate):
         path    = self.project.otu_table.graphs.cumulative_presence()
         return str(ScaledFigure(path, caption, &#39;cumulative_presence&#39;))
 
-    #------------------------------ Barrnap ----------------------------------#
-    def barrnap(self):
-        return bool(self.project.barrnap)
-
-    def barrnap_discard(self):
-        before = self.project.otus.results.count
-        after  = self.project.barrnap.results.count
-        return thousands(before - after)
-
-    def barrnap_left(self):
-        return thousands(self.project.barrnap.results.count)
-
-    #------------------------------- Taxonomy --------------------------------#
-    def taxonomy(self):
-        return bool(self.project.taxonomy)
-
-    def classify_citation(self):
-        return &#34;the &#39;%s&#39; method&#34; % self.project.taxonomy.long_name
-
-    def classify_database(self):
-        return &#34;&#39;&#34; + self.project.taxonomy.database.long_name + &#34;&#39;&#34;
-
-    def otu_classified_table(self):
-        # The functions #
-        def rank(i):
-            return &#34;**&#34; + self.project.taxonomy.database.rank_names[i] + &#34;**&#34;
-        def classified(i):
-            return self.project.taxonomy.results.count_assigned[i]
-        def unclassified(i):
-            return self.project.taxonomy.results.count_unassigned[i]
-        # The columns #
-        info = {
-            &#39;Rank&#39;:         rank,
-            &#39;Classified&#39;:   classified,
-            &#39;Unclassified&#39;: unclassified,
-        }
-        # The table contents, row after row #
-        table = [[i+1] + [f(i) for f in info.values()]
-                 for i in range(len(self.project.taxonomy.database.rank_names))]
-        # The title row #
-        headers = [&#39;#&#39;] + list(info.keys())
-        # Make it as text #
-        from tabulate import tabulate
-        table = tabulate(table, headers, numalign=&#34;right&#34;, tablefmt=&#34;pipe&#34;)
-        # Add caption #
-        return table + &#34;\n\n   : Classification summary for OTUs.&#34;
-
-    #--------------------------- Taxa Table Graphs ---------------------------#
-    def taxa_barstack_at_rank(self, rank, label):
-        graphs  = self.project.taxa_tables.results.graphs.by_rank
-        graph   = [g for g in graphs if g.base_rank == rank][0]
-        caption = &#34;Relative abundances per sample on the &#39;%s&#39; level&#34;
-        return str(ScaledFigure(graph(), caption % graph.label, label))
-
-    def level_one_barstack(self):
-        return self.taxa_barstack_at_rank(2, &#34;level_one_barstack&#34;)
-
-    def level_two_barstack(self):
-        return self.taxa_barstack_at_rank(3, &#34;level_two_barstack&#34;)
-
-    def level_three_barstack(self):
-        return self.taxa_barstack_at_rank(4, &#34;level_three_barstack&#34;)
-
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
         if len(self.samples) &lt; 2: return False
@@ -272,7 +209,7 @@ class ProjectTemplate(ReportTemplate):
     params = {&#39;title&#39;: &#39;Auto-generated project report&#39;}
 
     def __init__(self, project, output_path):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent  = project
         self.project = project
         # The output location #
@@ -375,7 +312,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
         return &#39;&lt;%s object on %s&gt;&#39; % (self.__class__.__name__, self.parent)
 
     def __init__(self, parent):
-        # Reference to parent objects #
+        # References to parent object #
         self.parent = parent
         self.report = parent
         # Reference to the project object #
@@ -453,69 +390,6 @@ documentation was unable to correctly traverse a decorated property.</p></div>
         path    = self.project.otu_table.graphs.cumulative_presence()
         return str(ScaledFigure(path, caption, &#39;cumulative_presence&#39;))
 
-    #------------------------------ Barrnap ----------------------------------#
-    def barrnap(self):
-        return bool(self.project.barrnap)
-
-    def barrnap_discard(self):
-        before = self.project.otus.results.count
-        after  = self.project.barrnap.results.count
-        return thousands(before - after)
-
-    def barrnap_left(self):
-        return thousands(self.project.barrnap.results.count)
-
-    #------------------------------- Taxonomy --------------------------------#
-    def taxonomy(self):
-        return bool(self.project.taxonomy)
-
-    def classify_citation(self):
-        return &#34;the &#39;%s&#39; method&#34; % self.project.taxonomy.long_name
-
-    def classify_database(self):
-        return &#34;&#39;&#34; + self.project.taxonomy.database.long_name + &#34;&#39;&#34;
-
-    def otu_classified_table(self):
-        # The functions #
-        def rank(i):
-            return &#34;**&#34; + self.project.taxonomy.database.rank_names[i] + &#34;**&#34;
-        def classified(i):
-            return self.project.taxonomy.results.count_assigned[i]
-        def unclassified(i):
-            return self.project.taxonomy.results.count_unassigned[i]
-        # The columns #
-        info = {
-            &#39;Rank&#39;:         rank,
-            &#39;Classified&#39;:   classified,
-            &#39;Unclassified&#39;: unclassified,
-        }
-        # The table contents, row after row #
-        table = [[i+1] + [f(i) for f in info.values()]
-                 for i in range(len(self.project.taxonomy.database.rank_names))]
-        # The title row #
-        headers = [&#39;#&#39;] + list(info.keys())
-        # Make it as text #
-        from tabulate import tabulate
-        table = tabulate(table, headers, numalign=&#34;right&#34;, tablefmt=&#34;pipe&#34;)
-        # Add caption #
-        return table + &#34;\n\n   : Classification summary for OTUs.&#34;
-
-    #--------------------------- Taxa Table Graphs ---------------------------#
-    def taxa_barstack_at_rank(self, rank, label):
-        graphs  = self.project.taxa_tables.results.graphs.by_rank
-        graph   = [g for g in graphs if g.base_rank == rank][0]
-        caption = &#34;Relative abundances per sample on the &#39;%s&#39; level&#34;
-        return str(ScaledFigure(graph(), caption % graph.label, label))
-
-    def level_one_barstack(self):
-        return self.taxa_barstack_at_rank(2, &#34;level_one_barstack&#34;)
-
-    def level_two_barstack(self):
-        return self.taxa_barstack_at_rank(3, &#34;level_two_barstack&#34;)
-
-    def level_three_barstack(self):
-        return self.taxa_barstack_at_rank(4, &#34;level_three_barstack&#34;)
-
     #------------------------------ Comparison -------------------------------#
     def comparison(self):
         if len(self.samples) &lt; 2: return False
@@ -540,73 +414,6 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="pacmill.reports.project.ProjectTemplate.barrnap"><code class="name flex">
-<span>def <span class="ident">barrnap</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def barrnap(self):
-    return bool(self.project.barrnap)</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.barrnap_discard"><code class="name flex">
-<span>def <span class="ident">barrnap_discard</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def barrnap_discard(self):
-    before = self.project.otus.results.count
-    after  = self.project.barrnap.results.count
-    return thousands(before - after)</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.barrnap_left"><code class="name flex">
-<span>def <span class="ident">barrnap_left</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def barrnap_left(self):
-    return thousands(self.project.barrnap.results.count)</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.classify_citation"><code class="name flex">
-<span>def <span class="ident">classify_citation</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def classify_citation(self):
-    return &#34;the &#39;%s&#39; method&#34; % self.project.taxonomy.long_name</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.classify_database"><code class="name flex">
-<span>def <span class="ident">classify_database</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def classify_database(self):
-    return &#34;&#39;&#34; + self.project.taxonomy.database.long_name + &#34;&#39;&#34;</code></pre>
-</details>
-</dd>
 <dt id="pacmill.reports.project.ProjectTemplate.comparison"><code class="name flex">
 <span>def <span class="ident">comparison</span></span>(<span>self)</span>
 </code></dt>
@@ -675,80 +482,6 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     caption = &#34;Distribution of sequence lengths at input&#34;
     path    = self.project.fasta.graphs.length_hist()
     return str(ScaledFigure(path, caption, &#34;input_length_dist&#34;))</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.level_one_barstack"><code class="name flex">
-<span>def <span class="ident">level_one_barstack</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def level_one_barstack(self):
-    return self.taxa_barstack_at_rank(2, &#34;level_one_barstack&#34;)</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.level_three_barstack"><code class="name flex">
-<span>def <span class="ident">level_three_barstack</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def level_three_barstack(self):
-    return self.taxa_barstack_at_rank(4, &#34;level_three_barstack&#34;)</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.level_two_barstack"><code class="name flex">
-<span>def <span class="ident">level_two_barstack</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def level_two_barstack(self):
-    return self.taxa_barstack_at_rank(3, &#34;level_two_barstack&#34;)</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.otu_classified_table"><code class="name flex">
-<span>def <span class="ident">otu_classified_table</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def otu_classified_table(self):
-    # The functions #
-    def rank(i):
-        return &#34;**&#34; + self.project.taxonomy.database.rank_names[i] + &#34;**&#34;
-    def classified(i):
-        return self.project.taxonomy.results.count_assigned[i]
-    def unclassified(i):
-        return self.project.taxonomy.results.count_unassigned[i]
-    # The columns #
-    info = {
-        &#39;Rank&#39;:         rank,
-        &#39;Classified&#39;:   classified,
-        &#39;Unclassified&#39;: unclassified,
-    }
-    # The table contents, row after row #
-    table = [[i+1] + [f(i) for f in info.values()]
-             for i in range(len(self.project.taxonomy.database.rank_names))]
-    # The title row #
-    headers = [&#39;#&#39;] + list(info.keys())
-    # Make it as text #
-    from tabulate import tabulate
-    table = tabulate(table, headers, numalign=&#34;right&#34;, tablefmt=&#34;pipe&#34;)
-    # Add caption #
-    return table + &#34;\n\n   : Classification summary for OTUs.&#34;</code></pre>
 </details>
 </dd>
 <dt id="pacmill.reports.project.ProjectTemplate.otu_nmds"><code class="name flex">
@@ -895,35 +628,6 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     return table + &#34;\n\n   : Summary information for all samples.&#34;</code></pre>
 </details>
 </dd>
-<dt id="pacmill.reports.project.ProjectTemplate.taxa_barstack_at_rank"><code class="name flex">
-<span>def <span class="ident">taxa_barstack_at_rank</span></span>(<span>self, rank, label)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def taxa_barstack_at_rank(self, rank, label):
-    graphs  = self.project.taxa_tables.results.graphs.by_rank
-    graph   = [g for g in graphs if g.base_rank == rank][0]
-    caption = &#34;Relative abundances per sample on the &#39;%s&#39; level&#34;
-    return str(ScaledFigure(graph(), caption % graph.label, label))</code></pre>
-</details>
-</dd>
-<dt id="pacmill.reports.project.ProjectTemplate.taxonomy"><code class="name flex">
-<span>def <span class="ident">taxonomy</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def taxonomy(self):
-    return bool(self.project.taxonomy)</code></pre>
-</details>
-</dd>
 </dl>
 </dd>
 </dl>
@@ -954,22 +658,13 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </li>
 <li>
 <h4><code><a title="pacmill.reports.project.ProjectTemplate" href="#pacmill.reports.project.ProjectTemplate">ProjectTemplate</a></code></h4>
-<ul class="">
-<li><code><a title="pacmill.reports.project.ProjectTemplate.barrnap" href="#pacmill.reports.project.ProjectTemplate.barrnap">barrnap</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.barrnap_discard" href="#pacmill.reports.project.ProjectTemplate.barrnap_discard">barrnap_discard</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.barrnap_left" href="#pacmill.reports.project.ProjectTemplate.barrnap_left">barrnap_left</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.classify_citation" href="#pacmill.reports.project.ProjectTemplate.classify_citation">classify_citation</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.classify_database" href="#pacmill.reports.project.ProjectTemplate.classify_database">classify_database</a></code></li>
+<ul class="two-column">
 <li><code><a title="pacmill.reports.project.ProjectTemplate.comparison" href="#pacmill.reports.project.ProjectTemplate.comparison">comparison</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.count_samples" href="#pacmill.reports.project.ProjectTemplate.count_samples">count_samples</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.count_sequences" href="#pacmill.reports.project.ProjectTemplate.count_sequences">count_sequences</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.cumulative_presence" href="#pacmill.reports.project.ProjectTemplate.cumulative_presence">cumulative_presence</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.delimiters" href="#pacmill.reports.project.ProjectTemplate.delimiters">delimiters</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.input_length_dist" href="#pacmill.reports.project.ProjectTemplate.input_length_dist">input_length_dist</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.level_one_barstack" href="#pacmill.reports.project.ProjectTemplate.level_one_barstack">level_one_barstack</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.level_three_barstack" href="#pacmill.reports.project.ProjectTemplate.level_three_barstack">level_three_barstack</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.level_two_barstack" href="#pacmill.reports.project.ProjectTemplate.level_two_barstack">level_two_barstack</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.otu_classified_table" href="#pacmill.reports.project.ProjectTemplate.otu_classified_table">otu_classified_table</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.otu_nmds" href="#pacmill.reports.project.ProjectTemplate.otu_nmds">otu_nmds</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.otu_sums_graph" href="#pacmill.reports.project.ProjectTemplate.otu_sums_graph">otu_sums_graph</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.otus" href="#pacmill.reports.project.ProjectTemplate.otus">otus</a></code></li>
@@ -979,8 +674,6 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.proj_short_name" href="#pacmill.reports.project.ProjectTemplate.proj_short_name">proj_short_name</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.sample_sums_graph" href="#pacmill.reports.project.ProjectTemplate.sample_sums_graph">sample_sums_graph</a></code></li>
 <li><code><a title="pacmill.reports.project.ProjectTemplate.sample_table" href="#pacmill.reports.project.ProjectTemplate.sample_table">sample_table</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.taxa_barstack_at_rank" href="#pacmill.reports.project.ProjectTemplate.taxa_barstack_at_rank">taxa_barstack_at_rank</a></code></li>
-<li><code><a title="pacmill.reports.project.ProjectTemplate.taxonomy" href="#pacmill.reports.project.ProjectTemplate.taxonomy">taxonomy</a></code></li>
 </ul>
 </li>
 </ul>

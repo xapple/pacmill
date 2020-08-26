@@ -30,7 +30,7 @@ Contact at www.sinclair.bio</p>
 <p>This script will download the raw input data for the demonstration project
 of the <code><a title="pacmill" href="../index.html">pacmill</a></code> pipeline.</p>
 <p>Typically you would run this file from a command line like this:</p>
-<pre><code>ipython3 -i -- ~/deploy/pacmill/demo/download.py
+<pre><code>ipython3 -i -- ~/deploy/pacmill/pacmill/demo/download.py
 </code></pre>
 <details class="source">
 <summary>
@@ -49,7 +49,7 @@ of the `pacmill` pipeline.
 
 Typically you would run this file from a command line like this:
 
-    ipython3 -i -- ~/deploy/pacmill/demo/download.py
+    ipython3 -i -- ~/deploy/pacmill/pacmill/demo/download.py
 &#34;&#34;&#34;
 
 # Built-in modules #
@@ -62,11 +62,10 @@ Typically you would run this file from a command line like this:
 if __name__ == &#34;__main__&#34;:
     # Import #
     from pacmill.demo.demo_samples import samples
-    # For debugging purposes #
-    if False: samples = samples[3:4]
     # Message #
     print(&#34;Downloading the 5 demo samples which are:\n&#34;)
-    print(&#39;\n  * &#39;.join(sample.description for sample in samples), &#39;\n&#39;)
+    texts = (sample.description for sample in samples)
+    print(&#39;\n  * &#39; + &#39;\n  * &#39;.join(texts), &#39;\n&#39;)
     # Download #
     for sample in samples: print(sample.download())
     # Extract #

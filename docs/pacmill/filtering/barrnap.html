@@ -41,7 +41,7 @@ Contact at www.sinclair.bio
 &#34;&#34;&#34;
 
 # Built-in modules #
-import os, multiprocessing
+import multiprocessing
 
 # First party modules #
 from fasta import FASTA, FASTQ
@@ -70,7 +70,8 @@ class Barrnap:
         P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
 
     You can either use barrnap in filter mode, or in extract mode.
-    See the two child classes below.
+    In addition, there is a &#34;remove ITS&#34; mode too.
+    See the three child classes below.
     &#34;&#34;&#34;
 
     # Proportional length threshold to reject prediction #
@@ -90,7 +91,8 @@ class Barrnap:
         self.dest = FilePath(dest)
         # Filtered is a file containing only raw reads with rRNA genes #
         if filtered is None:
-            filtered = self.source.prefix_path + &#39;.barrnap.fastq&#39;
+            extension = self.source.extension
+            filtered  = self.source.prefix_path + &#39;.barrnap&#39; + extension
         # It can be either a FASTA or a FASTQ #
         if filtered.endswith(&#39;fasta&#39;): self.filtered = FASTA(filtered)
         else:                          self.filtered = FASTQ(filtered)
@@ -160,6 +162,48 @@ class Barrnap:
         # Return #
         return self.dest
 
+    #-------------------------------- Parsing --------------------------------#
+    def parse_hit_ids(self, attr_text):
+        &#34;&#34;&#34;
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        all IDs that contained a given text in their attributes.
+        &#34;&#34;&#34;
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+        return [rec.seqid for rec in reader if attr_text in rec.attributes]
+
+    @property_cached
+    def ids_16s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 16S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;16S_rRNA&#39;))
+
+    @property_cached
+    def ids_23s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 23S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;23S_rRNA&#39;))
+
+    def parse_hit_location(self, attr_text):
+        &#34;&#34;&#34;
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        the start and end position of rRNA genes.
+        &#34;&#34;&#34;
+        # Get reads that had a rRNA hit #
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+        # Make a lookup table for those with hits #
+        return {rec.seqid: (rec.start, rec.end)
+                for rec in reader if attr_text in rec.attributes}
+
+    @property_cached
+    def loc_16s(self):
+        &#34;&#34;&#34;Return start and end location of reads that contained a 16S gene.&#34;&#34;&#34;
+        return self.parse_hit_location(&#39;16S_rRNA&#39;)
+
+    @property_cached
+    def loc_23s(self):
+        &#34;&#34;&#34;Return start and end location of reads that contained a 23S gene.&#34;&#34;&#34;
+        return self.parse_hit_location(&#39;23S_rRNA&#39;)
+
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
         &#34;&#34;&#34;
@@ -186,34 +230,17 @@ class BarrnapFilter(Barrnap):
     Using the original reads file and the GFF output of barrnap,
     we will create a new FASTQ file containing only the original reads
     that had a hit for both rRNA genes on the same read.
+
+    The sequences themselves however are not modified.
     &#34;&#34;&#34;
 
     def __call__(self, cpus=None, verbose=True):
         # Call the parent class method #
         self.run(cpus, verbose)
         # Filter #
-        self.filter()
+        return self.filter()
 
     #--------------------------- Presence of gene ----------------------------#
-    def parse_hit_ids(self, attr_text):
-        &#34;&#34;&#34;
-        Using the GFF output of barrnap and the `tag` parser, we retrieve
-        all IDs that contained a given text in their attributes.
-        &#34;&#34;&#34;
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        return [rec.seqid for rec in reader if attr_text in rec.attributes]
-
-    @property_cached
-    def ids_16s(self):
-        &#34;&#34;&#34;Return read IDs for reads that contained a 16S gene.&#34;&#34;&#34;
-        return frozenset(self.parse_hit_ids(&#39;16S_rRNA&#39;))
-
-    @property_cached
-    def ids_23s(self):
-        &#34;&#34;&#34;Return read IDs for reads that contained a 23S gene.&#34;&#34;&#34;
-        return frozenset(self.parse_hit_ids(&#39;23S_rRNA&#39;))
-
     def filter(self, verbose=True):
         # Message #
         if verbose:
@@ -240,7 +267,7 @@ class BarrnapExtract(Barrnap):
         # Call the parent class method #
         self.run(cpus, verbose)
         # Filter #
-        self.extract()
+        return self.extract()
 
     #--------------------------- Location of gene ----------------------------#
     def extract(self, verbose=True):
@@ -248,21 +275,57 @@ class BarrnapExtract(Barrnap):
         if verbose:
             msg = &#34;Extracting the 16S rRNA portion of sequences from &#39;%s&#39;&#34;
             print(msg % self.dest)
-        # Get reads that had a rRNA hit #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        # Make a lookup table for those with 16S hits #
-        lookup = {rec.seqid: (rec.start, rec.end)
-                  for rec in reader if &#39;16S_rRNA&#39; in rec.attributes}
         # Function to yield only the good part of each read #
         def only_16s_portion(reads):
             for r in reads:
-                start_and_end = lookup.get(r.id)
+                start_and_end = self.loc_16s.get(r.id)
                 if start_and_end is None: continue
                 start, end = start_and_end
                 yield r[start:end]
         # Write new FASTA file #
         self.filtered.write(only_16s_portion(self.source))
+        # Return #
+        return self.filtered
+
+###############################################################################
+class RemoveITS(Barrnap):
+    &#34;&#34;&#34;
+    With this subclass, we will extract the 16S region and the 23S region
+    from every read that had both, and concatenate them one next to
+    each other, effectively removing the ITS regions.
+    &#34;&#34;&#34;
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        return self.remove_its()
+
+    #------------------------ Location of both genes -------------------------#
+    def remove_its(self, verbose=True):
+        # Message #
+        if verbose:
+            msg = &#34;Removing the ITS portion of sequences from &#39;%s&#39;&#34;
+            print(msg % self.dest)
+        # Function to yield concatenated read #
+        def concat_16s_23s(reads):
+            for r in reads:
+                # Retrieve positions #
+                loc_16s = self.loc_16s.get(r.id)
+                loc_23s = self.loc_23s.get(r.id)
+                # Skip this read if no 16S found #
+                if loc_16s is None: continue
+                # Get only the 16S part in a new sequence #
+                start, end = loc_16s
+                seq = r[start:end]
+                # Add the 23S part to sequence if it was found #
+                if loc_23s is not None:
+                    start, end = loc_23s
+                    seq += r[start:end]
+                # Return the newly created sequence #
+                yield seq
+        # Write new FASTA file #
+        self.filtered.write(concat_16s_23s(self.source))
         # Return #
         return self.filtered</code></pre>
 </details>
@@ -291,7 +354,8 @@ P.marinus  barrnap:0.9  rRNA  5464  8334  0       +  .  Name=23S_rRNA
 P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
 </code></pre>
 <p>You can either use barrnap in filter mode, or in extract mode.
-See the two child classes below.</p></div>
+In addition, there is a "remove ITS" mode too.
+See the three child classes below.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -310,7 +374,8 @@ See the two child classes below.</p></div>
         P.marinus  barrnap:0.9  rRNA  8433  8536  9.6e-07 +  .  Name=5S_rRNA
 
     You can either use barrnap in filter mode, or in extract mode.
-    See the two child classes below.
+    In addition, there is a &#34;remove ITS&#34; mode too.
+    See the three child classes below.
     &#34;&#34;&#34;
 
     # Proportional length threshold to reject prediction #
@@ -330,7 +395,8 @@ See the two child classes below.</p></div>
         self.dest = FilePath(dest)
         # Filtered is a file containing only raw reads with rRNA genes #
         if filtered is None:
-            filtered = self.source.prefix_path + &#39;.barrnap.fastq&#39;
+            extension = self.source.extension
+            filtered  = self.source.prefix_path + &#39;.barrnap&#39; + extension
         # It can be either a FASTA or a FASTQ #
         if filtered.endswith(&#39;fasta&#39;): self.filtered = FASTA(filtered)
         else:                          self.filtered = FASTQ(filtered)
@@ -400,6 +466,48 @@ See the two child classes below.</p></div>
         # Return #
         return self.dest
 
+    #-------------------------------- Parsing --------------------------------#
+    def parse_hit_ids(self, attr_text):
+        &#34;&#34;&#34;
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        all IDs that contained a given text in their attributes.
+        &#34;&#34;&#34;
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+        return [rec.seqid for rec in reader if attr_text in rec.attributes]
+
+    @property_cached
+    def ids_16s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 16S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;16S_rRNA&#39;))
+
+    @property_cached
+    def ids_23s(self):
+        &#34;&#34;&#34;Return read IDs for reads that contained a 23S gene.&#34;&#34;&#34;
+        return frozenset(self.parse_hit_ids(&#39;23S_rRNA&#39;))
+
+    def parse_hit_location(self, attr_text):
+        &#34;&#34;&#34;
+        Using the GFF output of barrnap and the `tag` parser, we retrieve
+        the start and end position of rRNA genes.
+        &#34;&#34;&#34;
+        # Get reads that had a rRNA hit #
+        reader = tag.GFF3Reader(infilename=self.dest)
+        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+        # Make a lookup table for those with hits #
+        return {rec.seqid: (rec.start, rec.end)
+                for rec in reader if attr_text in rec.attributes}
+
+    @property_cached
+    def loc_16s(self):
+        &#34;&#34;&#34;Return start and end location of reads that contained a 16S gene.&#34;&#34;&#34;
+        return self.parse_hit_location(&#39;16S_rRNA&#39;)
+
+    @property_cached
+    def loc_23s(self):
+        &#34;&#34;&#34;Return start and end location of reads that contained a 23S gene.&#34;&#34;&#34;
+        return self.parse_hit_location(&#39;23S_rRNA&#39;)
+
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
         &#34;&#34;&#34;
@@ -422,6 +530,7 @@ See the two child classes below.</p></div>
 <ul class="hlist">
 <li><a title="pacmill.filtering.barrnap.BarrnapExtract" href="#pacmill.filtering.barrnap.BarrnapExtract">BarrnapExtract</a></li>
 <li><a title="pacmill.filtering.barrnap.BarrnapFilter" href="#pacmill.filtering.barrnap.BarrnapFilter">BarrnapFilter</a></li>
+<li><a title="pacmill.filtering.barrnap.RemoveITS" href="#pacmill.filtering.barrnap.RemoveITS">RemoveITS</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
@@ -508,6 +617,126 @@ def install(cls, prefix=&#34;~/programs/barrnap/&#34;):
 </dl>
 <h3>Instance variables</h3>
 <dl>
+<dt id="pacmill.filtering.barrnap.Barrnap.ids_16s"><code class="name">var <span class="ident">ids_16s</span></code></dt>
+<dd>
+<div class="desc"><p>Return read IDs for reads that contained a 16S gene.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.barrnap.Barrnap.ids_23s"><code class="name">var <span class="ident">ids_23s</span></code></dt>
+<dd>
+<div class="desc"><p>Return read IDs for reads that contained a 23S gene.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.barrnap.Barrnap.loc_16s"><code class="name">var <span class="ident">loc_16s</span></code></dt>
+<dd>
+<div class="desc"><p>Return start and end location of reads that contained a 16S gene.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.barrnap.Barrnap.loc_23s"><code class="name">var <span class="ident">loc_23s</span></code></dt>
+<dd>
+<div class="desc"><p>Return start and end location of reads that contained a 23S gene.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
 <dt id="pacmill.filtering.barrnap.Barrnap.results"><code class="name">var <span class="ident">results</span></code></dt>
 <dd>
 <div class="desc"><p>If you see the current source code in a seemingly unrelated part of
@@ -543,6 +772,49 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="pacmill.filtering.barrnap.Barrnap.parse_hit_ids"><code class="name flex">
+<span>def <span class="ident">parse_hit_ids</span></span>(<span>self, attr_text)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Using the GFF output of barrnap and the <code>tag</code> parser, we retrieve
+all IDs that contained a given text in their attributes.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_hit_ids(self, attr_text):
+    &#34;&#34;&#34;
+    Using the GFF output of barrnap and the `tag` parser, we retrieve
+    all IDs that contained a given text in their attributes.
+    &#34;&#34;&#34;
+    reader = tag.GFF3Reader(infilename=self.dest)
+    reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+    return [rec.seqid for rec in reader if attr_text in rec.attributes]</code></pre>
+</details>
+</dd>
+<dt id="pacmill.filtering.barrnap.Barrnap.parse_hit_location"><code class="name flex">
+<span>def <span class="ident">parse_hit_location</span></span>(<span>self, attr_text)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Using the GFF output of barrnap and the <code>tag</code> parser, we retrieve
+the start and end position of rRNA genes.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_hit_location(self, attr_text):
+    &#34;&#34;&#34;
+    Using the GFF output of barrnap and the `tag` parser, we retrieve
+    the start and end position of rRNA genes.
+    &#34;&#34;&#34;
+    # Get reads that had a rRNA hit #
+    reader = tag.GFF3Reader(infilename=self.dest)
+    reader = tag.select.features(reader, type=&#39;rRNA&#39;)
+    # Make a lookup table for those with hits #
+    return {rec.seqid: (rec.start, rec.end)
+            for rec in reader if attr_text in rec.attributes}</code></pre>
+</details>
+</dd>
 <dt id="pacmill.filtering.barrnap.Barrnap.run"><code class="name flex">
 <span>def <span class="ident">run</span></span>(<span>self, cpus=None, verbose=True)</span>
 </code></dt>
@@ -601,7 +873,7 @@ the original reads that contains the 16S rRNA gene.</p></div>
         # Call the parent class method #
         self.run(cpus, verbose)
         # Filter #
-        self.extract()
+        return self.extract()
 
     #--------------------------- Location of gene ----------------------------#
     def extract(self, verbose=True):
@@ -609,16 +881,10 @@ the original reads that contains the 16S rRNA gene.</p></div>
         if verbose:
             msg = &#34;Extracting the 16S rRNA portion of sequences from &#39;%s&#39;&#34;
             print(msg % self.dest)
-        # Get reads that had a rRNA hit #
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        # Make a lookup table for those with 16S hits #
-        lookup = {rec.seqid: (rec.start, rec.end)
-                  for rec in reader if &#39;16S_rRNA&#39; in rec.attributes}
         # Function to yield only the good part of each read #
         def only_16s_portion(reads):
             for r in reads:
-                start_and_end = lookup.get(r.id)
+                start_and_end = self.loc_16s.get(r.id)
                 if start_and_end is None: continue
                 start, end = start_and_end
                 yield r[start:end]
@@ -647,16 +913,10 @@ the original reads that contains the 16S rRNA gene.</p></div>
     if verbose:
         msg = &#34;Extracting the 16S rRNA portion of sequences from &#39;%s&#39;&#34;
         print(msg % self.dest)
-    # Get reads that had a rRNA hit #
-    reader = tag.GFF3Reader(infilename=self.dest)
-    reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-    # Make a lookup table for those with 16S hits #
-    lookup = {rec.seqid: (rec.start, rec.end)
-              for rec in reader if &#39;16S_rRNA&#39; in rec.attributes}
     # Function to yield only the good part of each read #
     def only_16s_portion(reads):
         for r in reads:
-            start_and_end = lookup.get(r.id)
+            start_and_end = self.loc_16s.get(r.id)
             if start_and_end is None: continue
             start, end = start_and_end
             yield r[start:end]
@@ -672,7 +932,13 @@ the original reads that contains the 16S rRNA gene.</p></div>
 <li><code><b><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></b></code>:
 <ul class="hlist">
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.check_installed" href="#pacmill.filtering.barrnap.Barrnap.check_installed">check_installed</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_16s" href="#pacmill.filtering.barrnap.Barrnap.ids_16s">ids_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_23s" href="#pacmill.filtering.barrnap.Barrnap.ids_23s">ids_23s</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.install" href="#pacmill.filtering.barrnap.Barrnap.install">install</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_16s" href="#pacmill.filtering.barrnap.Barrnap.loc_16s">loc_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_23s" href="#pacmill.filtering.barrnap.Barrnap.loc_23s">loc_23s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_ids" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_ids">parse_hit_ids</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_location" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_location">parse_hit_location</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.results" href="#pacmill.filtering.barrnap.Barrnap.results">results</a></code></li>
 </ul>
 </li>
@@ -686,7 +952,8 @@ the original reads that contains the 16S rRNA gene.</p></div>
 <div class="desc"><p>With this subclass, we will filter reads after running barrnap.</p>
 <p>Using the original reads file and the GFF output of barrnap,
 we will create a new FASTQ file containing only the original reads
-that had a hit for both rRNA genes on the same read.</p></div>
+that had a hit for both rRNA genes on the same read.</p>
+<p>The sequences themselves however are not modified.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -698,34 +965,17 @@ that had a hit for both rRNA genes on the same read.</p></div>
     Using the original reads file and the GFF output of barrnap,
     we will create a new FASTQ file containing only the original reads
     that had a hit for both rRNA genes on the same read.
+
+    The sequences themselves however are not modified.
     &#34;&#34;&#34;
 
     def __call__(self, cpus=None, verbose=True):
         # Call the parent class method #
         self.run(cpus, verbose)
         # Filter #
-        self.filter()
+        return self.filter()
 
     #--------------------------- Presence of gene ----------------------------#
-    def parse_hit_ids(self, attr_text):
-        &#34;&#34;&#34;
-        Using the GFF output of barrnap and the `tag` parser, we retrieve
-        all IDs that contained a given text in their attributes.
-        &#34;&#34;&#34;
-        reader = tag.GFF3Reader(infilename=self.dest)
-        reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-        return [rec.seqid for rec in reader if attr_text in rec.attributes]
-
-    @property_cached
-    def ids_16s(self):
-        &#34;&#34;&#34;Return read IDs for reads that contained a 16S gene.&#34;&#34;&#34;
-        return frozenset(self.parse_hit_ids(&#39;16S_rRNA&#39;))
-
-    @property_cached
-    def ids_23s(self):
-        &#34;&#34;&#34;Return read IDs for reads that contained a 23S gene.&#34;&#34;&#34;
-        return frozenset(self.parse_hit_ids(&#39;23S_rRNA&#39;))
-
     def filter(self, verbose=True):
         # Message #
         if verbose:
@@ -742,69 +992,6 @@ that had a hit for both rRNA genes on the same read.</p></div>
 <ul class="hlist">
 <li><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></li>
 </ul>
-<h3>Instance variables</h3>
-<dl>
-<dt id="pacmill.filtering.barrnap.BarrnapFilter.ids_16s"><code class="name">var <span class="ident">ids_16s</span></code></dt>
-<dd>
-<div class="desc"><p>Return read IDs for reads that contained a 16S gene.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def __get__(self, instance, owner):
-    &#34;&#34;&#34;
-    If you see the current source code in a seemingly unrelated part of
-    an auto-generated documentation, it means the program making the
-    documentation was unable to correctly traverse a decorated property.
-    &#34;&#34;&#34;
-    # For debugging purposes #
-    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
-    # If called from a class #
-    if instance is None: return self
-    # Does a cache exist for this instance? #
-    self.check_cache(instance)
-    # Is the answer in the cache? #
-    if self.name in instance.__cache__: return instance.__cache__[self.name]
-    # If not we will compute it #
-    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
-    else:                                      result = self.func(instance)
-    # Let&#39;s store the answer for later #
-    instance.__cache__[self.name] = result
-    # Return #
-    return result</code></pre>
-</details>
-</dd>
-<dt id="pacmill.filtering.barrnap.BarrnapFilter.ids_23s"><code class="name">var <span class="ident">ids_23s</span></code></dt>
-<dd>
-<div class="desc"><p>Return read IDs for reads that contained a 23S gene.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def __get__(self, instance, owner):
-    &#34;&#34;&#34;
-    If you see the current source code in a seemingly unrelated part of
-    an auto-generated documentation, it means the program making the
-    documentation was unable to correctly traverse a decorated property.
-    &#34;&#34;&#34;
-    # For debugging purposes #
-    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
-    # If called from a class #
-    if instance is None: return self
-    # Does a cache exist for this instance? #
-    self.check_cache(instance)
-    # Is the answer in the cache? #
-    if self.name in instance.__cache__: return instance.__cache__[self.name]
-    # If not we will compute it #
-    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
-    else:                                      result = self.func(instance)
-    # Let&#39;s store the answer for later #
-    instance.__cache__[self.name] = result
-    # Return #
-    return result</code></pre>
-</details>
-</dd>
-</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="pacmill.filtering.barrnap.BarrnapFilter.filter"><code class="name flex">
@@ -829,24 +1016,118 @@ that had a hit for both rRNA genes on the same read.</p></div>
     return self.filtered</code></pre>
 </details>
 </dd>
-<dt id="pacmill.filtering.barrnap.BarrnapFilter.parse_hit_ids"><code class="name flex">
-<span>def <span class="ident">parse_hit_ids</span></span>(<span>self, attr_text)</span>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.check_installed" href="#pacmill.filtering.barrnap.Barrnap.check_installed">check_installed</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_16s" href="#pacmill.filtering.barrnap.Barrnap.ids_16s">ids_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_23s" href="#pacmill.filtering.barrnap.Barrnap.ids_23s">ids_23s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.install" href="#pacmill.filtering.barrnap.Barrnap.install">install</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_16s" href="#pacmill.filtering.barrnap.Barrnap.loc_16s">loc_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_23s" href="#pacmill.filtering.barrnap.Barrnap.loc_23s">loc_23s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_ids" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_ids">parse_hit_ids</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_location" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_location">parse_hit_location</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.results" href="#pacmill.filtering.barrnap.Barrnap.results">results</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="pacmill.filtering.barrnap.RemoveITS"><code class="flex name class">
+<span>class <span class="ident">RemoveITS</span></span>
+<span>(</span><span>source, dest=None, filtered=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Using the GFF output of barrnap and the <code>tag</code> parser, we retrieve
-all IDs that contained a given text in their attributes.</p></div>
+<div class="desc"><p>With this subclass, we will extract the 16S region and the 23S region
+from every read that had both, and concatenate them one next to
+each other, effectively removing the ITS regions.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def parse_hit_ids(self, attr_text):
+<pre><code class="python">class RemoveITS(Barrnap):
     &#34;&#34;&#34;
-    Using the GFF output of barrnap and the `tag` parser, we retrieve
-    all IDs that contained a given text in their attributes.
+    With this subclass, we will extract the 16S region and the 23S region
+    from every read that had both, and concatenate them one next to
+    each other, effectively removing the ITS regions.
     &#34;&#34;&#34;
-    reader = tag.GFF3Reader(infilename=self.dest)
-    reader = tag.select.features(reader, type=&#39;rRNA&#39;)
-    return [rec.seqid for rec in reader if attr_text in rec.attributes]</code></pre>
+
+    def __call__(self, cpus=None, verbose=True):
+        # Call the parent class method #
+        self.run(cpus, verbose)
+        # Filter #
+        return self.remove_its()
+
+    #------------------------ Location of both genes -------------------------#
+    def remove_its(self, verbose=True):
+        # Message #
+        if verbose:
+            msg = &#34;Removing the ITS portion of sequences from &#39;%s&#39;&#34;
+            print(msg % self.dest)
+        # Function to yield concatenated read #
+        def concat_16s_23s(reads):
+            for r in reads:
+                # Retrieve positions #
+                loc_16s = self.loc_16s.get(r.id)
+                loc_23s = self.loc_23s.get(r.id)
+                # Skip this read if no 16S found #
+                if loc_16s is None: continue
+                # Get only the 16S part in a new sequence #
+                start, end = loc_16s
+                seq = r[start:end]
+                # Add the 23S part to sequence if it was found #
+                if loc_23s is not None:
+                    start, end = loc_23s
+                    seq += r[start:end]
+                # Return the newly created sequence #
+                yield seq
+        # Write new FASTA file #
+        self.filtered.write(concat_16s_23s(self.source))
+        # Return #
+        return self.filtered</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="pacmill.filtering.barrnap.RemoveITS.remove_its"><code class="name flex">
+<span>def <span class="ident">remove_its</span></span>(<span>self, verbose=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_its(self, verbose=True):
+    # Message #
+    if verbose:
+        msg = &#34;Removing the ITS portion of sequences from &#39;%s&#39;&#34;
+        print(msg % self.dest)
+    # Function to yield concatenated read #
+    def concat_16s_23s(reads):
+        for r in reads:
+            # Retrieve positions #
+            loc_16s = self.loc_16s.get(r.id)
+            loc_23s = self.loc_23s.get(r.id)
+            # Skip this read if no 16S found #
+            if loc_16s is None: continue
+            # Get only the 16S part in a new sequence #
+            start, end = loc_16s
+            seq = r[start:end]
+            # Add the 23S part to sequence if it was found #
+            if loc_23s is not None:
+                start, end = loc_23s
+                seq += r[start:end]
+            # Return the newly created sequence #
+            yield seq
+    # Write new FASTA file #
+    self.filtered.write(concat_16s_23s(self.source))
+    # Return #
+    return self.filtered</code></pre>
 </details>
 </dd>
 </dl>
@@ -855,7 +1136,13 @@ all IDs that contained a given text in their attributes.</p></div>
 <li><code><b><a title="pacmill.filtering.barrnap.Barrnap" href="#pacmill.filtering.barrnap.Barrnap">Barrnap</a></b></code>:
 <ul class="hlist">
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.check_installed" href="#pacmill.filtering.barrnap.Barrnap.check_installed">check_installed</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_16s" href="#pacmill.filtering.barrnap.Barrnap.ids_16s">ids_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_23s" href="#pacmill.filtering.barrnap.Barrnap.ids_23s">ids_23s</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.install" href="#pacmill.filtering.barrnap.Barrnap.install">install</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_16s" href="#pacmill.filtering.barrnap.Barrnap.loc_16s">loc_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_23s" href="#pacmill.filtering.barrnap.Barrnap.loc_23s">loc_23s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_ids" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_ids">parse_hit_ids</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_location" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_location">parse_hit_location</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.results" href="#pacmill.filtering.barrnap.Barrnap.results">results</a></code></li>
 </ul>
 </li>
@@ -882,7 +1169,13 @@ all IDs that contained a given text in their attributes.</p></div>
 <ul class="two-column">
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.apt_packages" href="#pacmill.filtering.barrnap.Barrnap.apt_packages">apt_packages</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.check_installed" href="#pacmill.filtering.barrnap.Barrnap.check_installed">check_installed</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_16s" href="#pacmill.filtering.barrnap.Barrnap.ids_16s">ids_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.ids_23s" href="#pacmill.filtering.barrnap.Barrnap.ids_23s">ids_23s</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.install" href="#pacmill.filtering.barrnap.Barrnap.install">install</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_16s" href="#pacmill.filtering.barrnap.Barrnap.loc_16s">loc_16s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.loc_23s" href="#pacmill.filtering.barrnap.Barrnap.loc_23s">loc_23s</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_ids" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_ids">parse_hit_ids</a></code></li>
+<li><code><a title="pacmill.filtering.barrnap.Barrnap.parse_hit_location" href="#pacmill.filtering.barrnap.Barrnap.parse_hit_location">parse_hit_location</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.reject_threshold" href="#pacmill.filtering.barrnap.Barrnap.reject_threshold">reject_threshold</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.results" href="#pacmill.filtering.barrnap.Barrnap.results">results</a></code></li>
 <li><code><a title="pacmill.filtering.barrnap.Barrnap.run" href="#pacmill.filtering.barrnap.Barrnap.run">run</a></code></li>
@@ -899,9 +1192,12 @@ all IDs that contained a given text in their attributes.</p></div>
 <h4><code><a title="pacmill.filtering.barrnap.BarrnapFilter" href="#pacmill.filtering.barrnap.BarrnapFilter">BarrnapFilter</a></code></h4>
 <ul class="">
 <li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.filter" href="#pacmill.filtering.barrnap.BarrnapFilter.filter">filter</a></code></li>
-<li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.ids_16s" href="#pacmill.filtering.barrnap.BarrnapFilter.ids_16s">ids_16s</a></code></li>
-<li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.ids_23s" href="#pacmill.filtering.barrnap.BarrnapFilter.ids_23s">ids_23s</a></code></li>
-<li><code><a title="pacmill.filtering.barrnap.BarrnapFilter.parse_hit_ids" href="#pacmill.filtering.barrnap.BarrnapFilter.parse_hit_ids">parse_hit_ids</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pacmill.filtering.barrnap.RemoveITS" href="#pacmill.filtering.barrnap.RemoveITS">RemoveITS</a></code></h4>
+<ul class="">
+<li><code><a title="pacmill.filtering.barrnap.RemoveITS.remove_its" href="#pacmill.filtering.barrnap.RemoveITS.remove_its">remove_its</a></code></li>
 </ul>
 </li>
 </ul>

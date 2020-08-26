@@ -43,56 +43,66 @@ Contact at www.sinclair.bio
 # Built-in modules #
 
 # First party modules #
+from plumbing.cache import property_cached
 from plumbing.graphs import Graph
 from plumbing.graphs.cool_colors import colors as cool_colors
+from plumbing.graphs.solo_legend import SoloLegend
 
 # Third party modules #
+import numpy
 from matplotlib import pyplot
 
 ################################################################################
 class TaxaBarstack(Graph):
     &#34;&#34;&#34;
-    Distribution of named taxa by sample (at different ranks).
-    The Y axis represents fractions.
-    The X axis should be sample short names.
-    The legend contains taxonomic titles.
+    Distribution of named taxa by sample (at a given rank).
+    The Y axis represents fractions of abundance in percent.
+    The X axis contains sample short names.
+    The legend contains the taxonomic titles themselves.
     &#34;&#34;&#34;
 
     base_rank     = -1
     short_name    = &#39;taxa_barstack&#39;
     width         = 12.0
     height        = 7.5
-    bottom        = 0.22
-    top           = 0.94
-    left          = 0.08
-    right         = 0.96
-    legend_anchor = -0.15
     y_label       = &#39;Relative abundances in percent&#39;
 
     def plot(self, **kwargs):
-        # Retrieve the taxa table for the current rank #
-        taxa_table = self.parent.taxa_tables_by_rank[self.base_rank]
-        # Normalize it #
-        df = taxa_table.apply(lambda x: 100 * x / x.sum(), axis=1)
-        # Special case where there is only one taxa e.g. only &#39;Bacteria&#39; #
-        if len(df.columns) &lt; 2 : colors = &#39;gray&#39;
-        else:                    colors = cool_colors
-        # Plot #
-        axes = df.plot(kind=&#39;bar&#39;, stacked=True, color=colors)
+        # Retrieve the corresponding legend to this graph #
+        legend = [leg for leg in self.parent.graphs.legends
+                  if leg.base_rank == self.base_rank][0]
+        # Transpose, each row is now a taxonomic title #
+        df = legend.df.T
+        # Number of bars and numbers of categories (sub-bars) within bars #
+        num_taxa, num_samples = df.shape
+        # Record the bottoms for each successive new bar #
+        cum_size = numpy.zeros(num_samples)
+        # Space each bar one unit apart from the next #
+        x_locations = list(range(num_samples))
+        # Loop #
+        for taxa_name, row in df.iterrows():
+            pyplot.bar(x_locations,
+                       row.values,
+                       linewidth = 0.5,
+                       edgecolor = &#39;k&#39;,
+                       bottom = cum_size,
+                       color  = legend.label_to_color[row.name])
+            # Increase the plotting location for the next bar #
+            cum_size += row.values
+        # Retrieve current figure and axes #
         fig  = pyplot.gcf()
-        # Other #
+        axes = pyplot.gca()
+        # Compute the plot title #
         title     = &#39;Taxonomic relative abundances per sample at rank %i (%s).&#39;
         rank_name = self.parent.parent.rank_names[self.base_rank]
         title     = title % (self.base_rank, rank_name)
+        # Set the plot title #
         axes.set_title(title)
         # Y limits should always be the same #
         axes.set_ylim([0, 100])
-        # Put a legend below the current axis #
-        axes.legend(loc            = &#39;upper center&#39;,
-                    bbox_to_anchor = (0.5, self.legend_anchor),
-                    fancybox       = True,
-                    shadow         = True,
-                    ncol           = 5)
+        # Add the sample names #
+        axes.set_xticks(x_locations)
+        axes.set_xticklabels(list(df.columns))
         # Change font of sample names #
         axes.set_xticklabels(axes.get_xticklabels(),
                              fontweight = &#39;bold&#39;,
@@ -101,7 +111,58 @@ class TaxaBarstack(Graph):
         # Save it #
         self.save_plot(fig, axes, **kwargs)
         # Close #
-        pyplot.close(fig)</code></pre>
+        pyplot.close(fig)
+
+################################################################################
+class TaxaLegend(SoloLegend):
+
+    # Base attributes #
+    base_rank  = -1
+    short_name = &#39;taxa_legend&#39;
+
+    # Number of columns #
+    n_col = 4
+
+    # Trim long names #
+    max_name_len = 42
+
+    @property_cached
+    def df(self):
+        &#34;&#34;&#34;The taxa table, normalized, sorted, trimmed and renamed.&#34;&#34;&#34;
+        # Retrieve the taxa table for the current rank #
+        taxa_table = self.parent.taxa_tables_by_rank[self.base_rank]
+        # Normalize it #
+        df = taxa_table.apply(lambda x: 100 * x / x.sum(), axis=1)
+        # Sort columns with biggest first #
+        df = df.reindex(df.mean().sort_values(ascending=False).index, axis=1)
+        # Combine all columns above a certain number to &#39;Others&#39; #
+        max_taxa_count = self.parent.parent.max_taxa_displayed
+        if len(df.columns) &gt; max_taxa_count:
+            cols_to_drop = df.columns[max_taxa_count-1:]
+            cols_summed  = df[cols_to_drop].sum(axis=1)
+            df = df.drop(columns=cols_to_drop)
+            df[&#39;(All Others Combined)&#39;] = cols_summed
+        # Trim taxonomic names to a certain number of characters #
+        new_columns = {col: col if len(col) &lt;= self.max_name_len
+        else col[:self.max_name_len-4] + &#39; ...&#39;
+                       for col in df.columns}
+        df = df.rename(new_columns)
+        # Return #
+        return df
+
+    @property_cached
+    def label_to_color(self):
+        &#34;&#34;&#34;Mapping of taxonomic titles to colors as a dictionary.&#34;&#34;&#34;
+        # Get all the taxonomic titles #
+        taxa = list(self.df.columns)
+        # Modify the colors so that &#39;others&#39; are always black #
+        max_taxa = self.parent.parent.max_taxa_displayed - 1
+        colors = cool_colors[:max_taxa] + [&#39;#000000&#39;] + cool_colors[max_taxa:]
+        # Assign colors #
+        from itertools import cycle
+        result = dict(zip(taxa, cycle(colors)))
+        # Return #
+        return result</code></pre>
 </details>
 </section>
 <section>
@@ -118,57 +179,64 @@ class TaxaBarstack(Graph):
 <span>(</span><span>parent=None, base_dir=None, short_name=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Distribution of named taxa by sample (at different ranks).
-The Y axis represents fractions.
-The X axis should be sample short names.
-The legend contains taxonomic titles.</p></div>
+<div class="desc"><p>Distribution of named taxa by sample (at a given rank).
+The Y axis represents fractions of abundance in percent.
+The X axis contains sample short names.
+The legend contains the taxonomic titles themselves.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class TaxaBarstack(Graph):
     &#34;&#34;&#34;
-    Distribution of named taxa by sample (at different ranks).
-    The Y axis represents fractions.
-    The X axis should be sample short names.
-    The legend contains taxonomic titles.
+    Distribution of named taxa by sample (at a given rank).
+    The Y axis represents fractions of abundance in percent.
+    The X axis contains sample short names.
+    The legend contains the taxonomic titles themselves.
     &#34;&#34;&#34;
 
     base_rank     = -1
     short_name    = &#39;taxa_barstack&#39;
     width         = 12.0
     height        = 7.5
-    bottom        = 0.22
-    top           = 0.94
-    left          = 0.08
-    right         = 0.96
-    legend_anchor = -0.15
     y_label       = &#39;Relative abundances in percent&#39;
 
     def plot(self, **kwargs):
-        # Retrieve the taxa table for the current rank #
-        taxa_table = self.parent.taxa_tables_by_rank[self.base_rank]
-        # Normalize it #
-        df = taxa_table.apply(lambda x: 100 * x / x.sum(), axis=1)
-        # Special case where there is only one taxa e.g. only &#39;Bacteria&#39; #
-        if len(df.columns) &lt; 2 : colors = &#39;gray&#39;
-        else:                    colors = cool_colors
-        # Plot #
-        axes = df.plot(kind=&#39;bar&#39;, stacked=True, color=colors)
+        # Retrieve the corresponding legend to this graph #
+        legend = [leg for leg in self.parent.graphs.legends
+                  if leg.base_rank == self.base_rank][0]
+        # Transpose, each row is now a taxonomic title #
+        df = legend.df.T
+        # Number of bars and numbers of categories (sub-bars) within bars #
+        num_taxa, num_samples = df.shape
+        # Record the bottoms for each successive new bar #
+        cum_size = numpy.zeros(num_samples)
+        # Space each bar one unit apart from the next #
+        x_locations = list(range(num_samples))
+        # Loop #
+        for taxa_name, row in df.iterrows():
+            pyplot.bar(x_locations,
+                       row.values,
+                       linewidth = 0.5,
+                       edgecolor = &#39;k&#39;,
+                       bottom = cum_size,
+                       color  = legend.label_to_color[row.name])
+            # Increase the plotting location for the next bar #
+            cum_size += row.values
+        # Retrieve current figure and axes #
         fig  = pyplot.gcf()
-        # Other #
+        axes = pyplot.gca()
+        # Compute the plot title #
         title     = &#39;Taxonomic relative abundances per sample at rank %i (%s).&#39;
         rank_name = self.parent.parent.rank_names[self.base_rank]
         title     = title % (self.base_rank, rank_name)
+        # Set the plot title #
         axes.set_title(title)
         # Y limits should always be the same #
         axes.set_ylim([0, 100])
-        # Put a legend below the current axis #
-        axes.legend(loc            = &#39;upper center&#39;,
-                    bbox_to_anchor = (0.5, self.legend_anchor),
-                    fancybox       = True,
-                    shadow         = True,
-                    ncol           = 5)
+        # Add the sample names #
+        axes.set_xticks(x_locations)
+        axes.set_xticklabels(list(df.columns))
         # Change font of sample names #
         axes.set_xticklabels(axes.get_xticklabels(),
                              fontweight = &#39;bold&#39;,
@@ -189,31 +257,11 @@ The legend contains taxonomic titles.</p></div>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="pacmill.taxonomy.taxa_graphs.TaxaBarstack.bottom"><code class="name">var <span class="ident">bottom</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
 <dt id="pacmill.taxonomy.taxa_graphs.TaxaBarstack.height"><code class="name">var <span class="ident">height</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="pacmill.taxonomy.taxa_graphs.TaxaBarstack.left"><code class="name">var <span class="ident">left</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt id="pacmill.taxonomy.taxa_graphs.TaxaBarstack.legend_anchor"><code class="name">var <span class="ident">legend_anchor</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt id="pacmill.taxonomy.taxa_graphs.TaxaBarstack.right"><code class="name">var <span class="ident">right</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
 <dt id="pacmill.taxonomy.taxa_graphs.TaxaBarstack.short_name"><code class="name">var <span class="ident">short_name</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt id="pacmill.taxonomy.taxa_graphs.TaxaBarstack.top"><code class="name">var <span class="ident">top</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -238,29 +286,41 @@ The legend contains taxonomic titles.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot(self, **kwargs):
-    # Retrieve the taxa table for the current rank #
-    taxa_table = self.parent.taxa_tables_by_rank[self.base_rank]
-    # Normalize it #
-    df = taxa_table.apply(lambda x: 100 * x / x.sum(), axis=1)
-    # Special case where there is only one taxa e.g. only &#39;Bacteria&#39; #
-    if len(df.columns) &lt; 2 : colors = &#39;gray&#39;
-    else:                    colors = cool_colors
-    # Plot #
-    axes = df.plot(kind=&#39;bar&#39;, stacked=True, color=colors)
+    # Retrieve the corresponding legend to this graph #
+    legend = [leg for leg in self.parent.graphs.legends
+              if leg.base_rank == self.base_rank][0]
+    # Transpose, each row is now a taxonomic title #
+    df = legend.df.T
+    # Number of bars and numbers of categories (sub-bars) within bars #
+    num_taxa, num_samples = df.shape
+    # Record the bottoms for each successive new bar #
+    cum_size = numpy.zeros(num_samples)
+    # Space each bar one unit apart from the next #
+    x_locations = list(range(num_samples))
+    # Loop #
+    for taxa_name, row in df.iterrows():
+        pyplot.bar(x_locations,
+                   row.values,
+                   linewidth = 0.5,
+                   edgecolor = &#39;k&#39;,
+                   bottom = cum_size,
+                   color  = legend.label_to_color[row.name])
+        # Increase the plotting location for the next bar #
+        cum_size += row.values
+    # Retrieve current figure and axes #
     fig  = pyplot.gcf()
-    # Other #
+    axes = pyplot.gca()
+    # Compute the plot title #
     title     = &#39;Taxonomic relative abundances per sample at rank %i (%s).&#39;
     rank_name = self.parent.parent.rank_names[self.base_rank]
     title     = title % (self.base_rank, rank_name)
+    # Set the plot title #
     axes.set_title(title)
     # Y limits should always be the same #
     axes.set_ylim([0, 100])
-    # Put a legend below the current axis #
-    axes.legend(loc            = &#39;upper center&#39;,
-                bbox_to_anchor = (0.5, self.legend_anchor),
-                fancybox       = True,
-                shadow         = True,
-                ncol           = 5)
+    # Add the sample names #
+    axes.set_xticks(x_locations)
+    axes.set_xticklabels(list(df.columns))
     # Change font of sample names #
     axes.set_xticklabels(axes.get_xticklabels(),
                          fontweight = &#39;bold&#39;,
@@ -270,6 +330,155 @@ The legend contains taxonomic titles.</p></div>
     self.save_plot(fig, axes, **kwargs)
     # Close #
     pyplot.close(fig)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="pacmill.taxonomy.taxa_graphs.TaxaLegend"><code class="flex name class">
+<span>class <span class="ident">TaxaLegend</span></span>
+<span>(</span><span>parent=None, base_dir=None, short_name=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A figure that contains no plot, only a legend, for composition purposes
+with the other graphs.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TaxaLegend(SoloLegend):
+
+    # Base attributes #
+    base_rank  = -1
+    short_name = &#39;taxa_legend&#39;
+
+    # Number of columns #
+    n_col = 4
+
+    # Trim long names #
+    max_name_len = 42
+
+    @property_cached
+    def df(self):
+        &#34;&#34;&#34;The taxa table, normalized, sorted, trimmed and renamed.&#34;&#34;&#34;
+        # Retrieve the taxa table for the current rank #
+        taxa_table = self.parent.taxa_tables_by_rank[self.base_rank]
+        # Normalize it #
+        df = taxa_table.apply(lambda x: 100 * x / x.sum(), axis=1)
+        # Sort columns with biggest first #
+        df = df.reindex(df.mean().sort_values(ascending=False).index, axis=1)
+        # Combine all columns above a certain number to &#39;Others&#39; #
+        max_taxa_count = self.parent.parent.max_taxa_displayed
+        if len(df.columns) &gt; max_taxa_count:
+            cols_to_drop = df.columns[max_taxa_count-1:]
+            cols_summed  = df[cols_to_drop].sum(axis=1)
+            df = df.drop(columns=cols_to_drop)
+            df[&#39;(All Others Combined)&#39;] = cols_summed
+        # Trim taxonomic names to a certain number of characters #
+        new_columns = {col: col if len(col) &lt;= self.max_name_len
+        else col[:self.max_name_len-4] + &#39; ...&#39;
+                       for col in df.columns}
+        df = df.rename(new_columns)
+        # Return #
+        return df
+
+    @property_cached
+    def label_to_color(self):
+        &#34;&#34;&#34;Mapping of taxonomic titles to colors as a dictionary.&#34;&#34;&#34;
+        # Get all the taxonomic titles #
+        taxa = list(self.df.columns)
+        # Modify the colors so that &#39;others&#39; are always black #
+        max_taxa = self.parent.parent.max_taxa_displayed - 1
+        colors = cool_colors[:max_taxa] + [&#39;#000000&#39;] + cool_colors[max_taxa:]
+        # Assign colors #
+        from itertools import cycle
+        result = dict(zip(taxa, cycle(colors)))
+        # Return #
+        return result</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>plumbing.graphs.solo_legend.SoloLegend</li>
+<li>plumbing.graphs.Graph</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="pacmill.taxonomy.taxa_graphs.TaxaLegend.base_rank"><code class="name">var <span class="ident">base_rank</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pacmill.taxonomy.taxa_graphs.TaxaLegend.max_name_len"><code class="name">var <span class="ident">max_name_len</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pacmill.taxonomy.taxa_graphs.TaxaLegend.n_col"><code class="name">var <span class="ident">n_col</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pacmill.taxonomy.taxa_graphs.TaxaLegend.short_name"><code class="name">var <span class="ident">short_name</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pacmill.taxonomy.taxa_graphs.TaxaLegend.df"><code class="name">var <span class="ident">df</span></code></dt>
+<dd>
+<div class="desc"><p>The taxa table, normalized, sorted, trimmed and renamed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.taxa_graphs.TaxaLegend.label_to_color"><code class="name">var <span class="ident">label_to_color</span></code></dt>
+<dd>
+<div class="desc"><p>Mapping of taxonomic titles to colors as a dictionary.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
 </details>
 </dd>
 </dl>
@@ -294,16 +503,22 @@ The legend contains taxonomic titles.</p></div>
 <h4><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack">TaxaBarstack</a></code></h4>
 <ul class="two-column">
 <li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.base_rank" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.base_rank">base_rank</a></code></li>
-<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.bottom" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.bottom">bottom</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.height" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.height">height</a></code></li>
-<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.left" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.left">left</a></code></li>
-<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.legend_anchor" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.legend_anchor">legend_anchor</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.plot" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.plot">plot</a></code></li>
-<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.right" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.right">right</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.short_name" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.short_name">short_name</a></code></li>
-<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.top" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.top">top</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.width" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.width">width</a></code></li>
 <li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaBarstack.y_label" href="#pacmill.taxonomy.taxa_graphs.TaxaBarstack.y_label">y_label</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pacmill.taxonomy.taxa_graphs.TaxaLegend" href="#pacmill.taxonomy.taxa_graphs.TaxaLegend">TaxaLegend</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaLegend.base_rank" href="#pacmill.taxonomy.taxa_graphs.TaxaLegend.base_rank">base_rank</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaLegend.df" href="#pacmill.taxonomy.taxa_graphs.TaxaLegend.df">df</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaLegend.label_to_color" href="#pacmill.taxonomy.taxa_graphs.TaxaLegend.label_to_color">label_to_color</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaLegend.max_name_len" href="#pacmill.taxonomy.taxa_graphs.TaxaLegend.max_name_len">max_name_len</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaLegend.n_col" href="#pacmill.taxonomy.taxa_graphs.TaxaLegend.n_col">n_col</a></code></li>
+<li><code><a title="pacmill.taxonomy.taxa_graphs.TaxaLegend.short_name" href="#pacmill.taxonomy.taxa_graphs.TaxaLegend.short_name">short_name</a></code></li>
 </ul>
 </li>
 </ul>

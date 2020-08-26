@@ -64,6 +64,9 @@ class MothurClassify:
         mothur &#34;#classify.seqs(fasta=rnammer.$sample.prok.16S.both.fasta,
         reference=silva.nr_v128.align, taxonomy=silva.nr_v128.tax,
         relabund=T, processors=30)&#34;
+
+    This is the method that is implemented by the RDP and is described by
+    Wang et al.
     &#34;&#34;&#34;
 
     # Constants #
@@ -74,27 +77,22 @@ class MothurClassify:
         msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, dest_dir):
+    def __init__(self, source, database, dest_dir):
         # Source is the FASTA file containing OTU consensus sequences #
         self.source = FASTA(source)
+        # Database is an object from the `seqsearch.databases` subpackage #
+        self.database = database
         # Destination is a directory that contains all the results #
         self.dest_dir = DirectoryPath(dest_dir)
-
-    #---------------------------- The database -------------------------------#
-    @property
-    def database(self):
-        &#34;&#34;&#34;A link to the `SilvaMothur` database object for convenience.&#34;&#34;&#34;
-        from seqsearch.databases.silva_mothur import silva_mothur
-        return silva_mothur
 
     #----------------------------- Installing --------------------------------#
     def check_installed(self):
         &#34;&#34;&#34;
-        Try to determine if the Silva database is downloaded and
+        Try to determine if the database chosen is downloaded and
         accessible.
         &#34;&#34;&#34;
         if not self.database:
-            msg  = &#34;The silva database does not seem to be accessible.&#34;
+            msg  = &#34;The taxonomic database does not seem to be accessible.&#34;
             msg += &#34; More information follows.\n\n&#34;
             msg += self.database.__doc__
             raise Exception(msg)
@@ -107,6 +105,7 @@ class MothurClassify:
                 /flipped.txt
                 /stdout.txt
                 /stderr.txt
+                /taxa_tables/
                 &#34;&#34;&#34;
 
     @property_cached
@@ -123,7 +122,8 @@ class MothurClassify:
     def __call__(self, cpus=None, verbose=True):
         # Message #
         if verbose:
-            print(&#34;Running taxonomy classification on &#39;%s&#39;&#34; % self.source)
+            message = &#34;Running `%s` taxonomy classification on &#39;%s&#39;&#34;
+            print(message % (self.database.short_name, self.source))
         # Check the database is there #
         self.check_installed()
         # Check mothur is installed #
@@ -191,9 +191,9 @@ class MothurClassify:
     def results(self):
         # Check it was run #
         if not self:
-            msg = &#34;You can&#39;t access results from taxonomic classification &#34; \
-                  &#34;before running the tool.&#34;
-            raise Exception(msg)
+            msg = &#34;You can&#39;t access results from the mothur &#39;%s&#39; taxonomic&#34; \
+                  &#34; classification before running the tool.&#34;
+            raise Exception(msg % self.database.short_name)
         # Return the results #
         return MothurClassifyResults(self.autopaths)
 
@@ -280,7 +280,7 @@ class MothurClassifyResults:
 <dl>
 <dt id="pacmill.taxonomy.mothur_classify.MothurClassify"><code class="flex name class">
 <span>class <span class="ident">MothurClassify</span></span>
-<span>(</span><span>source, dest_dir)</span>
+<span>(</span><span>source, database, dest_dir)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Predicts taxonomic composition by using a reference database and calling
@@ -289,7 +289,9 @@ class MothurClassifyResults:
 <pre><code>mothur "#classify.seqs(fasta=rnammer.$sample.prok.16S.both.fasta,
 reference=silva.nr_v128.align, taxonomy=silva.nr_v128.tax,
 relabund=T, processors=30)"
-</code></pre></div>
+</code></pre>
+<p>This is the method that is implemented by the RDP and is described by
+Wang et al.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -304,6 +306,9 @@ relabund=T, processors=30)"
         mothur &#34;#classify.seqs(fasta=rnammer.$sample.prok.16S.both.fasta,
         reference=silva.nr_v128.align, taxonomy=silva.nr_v128.tax,
         relabund=T, processors=30)&#34;
+
+    This is the method that is implemented by the RDP and is described by
+    Wang et al.
     &#34;&#34;&#34;
 
     # Constants #
@@ -314,27 +319,22 @@ relabund=T, processors=30)"
         msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, dest_dir):
+    def __init__(self, source, database, dest_dir):
         # Source is the FASTA file containing OTU consensus sequences #
         self.source = FASTA(source)
+        # Database is an object from the `seqsearch.databases` subpackage #
+        self.database = database
         # Destination is a directory that contains all the results #
         self.dest_dir = DirectoryPath(dest_dir)
-
-    #---------------------------- The database -------------------------------#
-    @property
-    def database(self):
-        &#34;&#34;&#34;A link to the `SilvaMothur` database object for convenience.&#34;&#34;&#34;
-        from seqsearch.databases.silva_mothur import silva_mothur
-        return silva_mothur
 
     #----------------------------- Installing --------------------------------#
     def check_installed(self):
         &#34;&#34;&#34;
-        Try to determine if the Silva database is downloaded and
+        Try to determine if the database chosen is downloaded and
         accessible.
         &#34;&#34;&#34;
         if not self.database:
-            msg  = &#34;The silva database does not seem to be accessible.&#34;
+            msg  = &#34;The taxonomic database does not seem to be accessible.&#34;
             msg += &#34; More information follows.\n\n&#34;
             msg += self.database.__doc__
             raise Exception(msg)
@@ -347,6 +347,7 @@ relabund=T, processors=30)"
                 /flipped.txt
                 /stdout.txt
                 /stderr.txt
+                /taxa_tables/
                 &#34;&#34;&#34;
 
     @property_cached
@@ -363,7 +364,8 @@ relabund=T, processors=30)"
     def __call__(self, cpus=None, verbose=True):
         # Message #
         if verbose:
-            print(&#34;Running taxonomy classification on &#39;%s&#39;&#34; % self.source)
+            message = &#34;Running `%s` taxonomy classification on &#39;%s&#39;&#34;
+            print(message % (self.database.short_name, self.source))
         # Check the database is there #
         self.check_installed()
         # Check mothur is installed #
@@ -431,9 +433,9 @@ relabund=T, processors=30)"
     def results(self):
         # Check it was run #
         if not self:
-            msg = &#34;You can&#39;t access results from taxonomic classification &#34; \
-                  &#34;before running the tool.&#34;
-            raise Exception(msg)
+            msg = &#34;You can&#39;t access results from the mothur &#39;%s&#39; taxonomic&#34; \
+                  &#34; classification before running the tool.&#34;
+            raise Exception(msg % self.database.short_name)
         # Return the results #
         return MothurClassifyResults(self.autopaths)</code></pre>
 </details>
@@ -486,20 +488,6 @@ See <a href="https://github.com/xapple/autopaths#autopaths-object">https://githu
     return result</code></pre>
 </details>
 </dd>
-<dt id="pacmill.taxonomy.mothur_classify.MothurClassify.database"><code class="name">var <span class="ident">database</span></code></dt>
-<dd>
-<div class="desc"><p>A link to the <code>SilvaMothur</code> database object for convenience.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@property
-def database(self):
-    &#34;&#34;&#34;A link to the `SilvaMothur` database object for convenience.&#34;&#34;&#34;
-    from seqsearch.databases.silva_mothur import silva_mothur
-    return silva_mothur</code></pre>
-</details>
-</dd>
 <dt id="pacmill.taxonomy.mothur_classify.MothurClassify.results"><code class="name">var <span class="ident">results</span></code></dt>
 <dd>
 <div class="desc"><p>If you see the current source code in a seemingly unrelated part of
@@ -539,7 +527,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <span>def <span class="ident">check_installed</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Try to determine if the Silva database is downloaded and
+<div class="desc"><p>Try to determine if the database chosen is downloaded and
 accessible.</p></div>
 <details class="source">
 <summary>
@@ -547,11 +535,11 @@ accessible.</p></div>
 </summary>
 <pre><code class="python">def check_installed(self):
     &#34;&#34;&#34;
-    Try to determine if the Silva database is downloaded and
+    Try to determine if the database chosen is downloaded and
     accessible.
     &#34;&#34;&#34;
     if not self.database:
-        msg  = &#34;The silva database does not seem to be accessible.&#34;
+        msg  = &#34;The taxonomic database does not seem to be accessible.&#34;
         msg += &#34; More information follows.\n\n&#34;
         msg += self.database.__doc__
         raise Exception(msg)</code></pre>
@@ -777,7 +765,6 @@ Typically this attribute will return something like:</p>
 <li><code><a title="pacmill.taxonomy.mothur_classify.MothurClassify.all_paths" href="#pacmill.taxonomy.mothur_classify.MothurClassify.all_paths">all_paths</a></code></li>
 <li><code><a title="pacmill.taxonomy.mothur_classify.MothurClassify.autopaths" href="#pacmill.taxonomy.mothur_classify.MothurClassify.autopaths">autopaths</a></code></li>
 <li><code><a title="pacmill.taxonomy.mothur_classify.MothurClassify.check_installed" href="#pacmill.taxonomy.mothur_classify.MothurClassify.check_installed">check_installed</a></code></li>
-<li><code><a title="pacmill.taxonomy.mothur_classify.MothurClassify.database" href="#pacmill.taxonomy.mothur_classify.MothurClassify.database">database</a></code></li>
 <li><code><a title="pacmill.taxonomy.mothur_classify.MothurClassify.long_name" href="#pacmill.taxonomy.mothur_classify.MothurClassify.long_name">long_name</a></code></li>
 <li><code><a title="pacmill.taxonomy.mothur_classify.MothurClassify.results" href="#pacmill.taxonomy.mothur_classify.MothurClassify.results">results</a></code></li>
 <li><code><a title="pacmill.taxonomy.mothur_classify.MothurClassify.short_name" href="#pacmill.taxonomy.mothur_classify.MothurClassify.short_name">short_name</a></code></li>
