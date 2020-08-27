@@ -113,15 +113,15 @@ After running the pipeline on a set of FASTQ files, several PDF reports are auto
 
 <a href="https://xapple.github.io/pacmill/demo_reports/project.pdf" class="image fit" target="_blank">
 <img src="docs/images/pdf_icon.png" width="120em">
-<p>Project report</p></a>
+Project report</a>
 
 <a href="https://xapple.github.io/pacmill/demo_reports/sample.pdf" class="image fit" target="_blank">
 <img src="docs/images/pdf_icon.png" width="120em">
-<p>Sample report</p></a>
+Sample report</a>
 
 <a href="https://xapple.github.io/pacmill/demo_reports/taxonomy.pdf" class="image fit" target="_blank">
 <img src="docs/images/pdf_icon.png" width="120em">
-<p>Taxonomy report</p></a>
+Taxonomy report</a>
 
 </div>
 
