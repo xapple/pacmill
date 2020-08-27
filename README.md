@@ -109,6 +109,7 @@ The `pacmill` pipeline produces a multitude of graphs and visualizations after h
 
 After running the pipeline on a set of FASTQ files, several PDF reports are auto-generated. Examples of two three reports are given below. The first concerns an individual sample while the second details the results of a project containing several samples. The third focuses on taxonomic assignment results and visualizations.
 
+<p align="center">
 <table>
   <tr>
     <td>
@@ -132,8 +133,9 @@ After running the pipeline on a set of FASTQ files, several PDF reports are auto
      <td><p align="center">Sample report</p></td>
      <td><p align="center">Taxonomy report</p></td>
   </tr>
- </table>
- 
+</table>
+</p>
+
 ## Flowchart
 
 Below is presented a flowchart detailing the multiple processing steps that occur in the `pacmill` pipeline in a chronological order.
