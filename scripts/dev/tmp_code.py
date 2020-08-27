@@ -32,12 +32,12 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 # Create project #
 proj = Project(proj_name, proj_xls)
 
-#for sample in proj:
-#    print(sample.report())
-#    break
+for sample in proj:
+    print(sample.fastq.fastqc())
+    break
 
-for report in proj.taxonomy.reports.all:
-    print(report())
+#for report in proj.taxonomy.reports.all:
+#    print(report())
 
 #proj.otus()
 #proj.taxonomy()
