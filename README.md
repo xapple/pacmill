@@ -51,7 +51,7 @@ An empty template for such a file is found under this repository at "./metadata/
  In addition, another file called "./metadata/metadata_example.xlsx" shows typical values that the fields are supposed to take along with a short documentation for each entry. A excerpt of this file is shown below:
  
  <p align="center">
- <img src="docs/screenshots/metadata_screenshot.png?raw=true">
+ <img src="docs/images/metadata_screenshot.png?raw=true">
  </p>
 
 ### Loading the project
@@ -91,6 +91,8 @@ To run the demo project, do the following:
 
 ## Example graphs 
 
+The `pacmill` pipeline produces a multitude of graphs and visualizations after having processed the sequence data. Below are two examples. Firstly a sequence length distribution of cleaned reads. Secondly, a barstack of taxonomic assignments for five different samples at the phylum level.
+
 <p align="center">
 <img src="docs/images/demo_len_hist.png?raw=true">
 </p>
@@ -107,17 +109,19 @@ To run the demo project, do the following:
 
 After running the pipeline on a set of FASTQ files, several PDF reports are auto-generated. Examples of two three reports are given below. The first concerns an individual sample while the second details the results of a project containing several samples. The third focuses on taxonomic assignment results and visualizations.
 
-<a href="docs/demo_reports/project.pdf" class="image fit">
-<img src="docs/images/pdf_icon.png" alt="">
+<p align="center">
+<a href="https://xapple.github.io/pacmill/demo_reports/sample.pdf" class="image fit" target="_blank">
+<img src="docs/images/pdf_icon.png" width="3em">
 </a>
 
-<a href="docs/demo_reports/sample.pdf" class="image fit">
-<img src="docs/images/pdf_icon.png" alt="">
+<a href="docs/demo_reports/sample.pdf" class="image fit" target="_blank">
+<img src="docs/images/pdf_icon.png" width="6em">
 </a>
 
-<a href="docs/demo_reports/taxonomy.pdf" class="image fit">
-<img src="docs/images/pdf_icon.png" alt="">
+<a href="docs/demo_reports/taxonomy.pdf" class="image fit" target="_blank">
+<img src="docs/images/pdf_icon.png" width="9em">
 </a>
+</p>
 
 ## Flowchart
 
