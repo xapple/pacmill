@@ -12,13 +12,13 @@ To check if you have `python3` installed, type the following on your terminal:
 
     $ python3 -V
 
-If you do not have `python3` installed, please refer to the section [obtaining python3](docs/installing_tips.md#obtaining-python3).
+If you do not have `python3` installed, please refer to the section [obtaining python3](docs/markdown/installing_tips.md#obtaining-python3).
 
 To check if you have `pip3` installed, type the following on your terminal:
 
     $ pip3 -V
 
-If you do not have `pip3` installed, please refer to the section [obtaining pip3](docs/installing_tips.md#obtaining-pip3).
+If you do not have `pip3` installed, please refer to the section [obtaining pip3](docs/markdown/installing_tips.md#obtaining-pip3).
 
 ## Installing
 
@@ -51,7 +51,7 @@ An empty template for such a file is found under this repository at "./metadata/
  In addition, another file called "./metadata/metadata_example.xlsx" shows typical values that the fields are supposed to take along with a short documentation for each entry. A excerpt of this file is shown below:
  
  <p align="center">
- <img src="docs/metadata_screenshot.png?raw=true">
+ <img src="docs/screenshots/metadata_screenshot.png?raw=true">
  </p>
 
 ### Loading the project
@@ -89,19 +89,44 @@ To run the demo project, do the following:
 
     # This example is not completed yet. TODO.
 
-## Flowchart
+## Example graphs 
 
 <p align="center">
-<img src="docs/flowchart.png?raw=true">
+<img src="docs/images/demo_len_hist.png?raw=true">
+</p>
+
+<p align="center">
+<img src="docs/images/demo_barstack.png?raw=true">
+</p>
+
+<p align="center">
+<img src="docs/images/demo_legend.png?raw=true">
 </p>
 
 ## Example reports
 
-After running the pipeline on a set of FASTQ files, several PDF reports are auto-generated. Examples of two such reports are given below. The first concerns an individual sample while the second details the results of a project containing several samples.
+After running the pipeline on a set of FASTQ files, several PDF reports are auto-generated. Examples of two three reports are given below. The first concerns an individual sample while the second details the results of a project containing several samples. The third focuses on taxonomic assignment results and visualizations.
 
-    # Add demo project Sample report here. TODO.
+<a href="docs/demo_reports/project.pdf" class="image fit">
+<img src="docs/images/pdf_icon.png" alt="">
+</a>
 
-    # Add demo project Project report here. TODO.
+<a href="docs/demo_reports/sample.pdf" class="image fit">
+<img src="docs/images/pdf_icon.png" alt="">
+</a>
+
+<a href="docs/demo_reports/taxonomy.pdf" class="image fit">
+<img src="docs/images/pdf_icon.png" alt="">
+</a>
+
+## Flowchart
+
+Below is presented a flowchart detailing the multiple processing steps that occur in the `pacmill` pipeline in a chronological order.
+
+<p align="center">
+<img src="docs/flowcharts/flowchart.png?raw=true">
+</p>
+
 
 ## Extra documentation
 
