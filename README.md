@@ -110,16 +110,16 @@ The `pacmill` pipeline produces a multitude of graphs and visualizations after h
 After running the pipeline on a set of FASTQ files, several PDF reports are auto-generated. Examples of two three reports are given below. The first concerns an individual sample while the second details the results of a project containing several samples. The third focuses on taxonomic assignment results and visualizations.
 
 <p align="center">
+<a href="https://xapple.github.io/pacmill/demo_reports/project.pdf" class="image fit" target="_blank">
+<img src="docs/images/pdf_icon.png" width="30em">
+</a>
+
 <a href="https://xapple.github.io/pacmill/demo_reports/sample.pdf" class="image fit" target="_blank">
-<img src="docs/images/pdf_icon.png" width="3em">
+<img src="docs/images/pdf_icon.png" width="30em">
 </a>
 
-<a href="docs/demo_reports/sample.pdf" class="image fit" target="_blank">
-<img src="docs/images/pdf_icon.png" width="6em">
-</a>
-
-<a href="docs/demo_reports/taxonomy.pdf" class="image fit" target="_blank">
-<img src="docs/images/pdf_icon.png" width="9em">
+<a href="https://xapple.github.io/pacmill/demo_reports/taxonomy.pdf" class="image fit" target="_blank">
+<img src="docs/images/pdf_icon.png" width="30em">
 </a>
 </p>
 
@@ -128,7 +128,7 @@ After running the pipeline on a set of FASTQ files, several PDF reports are auto
 Below is presented a flowchart detailing the multiple processing steps that occur in the `pacmill` pipeline in a chronological order.
 
 <p align="center">
-<img src="docs/flowcharts/flowchart.png?raw=true">
+<img src="docs/images/flowchart.png?raw=true">
 </p>
 
 
