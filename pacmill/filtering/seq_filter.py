@@ -169,6 +169,8 @@ class SeqFilter:
                                                     self.primer_mismatches)
         # Write #
         self.primers_fastq.write(self.primer_gen(all_reads))
+        # Close #
+        self.sample.fastq.close()
 
     #------------------------------ N bases ----------------------------------#
     def n_base_gen(self, reads):

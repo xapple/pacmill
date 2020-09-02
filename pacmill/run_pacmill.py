@@ -20,6 +20,10 @@ import os, argparse
 # Internal modules #
 from pacmill.core.project import Project
 
+# First party modules #
+from plumbing.timer import Timer
+from plumbing.processes import prll_map
+
 # Constants #
 env_name = os.environ.get("PACMILL_PROJ_NAME")
 env_xls  = os.environ.get("PACMILL_PROJ_XLS")
@@ -41,7 +45,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Get defaults for project name #
-    proj_name = env_name or args.proj_name
+    proj_name = args.proj_name or env_name
     if proj_name is None:
         raise Exception("No short project name has been given.")
 
@@ -51,75 +55,100 @@ if __name__ == "__main__":
         raise Exception("No excel file path has been given.")
 
     # Create project #
-    proj = Project(args.proj_name, args.proj_xls)
+    proj = Project(proj_name, proj_xls)
 
-    # Validate the format of the FASTQs #
-    for sample in proj: print(sample.fastq.validator())
+    # Message #
+    print("------------------------------------------")
+    print("Running pacmill on project '%s'." % proj.short_name)
+    print("------------------------------------------")
 
-    # Run FastQC on the samples individually #
+    # Start the timer #
+    timer = Timer()
+    timer.print_start()
+
+    print("# Validate the format of the FASTQs #")
+    prll_map(lambda s: s.fastq.validator(), proj)
+    timer.print_elapsed()
+
+    print("# Run FastQC on the samples individually #")
     for sample in proj:
         print(sample.fastq.fastqc())
+    timer.print_elapsed()
 
-    # Regenerate the graphs for samples #
+    print("# Regenerate the graphs for samples #")
     for sample in proj:
         print(sample.fastq.graphs.length_hist(rerun=True))
+    timer.print_elapsed()
 
-    # Filter reads in every sample based on several criteria #
-    for sample in proj:
-        print(sample.filter(verbose=True))
+    print("# Filter reads in every sample based on several criteria #")
+    prll_map(lambda s: s.filter(), proj)
+    timer.print_elapsed()
 
-    # Remove chimeric reads #
-    for sample in proj:
-        print(sample.chimeras())
+    print("# Remove chimeric reads #")
+    prll_map(lambda s: s.chimeras(cpus=1), proj)
+    timer.print_elapsed()
 
-    # Detect presence of rRNA genes #
+    print("# Detect presence of rRNA genes #")
     for sample in proj:
         print(sample.barrnap())
+    timer.print_elapsed()
 
-    # Concatenate reads from all samples into one file #
+    print("# Concatenate reads from all samples into one file #")
     print(proj.combine_reads())
+    timer.print_elapsed()
 
-    # Pick OTUS #
+    print("# Pick OTUS #")
     print(proj.otus())
+    timer.print_elapsed()
 
-    # Assign taxonomy and make all taxa tables #
+    print("# Assign taxonomy and make all taxa tables #")
     print(proj.taxonomy())
+    timer.print_elapsed()
 
-    # Regenerate the graphs for the project #
+    print("# Regenerate the graphs for the project #")
     print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
     print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
     print(proj.otu_table.graphs.cumulative_presence(rerun=True))
     print(proj.nmds_graph(rerun=True))
+    timer.print_elapsed()
 
-    # Regenerate the graphs and legends for taxa bar-stacks #
+    print("# Regenerate the graphs and legends for taxa bar-stacks #")
     for tables in proj.taxonomy.tables.all:
         for graph in tables.results.graphs.by_rank:
             print(graph(rerun=True))
         for legend in tables.results.graphs.legends:
             print(legend(rerun=True))
+    timer.print_elapsed()
 
     # Clear the cache #
     for sample in proj:
         print(sample.report.template.cache_dir.remove())
 
-    # Create the PDF reports for each sample #
+    print("# Create the PDF reports for each sample #")
     for sample in proj:
         print(sample.report())
 
-    # Create the PDF reports for each taxonomic classification #
+    print("# Create the PDF reports for each taxonomic classification #")
     for report in proj.taxonomy.reports.all:
         print(report())
 
-    # Create the PDF report for the project #
+    print("# Create the PDF report for the project #")
     print(proj.report())
+    timer.print_elapsed()
 
-    # Create a bundle for distribution #
+    print("# Create a bundle for distribution #")
     proj.bundle()
+    timer.print_elapsed()
 
     # Success message #
     print("The pipeline was successfully run on project '%s'." % proj_name)
+    print("------------------------------------------")
+
+    # Timer message #
+    timer.print_end()
+    timer.print_total_elapsed()
 
     # Bundle message #
-    print("To quickly download the sample and project reports to your local"
+    print("\n To quickly download the sample and project reports to your local"
           " computer, you can use the following command:"
           " \n\n%s\n" % proj.bundle.results.rsync)

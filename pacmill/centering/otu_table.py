@@ -19,6 +19,9 @@ from autopaths.file_path import FilePath
 # Third party modules #
 import pandas
 
+# Constants #
+class Dummy: pass
+
 ###############################################################################
 class OtuTable:
 
@@ -48,7 +51,7 @@ class OtuTable:
         instance as only argument.
         """
         # Make a dummy object #
-        result = type('Dummy', (), {})
+        result = Dummy()
         # Loop over graphs #
         for graph_name in pacmill.centering.otu_graphs.__all__:
             graph_cls = getattr(pacmill.centering.otu_graphs, graph_name)

@@ -97,7 +97,7 @@ class MultiTaxDatabases:
     def crest(self):
         from pacmill.taxonomy.crest import CrestClassify
         return CrestClassify(self.proj.otus.results,
-                            self.autopaths.crest_dir)
+                             self.autopaths.crest_dir)
 
     #--------------------------------- Tables --------------------------------#
     @property_cached

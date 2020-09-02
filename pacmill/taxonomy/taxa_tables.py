@@ -19,6 +19,9 @@ from plumbing.cache import property_cached
 # Third party modules #
 import pandas
 
+# Constants #
+class Dummy: pass
+
 ###############################################################################
 class TaxaTable:
     """
@@ -166,7 +169,7 @@ class TaxaTableResults:
             >>> print(proj.taxa_tables.results.graphs.taxa_legend_phylum)
         """
         # Make a dummy object #
-        result = type('Dummy', (), {})
+        result = Dummy()
         # Create a list attribute to hold each rank #
         result.by_rank = []
         # Create a list attribute to hold each legend #
