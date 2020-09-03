@@ -96,7 +96,9 @@ class CrestClassify:
         src_dir.move_to(prefix)
         # This 'bootstrap' stuff can't detect paths it seems, have to cwd #
         current_dir = os.getcwd()
-        os.chdir(src_dir)
+        os.chdir(src_dir.path)
+        # CREST needs to be updated, until then the next commands won't work #
+        print(1/0)
         # Call the install command - step one #
         bootstrap_script = src_dir + 'bootstrap.py'
         sh.python2(bootstrap_script)
@@ -114,15 +116,8 @@ class CrestClassify:
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """
-                /otu_table.csv
-                /otu_table_norm.csv
-                /centers.fasta
                 /graphs/
                 /stats/
-                /comp_phyla/
-                /comp_tips/
-                /comp_order/
-                /comp_class/
                 /blast/db_hits.xml
                 /blast/stdout.txt
                 /blast/stderr.txt
@@ -147,31 +142,40 @@ class CrestClassify:
 
     #------------------------------ Running ----------------------------------#
     def __call__(self, cpus=None):
+        # Check blast is installed #
+        check_cmd('blastn', True)
+        # Check crest is installed #
+        check_cmd('classify', True)
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Run #
-        sh.blastn('-task',              'megablast',
-                  '-num_threads', cpus,
-                  '-query', self.source,
-                  '-db', self.database_path,
-                  '-out', self.p.db_hits,
-                  '-max_target_seqs',   '100',
-                  '-outfmt',            '5',
-                  _out=self.p.blast_stdout, _err=self.p.blast_stderr)
+        sh.blastn('-task',             'megablast',
+                  '-num_threads',      cpus,
+                  '-query',            self.source,
+                  '-db',               self.database_path,
+                  '-out',              self.autopaths.db_hits,
+                  '-max_target_seqs',  '100',
+                  '-outfmt',           '5',
+                  _out = self.autopaths.blast_stdout,
+                  _err = self.autopaths.blast_stderr)
         # Check #
-        if os.path.getsize(self.p.db_hits) == 0:
-            raise Exception("Hits file empty. The MEGABLAST process was probably killed.")
-        # CREST #
-        self.p.crest_dir.remove()
-        sh.classify('--verbose', '--rdp',
+        if os.path.getsize(self.autopaths.db_hits) == 0:
+            msg = "Hits file empty. The MEGABLAST process was probably killed."
+            raise Exception(msg)
+        # Remove directory #
+        self.autopaths.crest_dir.remove()
+        # Run algorithm #
+        sh.classify('--verbose',
+                    '--rdp',
                     '-o', self.base_dir + 'crest/',
                     '-d', self.database,
-                    self.p.db_hits,
-                    out=self.p.crest_stdout.path, _err=self.p.crest_stderr.path)
+                    self.autopaths.db_hits,
+                    _out = self.autopaths.crest_stdout.path,
+                    _err = self.autopaths.crest_stderr.path)
         # Move #
-        shutil.move(self.p.db_hits.prefix_path + '_Composition.tsv', self.p.crest_composition)
-        shutil.move(self.p.db_hits.prefix_path + '_Tree.txt', self.p.crest_tree)
-        shutil.move(self.p.db_hits.prefix_path + '_Assignments.tsv', self.p.crest_assignments)
+        shutil.move(self.autopaths.db_hits.prefix_path + '_Composition.tsv', self.autopaths.crest_composition)
+        shutil.move(self.autopaths.db_hits.prefix_path + '_Tree.txt', self.autopaths.crest_tree)
+        shutil.move(self.autopaths.db_hits.prefix_path + '_Assignments.tsv', self.autopaths.crest_assignments)
         # Clean up #
         if os.path.exists("error.log") and os.path.getsize("error.log") == 0: os.remove("error.log")
 

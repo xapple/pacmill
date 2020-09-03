@@ -24,6 +24,9 @@ from pacmill.core.project import Project
 # Third party modules #
 from tqdm import tqdm
 
+# First party modules #
+from plumbing.processes import prll_map
+
 # Constants #
 proj_name = os.environ.get("PACMILL_PROJ_NAME", "No project has been set.")
 proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
@@ -33,8 +36,11 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 proj = Project(proj_name, proj_xls)
 
 for sample in proj:
-    print(sample.fastq.fastqc())
+    print(sample.fastq.graphs.length_hist(rerun=True))
     break
+
+import dill
+print(dill.dumps(proj.samples[0]))
 
 #for report in proj.taxonomy.reports.all:
 #    print(report())
