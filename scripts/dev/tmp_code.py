@@ -32,9 +32,9 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 # Create project #
 proj = Project(proj_name, proj_xls)
 
-for sample in proj:
-    print(sample.fastq.fastqc())
-    break
+#for sample in proj:
+#    print(sample.fastq.fastqc())
+#    break
 
 #for report in proj.taxonomy.reports.all:
 #    print(report())
@@ -59,6 +59,10 @@ for sample in proj:
 #for i, rank in tqdm(enumerate(proj.taxa_tables.rank_names)):
 #    proj.taxa_tables.results.graphs.by_rank[i](rerun=True)
 #    proj.taxa_tables.results.graphs.legends[i](rerun=True)
+
+for sample in proj:
+    print(sample.report())
+    break
 
 #proj.nmds_graph()
 

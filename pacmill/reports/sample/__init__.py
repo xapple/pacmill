@@ -92,7 +92,7 @@ class SampleTemplate(ReportTemplate):
         # Let's also remove those that have no value #
         keys = [k for k in keys if getattr(self.sample, k) is not None]
         # Format them as a bullet list #
-        value =  lambda k: str(getattr(self.sample, k))
+        value  = lambda k: str(getattr(self.sample, k))
         bullet = lambda k: '* **`%s`**: `%s`' % (k, value(k))
         result = '\n'.join(bullet(k) for k in keys)
         # Return #

@@ -75,13 +75,13 @@ Chimera Detection
 -----------------
 
 {{#chimeras}}
-    In this step, we run every sequence through the `vsearch --uchime3_denovo` algorithm to detect the presence of any chimeras.
+In this step, we run every sequence through the `vsearch --uchime3_denovo` algorithm to detect the presence of any chimeras.
 
     * Checking for chimeras discards {{chimeras_discard}} sequences ({{chimeras_left}} left).
 {{/chimeras}}
 
 {{^chimeras}}
-    The chimeras detection algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
+The chimeras detection algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
 {{/chimeras}}
 
 -------
