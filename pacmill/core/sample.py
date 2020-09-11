@@ -271,7 +271,7 @@ class Sample:
         of quality control.
         """
         # If barrnap was the last step #
-        if self.barrnap_mode == 'on': return self.barrnap.results
+        if self.barrnap_mode != 'off': return self.barrnap.results
         # Otherwise chimeras was the last step #
         return self.chimeras.results
 

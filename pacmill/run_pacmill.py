@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     print("# Detect presence of rRNA genes (optional) #")
     for sample in proj:
-        if sample.barrnap_mode == 'on':
+        if sample.barrnap_mode != 'off':
             print(sample.barrnap())
     timer.print_elapsed()
 
