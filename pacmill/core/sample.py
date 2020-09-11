@@ -66,6 +66,8 @@ class Sample:
         self.transform_attrs()
         # We need to validate some attributes #
         self.validate_attrs()
+        # We need to set some attributes to defaults when absent #
+        self.set_default_attrs()
 
     #------------------------------- Methods ---------------------------------#
     dna_keys = ['fwd_index_seq', 'rev_index_seq', 'fwd_primer_seq',
@@ -120,6 +122,20 @@ class Sample:
                       "characters, please check: '%s'"
                 msg = msg % (key, self.description, seq)
                 raise ValueError(msg)
+
+    def set_default_attrs(self):
+        """
+        This is where we set default values for optional columns in the excel
+        file. If the column is present, no change is made. If it is absent,
+        we will add that particular attribute to the current instance.
+        """
+        # Declare the default values #
+        defaults = {
+            'barrnap_mode': 'on'
+        }
+        # Check everyone of them #
+        for key, value in defaults.items():
+            if not hasattr(self, key): setattr(self, key, value)
 
     #----------------------------- Properties --------------------------------#
     @property
@@ -235,6 +251,8 @@ class Sample:
     @property_cached
     def barrnap(self):
         """Takes care of running the Barrnap program."""
+        # In case the barrnap mode was turned off #
+        if self.barrnap_mode == 'off': return None
         # Get file paths #
         source   = self.chimeras.results
         dest     = self.autopaths.barrnap_gff
@@ -244,6 +262,18 @@ class Sample:
         barrnap = RemoveITS(source, dest, filtered)
         # Return #
         return barrnap
+
+    @property_cached
+    def final(self):
+        """
+        The final FASTQ for the sample before aggregation with other samples
+        in a `Project` object. This is typically the output of the last step
+        of quality control.
+        """
+        # If barrnap was the last step #
+        if self.barrnap_mode == 'on': return self.barrnap.results
+        # Otherwise chimeras was the last step #
+        return self.chimeras.results
 
     @property_cached
     def report(self):

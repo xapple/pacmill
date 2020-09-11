@@ -88,9 +88,10 @@ if __name__ == "__main__":
     prll_map(lambda s: s.chimeras(cpus=1), proj)
     timer.print_elapsed()
 
-    print("# Detect presence of rRNA genes #")
+    print("# Detect presence of rRNA genes (optional) #")
     for sample in proj:
-        print(sample.barrnap())
+        if sample.barrnap_mode == 'on':
+            print(sample.barrnap())
     timer.print_elapsed()
 
     print("# Concatenate reads from all samples into one file #")

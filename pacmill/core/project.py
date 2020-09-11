@@ -171,7 +171,7 @@ class Project:
             msg = msg % (self.short_name, len(self.samples))
             print(msg)
         # Get all input paths #
-        inputs = [sample.barrnap.results for sample in self]
+        inputs = [sample.final for sample in self]
         # Make the command to be run #
         cmd = 'cat %s > %s' % (' '.join(inputs), self.fasta)
         # We don't want python to be buffering the text for speed #
