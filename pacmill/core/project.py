@@ -14,7 +14,6 @@ import pandas
 
 # First party modules #
 from autopaths import Path
-from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
@@ -115,26 +114,12 @@ class Project:
         Get the project's long name which is a string describing the
         project title in a longer fashion than the short name.
         """
-        # It's actually contained in the Sample objects #
-        all_names = set(s.project_long_name for s in self)
-        # Check that it doesn't diverge between samples #
-        if not len(all_names) == 1:
-            msg = "The project long name is not uniform across samples."
-            raise ValueError(msg)
-        # Return #
-        return all_names.pop()
+        return self.check_homogeneous('project_long_name')
 
     @property_cached
     def output_dir(self):
         """Get the project's output directory."""
-        # It's actually contained in the Sample objects #
-        all_output_dirs = set(s.output_dir for s in self)
-        # Check that it doesn't diverge between samples #
-        if not len(all_output_dirs) == 1:
-            msg = "The project output directory is not uniform across samples."
-            raise ValueError(msg)
-        # Return #
-        return DirectoryPath(all_output_dirs.pop())
+        return self.check_homogeneous('output_dir')
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """
@@ -160,6 +145,23 @@ class Project:
         return AutoPaths(self.output_dir, self.all_paths)
 
     #------------------------------- Methods ---------------------------------#
+    def check_homogeneous(self, attribute):
+        """
+        This method will check every Sample of the current project for a
+        specific attribute (e.g. 'output_dir') and assert that this attribute
+        has the same value in every Sample. If this is the case, the unique
+        value is returned.
+        """
+        # Collect all values #
+        all_values = set(getattr(s, attribute) for s in self)
+        # Check that it doesn't diverge between samples #
+        if not len(all_values) == 1:
+            msg = "The attribute '%s' is not uniform across samples." \
+                  " Current values are:\n %s"
+            raise ValueError(msg % (attribute, all_values))
+        # Return the unique value for convenience #
+        return all_values.pop()
+
     def combine_reads(self, verbose=True, check=False):
         """
         This method will concatenate all the cleaned reads from every sample

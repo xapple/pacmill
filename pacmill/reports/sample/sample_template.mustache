@@ -90,13 +90,19 @@ Gene Presence with Barrnap
 --------------------------
 
 {{#barrnap}}
-In this step, we run every sequence through the `barrnap` algorithm to detect the presence of any type of rRNA gene (via `nhmmer`). We then only keep raw sequences that had positive hits for both the 16S gene and the 23S gene. Furthermore, we extract both genes from each sequence and concatenate them together, effectively removing non-coding regions.
+In this step, we run every sequence through the `barrnap` algorithm to detect the presence of rRNA genes (via `nhmmer`). Using the results, we can proceed in several fashions:
+
+* **`filter`**: We can only keep raw sequences that had positive hits for both the 16S gene and the 23S gene.
+* **`concat`**: We can extract both genes from each read and concatenate them together, effectively removing non-coding regions.
+* **`trim`**: We can extract only the 16S gene from each read and remove all the rest.
+
+For this analysis the barrnap mode is set to: `{{barrnap_mode}}`
 
 * Checking for the presence of rRNA genes further discards {{barrnap_discard}} sequences ({{barrnap_left}} left).
 {{/barrnap}}
 
 {{^barrnap}}
-The barrnap algorithm has not been run on this sample yet. Please run the pipeline and regenerate this report.
+The barrnap algorithm has not been run on this sample.
 {{/barrnap}}
 
 -------

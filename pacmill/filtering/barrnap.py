@@ -204,7 +204,7 @@ class BarrnapFilter(Barrnap):
     def __call__(self, cpus=None, verbose=True):
         # Call the parent class method #
         self.run(cpus, verbose)
-        # Filter #
+        # Extra processing #
         return self.filter()
 
     #--------------------------- Presence of gene ----------------------------#
@@ -233,7 +233,7 @@ class BarrnapExtract(Barrnap):
     def __call__(self, cpus=None, verbose=True):
         # Call the parent class method #
         self.run(cpus, verbose)
-        # Filter #
+        # Extra processing #
         return self.extract()
 
     #--------------------------- Location of gene ----------------------------#
@@ -265,7 +265,7 @@ class RemoveITS(Barrnap):
     def __call__(self, cpus=None, verbose=True):
         # Call the parent class method #
         self.run(cpus, verbose)
-        # Filter #
+        # Extra processing #
         return self.remove_its()
 
     #------------------------ Location of both genes -------------------------#

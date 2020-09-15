@@ -122,6 +122,9 @@ class Sample:
                       "characters, please check: '%s'"
                 msg = msg % (key, self.description, seq)
                 raise ValueError(msg)
+        # Check that barrnap mode is a valid option #
+        if hasattr(self, 'barrnap_mode'):
+            assert self.barrnap_mode in ['off', 'filter', 'concat', 'trim']
 
     def set_default_attrs(self):
         """
@@ -131,7 +134,7 @@ class Sample:
         """
         # Declare the default values #
         defaults = {
-            'barrnap_mode': 'on'
+            'barrnap_mode': 'off'
         }
         # Check everyone of them #
         for key, value in defaults.items():
@@ -257,9 +260,16 @@ class Sample:
         source   = self.chimeras.results
         dest     = self.autopaths.barrnap_gff
         filtered = self.autopaths.barrnap_fasta
-        # Create barrnap object for filtering #
-        from pacmill.filtering.barrnap import RemoveITS
-        barrnap = RemoveITS(source, dest, filtered)
+        # Create barrnap object depending on mode chosen #
+        if self.barrnap_mode == 'filter':
+            from pacmill.filtering.barrnap import BarrnapFilter
+            barrnap = BarrnapFilter(source, dest, filtered)
+        if self.barrnap_mode == 'concat':
+            from pacmill.filtering.barrnap import RemoveITS
+            barrnap = RemoveITS(source, dest, filtered)
+        if self.barrnap_mode == 'trim':
+            from pacmill.filtering.barrnap import BarrnapExtract
+            barrnap = BarrnapExtract(source, dest, filtered)
         # Return #
         return barrnap
 

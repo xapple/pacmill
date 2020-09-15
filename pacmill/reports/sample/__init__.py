@@ -222,6 +222,9 @@ class SampleTemplate(ReportTemplate):
     def barrnap(self):
         return bool(self.sample.barrnap)
 
+    def barrnap_mode(self):
+        return self.sample.barrnap_mode
+
     @property_pickled
     def barrnap_discard(self):
         before = self.sample.chimeras.results.count
