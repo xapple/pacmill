@@ -57,8 +57,9 @@ class CrestClassify:
     @property_cached
     def database(self):
         # Find where the database is on the file system #
-        self.database_path  = which('classify').physical_path.directory.directory
-        self.database_path += 'parts/flatdb/%s/%s.fasta' % (database, database)
+        path  = os.path.expanduser("~/programs/crest/parts/flatdb/")
+        path += '%s/%s.fasta' % ("silvamod", "silvamod128")
+        return path
 
     #----------------------------- Installing --------------------------------#
     apt_packages = ['ncbi-blast+', 'python2']
@@ -116,18 +117,18 @@ class CrestClassify:
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """
-                /graphs/
-                /stats/
                 /blast/db_hits.xml
                 /blast/stdout.txt
                 /blast/stderr.txt
+                /crest/stdout.txt
+                /crest/stderr.txt
                 /crest/assignments.tsv
                 /crest/composition.tsv
                 /crest/tree.txt
                 /crest/Relative_Abundance.tsv
                 /crest/Richness.tsv
-                /crest/stdout.txt
-                /crest/stderr.txt
+                /graphs/
+                /stats/
                 """
 
     @property_cached
@@ -141,18 +142,22 @@ class CrestClassify:
         return AutoPaths(self.dest_dir, self.all_paths)
 
     #------------------------------ Running ----------------------------------#
-    def __call__(self, cpus=None):
+    def __call__(self, cpus=None, verbose=True):
+        # Message #
+        if verbose:
+            message = "Running `%s` taxonomy classification on '%s'"
+            print(message % (self.short_name, self.source))
         # Check blast is installed #
         check_cmd('blastn', True)
         # Check crest is installed #
-        check_cmd('classify', True)
+        crest = sh.Command("~/programs/crest/bin/classify")
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Run #
         sh.blastn('-task',             'megablast',
                   '-num_threads',      cpus,
                   '-query',            self.source,
-                  '-db',               self.database_path,
+                  '-db',               self.database,
                   '-out',              self.autopaths.db_hits,
                   '-max_target_seqs',  '100',
                   '-outfmt',           '5',
@@ -162,22 +167,27 @@ class CrestClassify:
         if os.path.getsize(self.autopaths.db_hits) == 0:
             msg = "Hits file empty. The MEGABLAST process was probably killed."
             raise Exception(msg)
-        # Remove directory #
+        # Remove directory otherwise crest complains #
         self.autopaths.crest_dir.remove()
         # Run algorithm #
-        sh.classify('--verbose',
-                    '--rdp',
-                    '-o', self.base_dir + 'crest/',
-                    '-d', self.database,
-                    self.autopaths.db_hits,
-                    _out = self.autopaths.crest_stdout.path,
-                    _err = self.autopaths.crest_stderr.path)
-        # Move #
-        shutil.move(self.autopaths.db_hits.prefix_path + '_Composition.tsv', self.autopaths.crest_composition)
-        shutil.move(self.autopaths.db_hits.prefix_path + '_Tree.txt', self.autopaths.crest_tree)
-        shutil.move(self.autopaths.db_hits.prefix_path + '_Assignments.tsv', self.autopaths.crest_assignments)
+        crest('--verbose',
+              '--rdp',
+              '-o', self.dest_dir + 'crest/',
+              '-d', self.database,
+              self.autopaths.db_hits,
+              _out = self.autopaths.crest_stdout.path,
+              _err = self.autopaths.crest_stderr.path)
+        # Get generated files #
+        composition = self.autopaths.db_hits.prefix_path + '_Composition.tsv'
+        tree        = self.autopaths.db_hits.prefix_path + '_Tree.txt'
+        assignments = self.autopaths.db_hits.prefix_path + '_Assignments.tsv'
+        # Move files into place #
+        shutil.move(composition, self.autopaths.crest_composition)
+        shutil.move(tree,        self.autopaths.crest_tree)
+        shutil.move(assignments, self.autopaths.crest_assignments)
         # Clean up #
-        if os.path.exists("error.log") and os.path.getsize("error.log") == 0: os.remove("error.log")
+        if os.path.exists("error.log") and os.path.getsize("error.log") == 0:
+            os.remove("error.log")
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):

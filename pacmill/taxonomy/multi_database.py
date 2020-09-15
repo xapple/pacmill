@@ -61,7 +61,7 @@ class MultiTaxDatabases:
     #------------------------------ Running ----------------------------------#
     @property_cached
     def taxonomies(self):
-        return [self.silva, self.greengenes, self.rdp]
+        return [self.silva, self.greengenes, self.rdp, self.crest]
 
     def __call__(self, verbose=True):
         # Loop over databases #

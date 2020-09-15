@@ -14,6 +14,7 @@ import pandas
 
 # First party modules #
 from autopaths import Path
+from autopaths.dir_path import DirectoryPath
 from plumbing.cache import property_cached
 
 # Internal modules #
@@ -106,7 +107,7 @@ class Project:
         # Check we have at least one sample #
         if not len(samples) > 0:
             msg = "No samples belonging to the project '%s' were found in" \
-                  " the metadata files '%s'."
+                  " the following metadata files:\n %s."
             raise Exception(msg % (self.short_name, self.all_xlsx))
         # Return #
         return samples
@@ -122,7 +123,7 @@ class Project:
     @property_cached
     def output_dir(self):
         """Get the project's output directory."""
-        return self.check_homogeneous('output_dir')
+        return DirectoryPath(self.check_homogeneous('output_dir'))
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """

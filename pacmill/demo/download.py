@@ -24,18 +24,22 @@ Typically you would run this file from a command line like this:
 if __name__ == "__main__":
     # Import #
     from pacmill.demo.demo_samples import samples
+    # Check we have the required program for uncompressing first #
+    from pacmill.demo.sra import DumpSRA
+    DumpSRA.check_installed()
     # Message #
-    print("Downloading the 5 demo samples which are:\n")
+    print("\n Downloading the 5 demo samples which are:")
     texts = (sample.description for sample in samples)
     print('\n  * ' + '\n  * '.join(texts), '\n')
+    print("This will take a few minutes.")
     # Download #
     for sample in samples: print(sample.download())
     # Extract #
     for sample in samples: print(sample.extract())
     # Compress #
-    print("Compressing FASTQ files.")
+    print("Compressing all FASTQ files.")
     for sample in samples: print(sample.fastq.compress(remove_orig=True))
     # Remove the sra archive #
     for sample in samples: sample.path_sra.remove()
     # Success #
-    print("Done.")
+    print("Done. Results are in '%s'." % samples[0].base_dir)
