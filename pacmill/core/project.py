@@ -104,7 +104,10 @@ class Project:
         # Add a reference to the current project #
         for sample in samples: sample.parent = self
         # Check we have at least one sample #
-        assert len(samples) > 0
+        if not len(samples) > 0:
+            msg = "No samples belonging to the project '%s' were found in" \
+                  " the metadata files '%s'."
+            raise Exception(msg % (self.short_name, self.all_xlsx))
         # Return #
         return samples
 
