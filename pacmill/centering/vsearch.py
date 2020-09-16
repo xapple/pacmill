@@ -8,7 +8,7 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
-import multiprocessing
+import multiprocessing, re
 
 # First party modules #
 from fasta import FASTA, FASTQ
@@ -17,7 +17,7 @@ from plumbing.cache           import property_cached
 from autopaths.file_path      import FilePath
 
 # Third party modules #
-import sh
+import sh, pandas
 
 ###############################################################################
 class ClusterVsearch:
@@ -60,7 +60,7 @@ class ClusterVsearch:
         # Threshold is a float such as 0.97 #
         self.threshold = threshold
         # Minimum size is an integer such as 2 #
-        self.min_size = min_size #TODO
+        self.min_size = min_size
         # self.otus is a FASTA file that contains the centroid sequences #
         if otus is None:
             otus = self.source.prefix_path + '.otus.fasta'
@@ -72,6 +72,17 @@ class ClusterVsearch:
 
     #------------------------------ Running ----------------------------------#
     def __call__(self, cpus=None, verbose=True):
+        # Call vsearch #
+        self.cluster(cpus, verbose)
+        # Filter OTUs that are too small #
+        if self.min_size > 1: self.dereplicate(verbose)
+
+    def cluster(self, cpus=None, verbose=True):
+        """
+        Will call the vsearch algorithm. Documentation for command line
+        options are found at:
+        https://manpages.debian.org/stretch/vsearch/vsearch.1.en.html
+        """
         # Message #
         if verbose:
             msg = "Running OTU creation on '%s'"
@@ -90,6 +101,40 @@ class ClusterVsearch:
                    "--threads",      cpus)
         # Run the command on the input FASTA file #
         sh.vsearch(command)
+        # Return #
+        return self.otus
+
+    def dereplicate(self, verbose=True):
+        """
+        We will read the TSV table at `self.table` and remove OTUs that are
+        below the self.min_size threshold. Following which, we will read the
+        FASTA file at `self.otus` and remove the same sequences that are no
+        longer required.
+        """
+        # Message #
+        if verbose:
+            msg = "Removing low abundance OTUs on '%s'"
+            print(msg % self.otus)
+        # Load table #
+        df = pandas.read_csv(self.table, sep='\t', index_col=0)
+        # Sum and sort #
+        totals = df.sum(axis=1).sort_values(ascending=False)
+        # Get the sequences IDs to drop and those to keep #
+        keep_ids = list(totals[totals >= self.min_size].index)
+        drop_ids = list(totals[totals <  self.min_size].index)
+        # Make a new table to replace the old one #
+        df = df.loc[keep_ids]
+        path = self.table + 'filtered.tsv'
+        df.to_csv(path.path, sep='\t')
+        # Function for filtering reads #
+        def keep_reads_if(title):
+            pattern  = r'\Acentroid=(.+);seqs=[0-9]+\Z'
+            otu_name = re.findall(pattern, title)[0]
+            if otu_name in keep_ids: return True
+            return False
+        # Filter the FASTA file #
+        new_path = self.otus + 'filtered.fasta'
+        self.otus.extract_sequences(keep_reads_if, new_path)
         # Return #
         return self.otus
 
