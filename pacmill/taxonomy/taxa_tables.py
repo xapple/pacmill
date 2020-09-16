@@ -43,8 +43,12 @@ class TaxaTable:
         self.base_dir  = base_dir
         # Short cuts #
         self.assignments = self.taxonomy.results.assignments
-        self.rank_names  = self.taxonomy.database.rank_names
         self.otu_df      = self.otu_table.df
+        # The rank names #
+        if hasattr(self.taxonomy.database, 'rank_names'):
+            self.rank_names = self.taxonomy.database.rank_names
+        else:
+            self.rank_names = list(map(str, range(1, 8)))
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """

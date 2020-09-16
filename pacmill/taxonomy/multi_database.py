@@ -108,8 +108,8 @@ class MultiTaxDatabases:
 
         Typically you can access these tables like this:
 
-            >>> print(project.taxonomy.tables.silva)
-            >>> print(project.taxonomy.tables.rdp)
+            >>> print(proj.taxonomy.tables.silva)
+            >>> print(proj.taxonomy.tables.rdp)
         """
         # Import #
         from pacmill.taxonomy.taxa_tables import TaxaTable

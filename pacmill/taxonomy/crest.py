@@ -8,7 +8,7 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
-import os, multiprocessing, shutil
+import os, multiprocessing, shutil, re
 
 # First party modules #
 from fasta import FASTA
@@ -47,6 +47,7 @@ class CrestClassify:
     # The database #
     db_version_name = "silvamod128"
     db_short_name   = "silvamod"
+    db_long_name    = 'Silva version 128 modified for CREST'
 
     def __repr__(self):
         msg = '<%s object on "%s">'
@@ -58,12 +59,28 @@ class CrestClassify:
         # Destination is a directory that contains all the results #
         self.dest_dir = DirectoryPath(dest_dir)
 
+    @property
+    def rank_names(self):
+        return ['Domain',    # 1
+                'Kingdom',   # 2
+                'Phylum',    # 3
+                'Class',     # 4
+                'Order',     # 5
+                'Family',    # 6
+                'Genus',     # 7
+                'Species']   # 8
+
     @property_cached
     def database(self):
         # Find where the database is on the file system #
         path  = os.path.expanduser("~/programs/crest/parts/flatdb/")
         path += '%s/%s.fasta' % (self.db_short_name, self.db_version_name)
-        return path
+        # Make an object with a path and rank_names #
+        attributes = {'path':       path,
+                      'rank_names': self.rank_names,
+                      'tag':        self.db_version_name,
+                      'long_name':  self.db_long_name}
+        return type('CrestDatabase', (), attributes)
 
     #----------------------------- Installing --------------------------------#
     apt_packages = ['ncbi-blast+', 'python2']
@@ -128,8 +145,7 @@ class CrestClassify:
                 /results/stdout.txt
                 /results/stderr.txt
                 /results/assignments.tsv
-                /graphs/
-                /stats/
+                /taxa_tables/
                 """
 
     @property_cached
@@ -155,15 +171,15 @@ class CrestClassify:
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Run #
-        #sh.blastn('-task',             'megablast',
-        #          '-num_threads',      cpus,
-        #          '-query',            self.source,
-        #          '-db',               self.database,
-        #          '-out',              self.autopaths.db_hits,
-        #          '-max_target_seqs',  '100',
-        #          '-outfmt',           '5',
-        #          _out = self.autopaths.blast_stdout,
-        #          _err = self.autopaths.blast_stderr)
+        sh.blastn('-task',             'megablast',
+                  '-num_threads',      cpus,
+                  '-query',            self.source,
+                  '-db',               self.database.path,
+                  '-out',              self.autopaths.db_hits,
+                  '-max_target_seqs',  '100',
+                  '-outfmt',           '5',
+                  _out = self.autopaths.blast_stdout,
+                  _err = self.autopaths.blast_stderr)
         # Check #
         if os.path.getsize(self.autopaths.db_hits) == 0:
             msg = "Hits file empty. The MEGABLAST process was probably killed."
@@ -215,20 +231,39 @@ class CrestResults(object):
         with open(self.autopaths.assignments, 'r') as handle:
             for line in handle:
                 # Split by tabs #
-                code, count, species = line.split('\t')
+                code, count, species = line.strip('\n').split('\t')
                 # First line is just the column titles #
                 if species == "classification": continue
                 # Split by semi-colons #
                 species = tuple(species.strip('\n').split(';'))
                 # Get the original OTU name #
-
+                pattern  = r':centroid=(.+);seqs=[0-9]+\Z'
+                otu_name = re.findall(pattern, code)[0]
+                # Conform to the mothur standard of names #
+                otu_name = otu_name.replace(':', '_')
                 # Make a dictionary #
-                result[code] = species[:8]
+                result[otu_name] = species[1:]
         # Return #
         return result
 
-    @property
+    @property_cached
+    def count_unassigned(self):
+        """Will count how many did not get a prediction at each level."""
+        # Load the assignment values created by mothur #
+        vals = list(self.assignments.values())
+        # Calculate for each position in the tree of life #
+        return [
+            sum(1 for x in vals if len(x) >= 1), # Domain
+            sum(1 for x in vals if len(x) >= 2), # Kingdom
+            sum(1 for x in vals if len(x) >= 3), # Phylum
+            sum(1 for x in vals if len(x) >= 4), # Class
+            sum(1 for x in vals if len(x) >= 5), # Order
+            sum(1 for x in vals if len(x) >= 6), # Family
+            sum(1 for x in vals if len(x) >= 7), # Genus
+            sum(1 for x in vals if len(x) >= 8), # Species
+        ]
+
+    @property_cached
     def count_assigned(self):
-        """How many got a position?"""
-        return len([s for s in self.assignments.values()
-                    if s != ('No hits',)])
+        """Will count how many did get a prediction at each level."""
+        return [len(self.assignments) - x for x in self.count_unassigned]
