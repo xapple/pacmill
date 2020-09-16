@@ -35,28 +35,32 @@ class ClusterVsearch:
     Caveat: The Vsearch algorithm will name OTU differently in the FASTA
             file it outputs as compared to the TSV file it outputs
 
-    In the `self.table` they are named:
+    In the `self.table` which is a TSV they are named:
 
         sample_1:1034      sample_1:1041       etc.
 
-    In the `self.otus` they are named:
+    In the `self.otus` which is a FASTA they are named:
 
        centroid=sample_1:1034;seqs=128      etc.
 
     After mothur classifies the OTU, they are named:
 
        centroid=sample_1_1034;seqs=128      etc.
-    """
 
-    threshold = 0.97
+    Which is almost the same except colons are underscores now.
+    """
 
     def __repr__(self):
         msg = '<%s object on "%s">'
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, otus=None, table=None):
+    def __init__(self, source, threshold, min_size, otus=None, table=None):
         # Source is a FASTA to run the algorithm on #
         self.source = FASTQ(source)
+        # Threshold is a float such as 0.97 #
+        self.threshold = threshold
+        # Minimum size is an integer such as 2 #
+        self.min_size = min_size #TODO
         # self.otus is a FASTA file that contains the centroid sequences #
         if otus is None:
             otus = self.source.prefix_path + '.otus.fasta'

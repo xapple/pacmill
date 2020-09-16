@@ -134,7 +134,9 @@ class Sample:
         """
         # Declare the default values #
         defaults = {
-            'barrnap_mode': 'off'
+            'barrnap_mode':  'off',
+            'otu_threshold':  0.97,
+            'otu_min_size':      1,
         }
         # Check everyone of them #
         for key, value in defaults.items():

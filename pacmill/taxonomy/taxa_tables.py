@@ -96,7 +96,7 @@ class TaxaTable:
             for otu_name, count in column.iteritems():
                 # Because mothur renames OTUs #
                 otu_name   = otu_name.replace(':', '_')
-                # Retrieve a tuple unless it was discarded by barrnap #
+                # Retrieve a tuple unless it was discarded by post-processing #
                 assignment = self.assignments.get(otu_name)
                 # Get the assignment at this specific rank #
                 if assignment is None:        taxa_term = "Unassigned"

@@ -208,8 +208,14 @@ class Project:
         Takes care of running a single-pass, greedy centroid-based clustering
         algorithm on all sequences to determine consensus sequences of OTUs.
         """
+        # Get the threshold of clustering and minimum size #
+        threshold = self.check_homogeneous('otu_threshold')
+        min_size  = self.check_homogeneous('otu_min_size')
+        # Return a vsearch object #
         from pacmill.centering.vsearch import ClusterVsearch
         return ClusterVsearch(self.fasta,
+                              threshold,
+                              min_size,
                               self.autopaths.otus_fasta,
                               self.autopaths.otus_tsv)
 
