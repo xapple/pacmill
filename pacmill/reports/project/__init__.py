@@ -117,6 +117,9 @@ class ProjectTemplate(ReportTemplate):
     def otus_threshold(self):
         return "%.1f%%" % (self.project.otus.threshold * 100)
 
+    def otus_min_size(self):
+        return self.project.otus.min_size
+
     def otus_total(self):
         return thousands(self.project.otus.results.count)
 
