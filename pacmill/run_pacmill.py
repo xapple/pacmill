@@ -103,7 +103,7 @@ if __name__ == "__main__":
     timer.print_elapsed()
 
     print("# Assign taxonomy and make all taxa tables #")
-    print(proj.taxonomy())
+    proj.taxonomy()
     timer.print_elapsed()
 
     print("# Regenerate the graphs for the project #")
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     # Clear the cache #
     for sample in proj:
-        print(sample.report.template.cache_dir.remove())
+        sample.report.template.cache_dir.remove()
 
     print("# Create the PDF reports for each sample #")
     for sample in proj:
