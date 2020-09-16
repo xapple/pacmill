@@ -44,6 +44,10 @@ class CrestClassify:
     long_name  = 'LCAClassifier/CREST version 3.2.0'
     executable = 'classify'
 
+    # The database #
+    db_version_name = "silvamod128"
+    db_short_name   = "silvamod"
+
     def __repr__(self):
         msg = '<%s object on "%s">'
         return msg % (self.__class__.__name__, self.source.path)
@@ -58,7 +62,7 @@ class CrestClassify:
     def database(self):
         # Find where the database is on the file system #
         path  = os.path.expanduser("~/programs/crest/parts/flatdb/")
-        path += '%s/%s.fasta' % ("silvamod", "silvamod128")
+        path += '%s/%s.fasta' % (self.db_short_name, self.db_version_name)
         return path
 
     #----------------------------- Installing --------------------------------#
@@ -120,13 +124,10 @@ class CrestClassify:
                 /blast/db_hits.xml
                 /blast/stdout.txt
                 /blast/stderr.txt
-                /crest/stdout.txt
-                /crest/stderr.txt
-                /crest/assignments.tsv
-                /crest/composition.tsv
-                /crest/tree.txt
-                /crest/Relative_Abundance.tsv
-                /crest/Richness.tsv
+                /output/
+                /results/stdout.txt
+                /results/stderr.txt
+                /results/assignments.tsv
                 /graphs/
                 /stats/
                 """
@@ -154,37 +155,32 @@ class CrestClassify:
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Run #
-        sh.blastn('-task',             'megablast',
-                  '-num_threads',      cpus,
-                  '-query',            self.source,
-                  '-db',               self.database,
-                  '-out',              self.autopaths.db_hits,
-                  '-max_target_seqs',  '100',
-                  '-outfmt',           '5',
-                  _out = self.autopaths.blast_stdout,
-                  _err = self.autopaths.blast_stderr)
+        #sh.blastn('-task',             'megablast',
+        #          '-num_threads',      cpus,
+        #          '-query',            self.source,
+        #          '-db',               self.database,
+        #          '-out',              self.autopaths.db_hits,
+        #          '-max_target_seqs',  '100',
+        #          '-outfmt',           '5',
+        #          _out = self.autopaths.blast_stdout,
+        #          _err = self.autopaths.blast_stderr)
         # Check #
         if os.path.getsize(self.autopaths.db_hits) == 0:
             msg = "Hits file empty. The MEGABLAST process was probably killed."
             raise Exception(msg)
         # Remove directory otherwise crest complains #
-        self.autopaths.crest_dir.remove()
+        self.autopaths.output_dir.remove()
         # Run algorithm #
         crest('--verbose',
-              '--rdp',
-              '-o', self.dest_dir + 'crest/',
-              '-d', self.database,
+              '-o', self.dest_dir + 'output/',
+              '-d', self.db_version_name,
               self.autopaths.db_hits,
-              _out = self.autopaths.crest_stdout.path,
-              _err = self.autopaths.crest_stderr.path)
+              _out = self.autopaths.results_stdout.path,
+              _err = self.autopaths.results_stderr.path)
         # Get generated files #
-        composition = self.autopaths.db_hits.prefix_path + '_Composition.tsv'
-        tree        = self.autopaths.db_hits.prefix_path + '_Tree.txt'
-        assignments = self.autopaths.db_hits.prefix_path + '_Assignments.tsv'
+        assignments = self.autopaths.output_dir + 'otus.csv'
         # Move files into place #
-        shutil.move(composition, self.autopaths.crest_composition)
-        shutil.move(tree,        self.autopaths.crest_tree)
-        shutil.move(assignments, self.autopaths.crest_assignments)
+        shutil.move(assignments, self.autopaths.results_assignments)
         # Clean up #
         if os.path.exists("error.log") and os.path.getsize("error.log") == 0:
             os.remove("error.log")
@@ -218,11 +214,21 @@ class CrestResults(object):
         result = {}
         with open(self.autopaths.assignments, 'r') as handle:
             for line in handle:
-                code, species = line.split('\t')
-                result[code] = tuple(species.strip('\n').split(';'))[:8]
+                # Split by tabs #
+                code, count, species = line.split('\t')
+                # First line is just the column titles #
+                if species == "classification": continue
+                # Split by semi-colons #
+                species = tuple(species.strip('\n').split(';'))
+                # Get the original OTU name #
+
+                # Make a dictionary #
+                result[code] = species[:8]
+        # Return #
         return result
 
     @property
     def count_assigned(self):
         """How many got a position?"""
-        return len([s for s in self.assignments.values() if s != ('No hits',)])
+        return len([s for s in self.assignments.values()
+                    if s != ('No hits',)])
