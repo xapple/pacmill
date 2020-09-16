@@ -8,7 +8,7 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
-import multiprocessing, re
+import multiprocessing, re, shutil
 
 # First party modules #
 from fasta import FASTA, FASTQ
@@ -120,21 +120,22 @@ class ClusterVsearch:
         # Sum and sort #
         totals = df.sum(axis=1).sort_values(ascending=False)
         # Get the sequences IDs to drop and those to keep #
-        keep_ids = list(totals[totals >= self.min_size].index)
-        drop_ids = list(totals[totals <  self.min_size].index)
-        # Make a new table to replace the old one #
-        df = df.loc[keep_ids]
-        path = self.table + 'filtered.tsv'
-        df.to_csv(path.path, sep='\t')
+        self.keep_ids = list(totals[totals >= self.min_size].index)
+        self.drop_ids = list(totals[totals <  self.min_size].index)
+        # Filter the dataframe #
+        df = df.loc[self.keep_ids]
+        # Backup the old table and replace it #
+        shutil.move(self.table, self.table + '.unfiltered')
+        df.to_csv(self.table.path, sep='\t')
         # Function for filtering reads #
         def keep_reads_if(title):
             pattern  = r'\Acentroid=(.+);seqs=[0-9]+\Z'
             otu_name = re.findall(pattern, title)[0]
-            if otu_name in keep_ids: return True
+            if otu_name in self.keep_ids: return True
             return False
         # Filter the FASTA file #
-        new_path = self.otus + 'filtered.fasta'
-        self.otus.extract_sequences(keep_reads_if, new_path)
+        self.otus.copy(self.otus + '.unfiltered')
+        self.otus.extract_sequences(keep_reads_if, in_place=True)
         # Return #
         return self.otus
 
