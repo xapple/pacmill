@@ -32,6 +32,8 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 # Create project #
 proj = Project(proj_name, proj_xls)
 
+proj.taxonomy.tables.silvamod128()
+
 #for sample in proj:
 #    print(sample.fastq.fastqc())
 #    break
@@ -60,9 +62,9 @@ proj = Project(proj_name, proj_xls)
 #    proj.taxa_tables.results.graphs.by_rank[i](rerun=True)
 #    proj.taxa_tables.results.graphs.legends[i](rerun=True)
 
-for sample in proj:
-    print(sample.report())
-    break
+#for sample in proj:
+#    print(sample.report())
+#    break
 
 #proj.nmds_graph()
 

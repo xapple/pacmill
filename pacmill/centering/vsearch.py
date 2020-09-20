@@ -76,6 +76,8 @@ class ClusterVsearch:
         self.cluster(cpus, verbose)
         # Filter OTUs that are too small #
         if self.min_size > 1: self.dereplicate(verbose)
+        # Return #
+        return self.otus
 
     def cluster(self, cpus=None, verbose=True):
         """

@@ -253,14 +253,14 @@ class CrestResults(object):
         vals = list(self.assignments.values())
         # Calculate for each position in the tree of life #
         return [
-            sum(1 for x in vals if len(x) >= 1), # Domain
-            sum(1 for x in vals if len(x) >= 2), # Kingdom
-            sum(1 for x in vals if len(x) >= 3), # Phylum
-            sum(1 for x in vals if len(x) >= 4), # Class
-            sum(1 for x in vals if len(x) >= 5), # Order
-            sum(1 for x in vals if len(x) >= 6), # Family
-            sum(1 for x in vals if len(x) >= 7), # Genus
-            sum(1 for x in vals if len(x) >= 8), # Species
+            sum(1 for x in vals if len(x) < 1), # Domain
+            sum(1 for x in vals if len(x) < 2), # Kingdom
+            sum(1 for x in vals if len(x) < 3), # Phylum
+            sum(1 for x in vals if len(x) < 4), # Class
+            sum(1 for x in vals if len(x) < 5), # Order
+            sum(1 for x in vals if len(x) < 6), # Family
+            sum(1 for x in vals if len(x) < 7), # Genus
+            sum(1 for x in vals if len(x) < 8), # Species
         ]
 
     @property_cached
