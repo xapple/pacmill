@@ -70,7 +70,10 @@ class Project:
         # Save all excel file paths as Paths objects #
         self.all_xlsx = list(map(Path, all_xlsx))
         # Check all the excel paths actually exist #
-        assert all(xlsx.exists for xlsx in self.all_xlsx)
+        for path in self.all_xlsx:
+            if not path.exists:
+                msg = "The excel file at '%s' does not exist."
+                raise Exception(msg % path)
 
     #----------------------------- Properties --------------------------------#
     @property_cached
