@@ -32,7 +32,15 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 # Create project #
 proj = Project(proj_name, proj_xls)
 
-proj.taxonomy.tables.silvamod128()
+# Others #
+for tables in proj.taxonomy.tables.all:
+    tables()
+    for graph in tables.results.graphs.by_rank:
+        print(graph(rerun=True))
+    for legend in tables.results.graphs.legends:
+        print(legend(rerun=True))
+
+proj.taxonomy.reports.silvamod128()
 
 #for sample in proj:
 #    print(sample.fastq.fastqc())

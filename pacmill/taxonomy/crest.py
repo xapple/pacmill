@@ -61,14 +61,15 @@ class CrestClassify:
 
     @property
     def rank_names(self):
-        return ['Domain',    # 1
-                'Kingdom',   # 2
-                'Phylum',    # 3
-                'Class',     # 4
-                'Order',     # 5
-                'Family',    # 6
-                'Genus',     # 7
-                'Species']   # 8
+        return ['Domain',         # 1
+                'Superkingdom',   # 2
+                'Kingdom',        # 3
+                'Phylum',         # 4
+                'Class',          # 5
+                'Order',          # 6
+                'Family',         # 7
+                'Genus',          # 8
+                'Species']        # 9
 
     @property_cached
     def database(self):
@@ -217,16 +218,25 @@ class CrestClassify:
                   " classification before running the tool."
             raise Exception(msg)
         # Return the results #
-        return CrestResults(self.autopaths)
+        return CrestResults(self.autopaths, self.database)
 
 ###############################################################################
 class CrestResults(object):
 
-    def __init__(self, autopaths):
+    def __init__(self, autopaths, database):
         self.autopaths = autopaths
+        self.database = database
 
     @property_cached
     def assignments(self):
+        """
+        Typically an assignment from CREST looks like this:
+
+            Main genome;Bacteria;Bacteria (superkingdom);Terrabacteria;
+            Firmicutes;Bacilli;Bacillales;Bacillaceae;Bacillus
+
+        We skip the first entry as it seems to be always "Main genome".
+        """
         result = {}
         with open(self.autopaths.assignments, 'r') as handle:
             for line in handle:
@@ -249,19 +259,12 @@ class CrestResults(object):
     @property_cached
     def count_unassigned(self):
         """Will count how many did not get a prediction at each level."""
-        # Load the assignment values created by mothur #
-        vals = list(self.assignments.values())
+        # Load the assignment values created by CREST #
+        values = list(self.assignments.values())
+        # Iterate over every rank number #
+        rank_numbers = list(range(len(self.database.rank_names)))
         # Calculate for each position in the tree of life #
-        return [
-            sum(1 for x in vals if len(x) < 1), # Domain
-            sum(1 for x in vals if len(x) < 2), # Kingdom
-            sum(1 for x in vals if len(x) < 3), # Phylum
-            sum(1 for x in vals if len(x) < 4), # Class
-            sum(1 for x in vals if len(x) < 5), # Order
-            sum(1 for x in vals if len(x) < 6), # Family
-            sum(1 for x in vals if len(x) < 7), # Genus
-            sum(1 for x in vals if len(x) < 8), # Species
-        ]
+        return [sum(1 for x in values if len(x) < i) for i in rank_numbers]
 
     @property_cached
     def count_assigned(self):

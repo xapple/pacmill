@@ -154,7 +154,7 @@ class MultiTaxDatabases:
             # Instantiate #
             report = TaxonomyReport(tax, tables, self.proj, path)
             # Set attribute #
-            setattr(result, tax.short_name, report)
+            setattr(result, tax.database.tag, report)
             # Add it to list #
             result.all.append(report)
         # Return #

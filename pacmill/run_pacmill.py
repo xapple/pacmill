@@ -138,7 +138,7 @@ if __name__ == "__main__":
     timer.print_elapsed()
 
     print("# Create a bundle for distribution #")
-    proj.bundle()
+    print(proj.bundle())
     timer.print_elapsed()
 
     # Success message #
