@@ -41,6 +41,8 @@ class TaxonomyReport(Document):
         self.tax    = tax
         self.tables = tables
         self.proj   = proj
+        # For string representation we have to select a parent #
+        self.parent = tax
         # The output location #
         self.output_path = Path(output_path)
 
@@ -58,7 +60,7 @@ class TaxonomyTemplate(ReportTemplate):
     delimiters = (u'{{', u'}}')
 
     def __repr__(self):
-        return '<%s object on %s>' % (self.__class__.__name__, self.parent)
+        return '<%s object on %s>' % (self.__class__.__name__, self.report)
 
     def __init__(self, parent):
         # References to parent object #
