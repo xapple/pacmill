@@ -63,13 +63,17 @@ class MultiTaxDatabases:
     def taxonomies(self):
         return [self.silva, self.greengenes, self.rdp, self.crest]
 
+    on_off_keys = ['run_silva', 'run_greengenes', 'run_rdp', 'run_crest']
+
     def __call__(self, verbose=True):
-        # Loop over databases #
-        for tax in self.taxonomies:
-            tax(verbose=verbose)
+        # Every taxonomy method can be switched on or off #
+        for tax, key in zip(self.taxonomies, self.on_off_keys):
+            if self.proj.check_homogeneous(key):
+                tax(verbose=verbose)
         # Make all tables #
-        for table in self.tables.all:
-            table(verbose=verbose)
+        for table, key in zip(self.tables.all, self.on_off_keys):
+            if self.proj.check_homogeneous(key):
+                table(verbose=verbose)
 
     #---------------------------- Compositions -------------------------------#
     @property_cached

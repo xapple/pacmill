@@ -157,7 +157,7 @@ class Project:
         This method will check every Sample of the current project for a
         specific attribute (e.g. 'output_dir') and assert that this attribute
         has the same value in every Sample. If this is the case, the unique
-        value is returned.
+        value is returned. Otherwise an Exception is raised.
         """
         # Collect all values #
         all_values = set(getattr(s, attribute) for s in self)
