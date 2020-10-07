@@ -33,50 +33,5 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 proj = Project(proj_name, proj_xls)
 
 # Others #
-for tables in proj.taxonomy.tables.all:
-    tables()
-    for graph in tables.results.graphs.by_rank:
-        print(graph(rerun=True))
-    for legend in tables.results.graphs.legends:
-        print(legend(rerun=True))
-
-proj.taxonomy.reports.silvamod128()
-
-#for sample in proj:
-#    print(sample.fastq.fastqc())
-#    break
-
-#for report in proj.taxonomy.reports.all:
-#    print(report())
-
-#proj.otus()
-#proj.taxonomy()
-
-#for tables in proj.taxonomy.tables.all:
-#    for graph in tables.results.graphs.by_rank:
-#        print(graph(rerun=True))
-#    for legend in tables.results.graphs.legends:
-#        print(legend(rerun=True))
-
-#for i, rank in tqdm(enumerate(proj.taxa_tables.rank_names)):
-#    proj.taxa_tables.results.graphs.by_rank[i](rerun=True)
-#    proj.taxa_tables.results.graphs.legends[i](rerun=True)
-
-#print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
-#print(proj.otu_table.graphs.sample_sums_graph(rerun=True))
-#print(proj.otu_table.graphs.cumulative_presence(rerun=True))
-
-#for i, rank in tqdm(enumerate(proj.taxa_tables.rank_names)):
-#    proj.taxa_tables.results.graphs.by_rank[i](rerun=True)
-#    proj.taxa_tables.results.graphs.legends[i](rerun=True)
-
-#for sample in proj:
-#    print(sample.report())
-#    break
-
-#proj.nmds_graph()
-
-#proj.report()
-
-#proj.bundle()
-#print(proj.bundle.results.rsync)
+proj.ncbi_blast()
+proj.ncbi_blast.results.report()
