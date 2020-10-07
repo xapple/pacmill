@@ -66,45 +66,50 @@ if __name__ == "__main__":
     timer = Timer()
     timer.print_start()
 
-    print("# Validate the format of the FASTQs #")
-    prll_map(lambda s: s.fastq.validator(), proj)
-    timer.print_elapsed()
-
-    print("# Run FastQC on the samples individually #")
-    for sample in proj:
-        print(sample.fastq.fastqc())
-    timer.print_elapsed()
-
-    print("# Regenerate the graphs for samples #")
-    for sample in proj:
-        print(sample.fastq.graphs.length_hist(rerun=True))
-    timer.print_elapsed()
-
-    print("# Filter reads in every sample based on several criteria #")
-    prll_map(lambda s: s.filter(), proj)
-    timer.print_elapsed()
-
-    print("# Remove chimeric reads #")
-    prll_map(lambda s: s.chimeras(cpus=1), proj)
-    timer.print_elapsed()
-
-    print("# Detect presence of rRNA genes (optional) #")
-    for sample in proj:
-        if sample.barrnap_mode != 'off':
-            print(sample.barrnap())
-    timer.print_elapsed()
-
-    print("# Concatenate reads from all samples into one file #")
-    print(proj.combine_reads())
-    timer.print_elapsed()
-
-    print("# Pick OTUS #")
-    print(proj.otus())
-    timer.print_elapsed()
+    #print("# Validate the format of the FASTQs #")
+    #prll_map(lambda s: s.fastq.validator(), proj)
+    #timer.print_elapsed()
+#
+    #print("# Run FastQC on the samples individually #")
+    #for sample in proj:
+    #    print(sample.fastq.fastqc())
+    #timer.print_elapsed()
+#
+    #print("# Regenerate the graphs for samples #")
+    #for sample in proj:
+    #    print(sample.fastq.graphs.length_hist(rerun=True))
+    #timer.print_elapsed()
+#
+    #print("# Filter reads in every sample based on several criteria #")
+    #prll_map(lambda s: s.filter(), proj)
+    #timer.print_elapsed()
+#
+    #print("# Remove chimeric reads #")
+    #prll_map(lambda s: s.chimeras(cpus=1), proj)
+    #timer.print_elapsed()
+#
+    #print("# Detect presence of rRNA genes (optional) #")
+    #for sample in proj:
+    #    if sample.barrnap_mode != 'off':
+    #        print(sample.barrnap())
+    #timer.print_elapsed()
+#
+    #print("# Concatenate reads from all samples into one file #")
+    #print(proj.combine_reads())
+    #timer.print_elapsed()
+#
+    #print("# Pick OTUS #")
+    #print(proj.otus())
+    #timer.print_elapsed()
 
     print("# Assign taxonomy and make all taxa tables #")
     proj.taxonomy()
     timer.print_elapsed()
+
+    if proj.check_homogeneous("run_ncbi_blast"):
+        print("# BLAST sequences against the NCBI 16S database #")
+        proj.ncbi_blast()
+        timer.print_elapsed()
 
     print("# Regenerate the graphs for the project #")
     print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
@@ -128,10 +133,17 @@ if __name__ == "__main__":
     print("# Create the PDF reports for each sample #")
     for sample in proj:
         print(sample.report())
+        timer.print_elapsed()
 
     print("# Create the PDF reports for each taxonomic classification #")
     for report in proj.taxonomy.reports.all:
         print(report())
+        timer.print_elapsed()
+
+    if proj.check_homogeneous("run_ncbi_blast"):
+        print("# Create the PDF report for the NCBI BLAST #")
+        proj.ncbi_blast.results.report()
+        timer.print_elapsed()
 
     print("# Create the PDF report for the project #")
     print(proj.report())

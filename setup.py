@@ -12,7 +12,7 @@ setup(
     author_email     = 'lucas.sinclair@me.com',
     packages         = find_packages(),
     install_requires = ['plumbing>=2.9.4', 'autopaths>=1.4.6', 'fasta>=2.2.2',
-                        'pymarktex>=1.4.6', 'seqsearch>=1.3.1', 'biopython',
+                        'pymarktex>=1.4.6', 'seqsearch>=1.3.3', 'biopython',
                         'pandas', 'sh', 'tag', 'shell_command', 'tabulate'],
     long_description = open('README.md').read(),
     long_description_content_type = 'text/markdown',
