@@ -116,9 +116,12 @@ class BlastClassify:
         self.check_installed()
         # Run #
         self.seq_search.run()
+        # Generate summary lists #
+        one  = self.all_otus_df(1)
+        five = self.all_otus_df(5)
         # Create excel reports #
-        self.all_otus_df(1).to_excel(self.autopaths.xlsx_single_hit.path)
-        self.all_otus_df(5).to_excel(self.autopaths.xlsx_five_hits.path)
+        one.to_excel(self.autopaths.xlsx_single_hit.path, index=False)
+        five.to_excel(self.autopaths.xlsx_five_hits.path, index=False)
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
