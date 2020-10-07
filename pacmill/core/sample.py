@@ -126,20 +126,26 @@ class Sample:
         if hasattr(self, 'barrnap_mode'):
             assert self.barrnap_mode in ['off', 'filter', 'concat', 'trim']
 
+    # Declare the default values #
+    defaults = {
+        'barrnap_mode':   'off',
+        'otu_threshold':   0.97,
+        'otu_min_size':    1,
+        'run_silva':       True,
+        'run_greengenes':  False,
+        'run_rdp':         False,
+        'run_crest':       False,
+        'run_ncbi_blast':  False,
+    }
+
     def set_default_attrs(self):
         """
         This is where we set default values for optional columns in the excel
         file. If the column is present, no change is made. If it is absent,
         we will add that particular attribute to the current instance.
         """
-        # Declare the default values #
-        defaults = {
-            'barrnap_mode':  'off',
-            'otu_threshold':  0.97,
-            'otu_min_size':      1,
-        }
         # Check everyone of them #
-        for key, value in defaults.items():
+        for key, value in self.defaults.items():
             if not hasattr(self, key): setattr(self, key, value)
 
     #----------------------------- Properties --------------------------------#

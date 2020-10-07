@@ -1,0 +1,45 @@
+Taxonomy report
+===============
+
+General Information
+-------------------
+This taxonomic classification report is based on the "`{{tax_tag}}`" method. It is part of the project named "`{{proj_short_name}}`" which is described as "{{proj_long_name}}".
+
+-------
+
+Processing
+----------
+* This report and all the analysis was generated using the `{{project_name}}` python pipeline.
+
+* Documentation and source code is available at:
+
+<{{project_url}}>
+
+* Version `{{project_version}}` of the pipeline was used.
+
+* This document was generated at `{{now}}` on host `{{hostname}}`.
+
+{{#git}}
+* The exact git hash of the latest commit was: `{{git_hash}}`
+{{/git}}
+
+-------
+
+Taxonomic classification
+------------------------
+
+The NCBI provides a database of 16S ribosomal sequences. The exact title is "Bacteria and Archaea: 16S ribosomal RNA project". More information is available at:
+
+https://www.ncbi.nlm.nih.gov/refseq/targetedloci/16S_process/
+
+Here, we attempt to classify each OTU by BLASTing the centroid sequence against the aforementioned database and reporting the hit with the best e-value.
+
+The parameters for the sequence similarity search are the following:
+
+* Minimum e-value: {{min_e_value}}
+* Minimum percent identity: {{min_perc_identity}}
+* Maximum number of aligned sequences : {{max_target_seqs}}
+
+The best hit for the ten most abundant OTUs is summarized in the table below:
+
+{{blast_result_table}}

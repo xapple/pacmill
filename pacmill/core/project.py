@@ -134,6 +134,7 @@ class Project:
                 /otus/consensus.fasta
                 /otus/consensus.tsv
                 /taxonomy/
+                /taxonomy/ncbi_blast/
                 /taxa_tables/
                 /graphs/
                 /report/cache/
@@ -240,6 +241,22 @@ class Project:
         """
         from pacmill.taxonomy.multi_database import MultiTaxDatabases
         return MultiTaxDatabases(self, self.autopaths.taxonomy_dir)
+
+    @property_cached
+    def ncbi_blast(self):
+        """
+        A special taxonomic classification strategy where we BLAST
+        the OTU centroids against the NCBI 16S RNA database to try
+        and find species level matches.
+        """
+        # Imports #
+        from pacmill.taxonomy.ncbi_blast import BlastClassify
+        from seqsearch.databases.ncbi_16s import ncbi_16s
+        # Create class #
+        return BlastClassify(self.otus.results,
+                             ncbi_16s,
+                             self.autopaths.ncbi_blast_dir,
+                             self)
 
     @property_cached
     def nmds_graph(self):

@@ -63,6 +63,7 @@ class MultiTaxDatabases:
     def taxonomies(self):
         return [self.silva, self.greengenes, self.rdp, self.crest]
 
+    # Matches the excel file column names #
     on_off_keys = ['run_silva', 'run_greengenes', 'run_rdp', 'run_crest']
 
     def __call__(self, verbose=True):
