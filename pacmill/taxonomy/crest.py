@@ -168,6 +168,8 @@ class CrestClassify:
         # Check blast is installed #
         check_cmd('blastn', True)
         # Check crest is installed #
+        pass
+        # Check crest is at the right location #
         crest = sh.Command("~/programs/crest/bin/classify")
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
@@ -221,7 +223,7 @@ class CrestClassify:
         return CrestResults(self.autopaths, self.database)
 
 ###############################################################################
-class CrestResults(object):
+class CrestResults:
 
     def __init__(self, autopaths, database):
         self.autopaths = autopaths

@@ -151,5 +151,5 @@ class TaxonomyTemplate(ReportTemplate):
         graphs = [self.taxa_barstack_at_rank(r) for r in ranks]
         # Separate graphs with newlines #
         graphs = '\n\n'.join(graphs)
-        # Return
+        # Return #
         return graphs
