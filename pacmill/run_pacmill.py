@@ -66,41 +66,41 @@ if __name__ == "__main__":
     timer = Timer()
     timer.print_start()
 
-    #print("# Validate the format of the FASTQs #")
-    #prll_map(lambda s: s.fastq.validator(), proj)
-    #timer.print_elapsed()
-#
-    #print("# Run FastQC on the samples individually #")
-    #for sample in proj:
-    #    print(sample.fastq.fastqc())
-    #timer.print_elapsed()
-#
-    #print("# Regenerate the graphs for samples #")
-    #for sample in proj:
-    #    print(sample.fastq.graphs.length_hist(rerun=True))
-    #timer.print_elapsed()
-#
-    #print("# Filter reads in every sample based on several criteria #")
-    #prll_map(lambda s: s.filter(), proj)
-    #timer.print_elapsed()
-#
-    #print("# Remove chimeric reads #")
-    #prll_map(lambda s: s.chimeras(cpus=1), proj)
-    #timer.print_elapsed()
-#
-    #print("# Detect presence of rRNA genes (optional) #")
-    #for sample in proj:
-    #    if sample.barrnap_mode != 'off':
-    #        print(sample.barrnap())
-    #timer.print_elapsed()
-#
-    #print("# Concatenate reads from all samples into one file #")
-    #print(proj.combine_reads())
-    #timer.print_elapsed()
-#
-    #print("# Pick OTUS #")
-    #print(proj.otus())
-    #timer.print_elapsed()
+    print("# Validate the format of the FASTQs #")
+    prll_map(lambda s: s.fastq.validator(), proj)
+    timer.print_elapsed()
+
+    print("# Run FastQC on the samples individually #")
+    for sample in proj:
+        print(sample.fastq.fastqc())
+    timer.print_elapsed()
+
+    print("# Regenerate the graphs for samples #")
+    for sample in proj:
+        print(sample.fastq.graphs.length_hist(rerun=True))
+    timer.print_elapsed()
+
+    print("# Filter reads in every sample based on several criteria #")
+    prll_map(lambda s: s.filter(), proj)
+    timer.print_elapsed()
+
+    print("# Remove chimeric reads #")
+    prll_map(lambda s: s.chimeras(cpus=1), proj)
+    timer.print_elapsed()
+
+    print("# Detect presence of rRNA genes (optional) #")
+    for sample in proj:
+        if sample.barrnap_mode != 'off':
+            print(sample.barrnap())
+    timer.print_elapsed()
+
+    print("# Concatenate reads from all samples into one file #")
+    print(proj.combine_reads())
+    timer.print_elapsed()
+
+    print("# Pick OTUS #")
+    print(proj.otus())
+    timer.print_elapsed()
 
     print("# Assign taxonomy and make all taxa tables #")
     proj.taxonomy()
