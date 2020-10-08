@@ -63,46 +63,67 @@ class MultiTaxDatabases:
     def taxonomies(self):
         return [self.silva, self.greengenes, self.rdp, self.crest]
 
-    # Matches the excel file column names #
-    on_off_keys = ['run_silva', 'run_greengenes', 'run_rdp', 'run_crest']
-
     def __call__(self, verbose=True):
-        # Every taxonomy method can be switched on or off #
-        for tax, key in zip(self.taxonomies, self.on_off_keys):
-            if self.proj.check_homogeneous(key):
+        # Run all taxonomy methods #
+        for tax in self.taxonomies:
+            if tax.should_run:
                 tax(verbose=verbose)
         # Make all tables #
-        for table, key in zip(self.tables.all, self.on_off_keys):
-            if self.proj.check_homogeneous(key):
+        for table in self.tables.all:
+            if table.taxonomy.should_run:
                 table(verbose=verbose)
 
     #---------------------------- Compositions -------------------------------#
     @property_cached
     def silva(self):
+        # Import #
         from seqsearch.databases.mothur.silva import silva_mothur
-        return MothurClassify(self.proj.otus.results,
+        # Create #
+        tax =  MothurClassify(self.proj.otus.results,
                               silva_mothur,
                               self.autopaths.silva_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous('run_silva')
+        # Return #
+        return tax
 
     @property_cached
     def greengenes(self):
+        # Import #
         from seqsearch.databases.mothur.greengenes import gg_mothur
-        return MothurClassify(self.proj.otus.results,
-                              gg_mothur,
-                              self.autopaths.greengenes_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             gg_mothur,
+                             self.autopaths.greengenes_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous('run_greengenes')
+        # Return #
+        return tax
 
     @property_cached
     def rdp(self):
+        # Import #
         from seqsearch.databases.mothur.rdp import rdp_mothur
-        return MothurClassify(self.proj.otus.results,
-                              rdp_mothur,
-                              self.autopaths.rdp_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             rdp_mothur,
+                             self.autopaths.rdp_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous('run_rdp')
+        # Return #
+        return tax
 
     @property_cached
     def crest(self):
+        # Import #
         from pacmill.taxonomy.crest import CrestClassify
-        return CrestClassify(self.proj.otus.results,
-                             self.autopaths.crest_dir)
+        # Create #
+        tax = CrestClassify(self.proj.otus.results,
+                            self.autopaths.crest_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous('run_crest')
+        # Return #
+        return tax
 
     #--------------------------------- Tables --------------------------------#
     @property_cached
