@@ -120,6 +120,7 @@ if __name__ == "__main__":
 
     print("# Regenerate the graphs and legends for taxa bar-stacks #")
     for tables in proj.taxonomy.tables.all:
+        if not tables.taxonomy.should_run: continue
         for graph in tables.results.graphs.by_rank:
             print(graph(rerun=True))
         for legend in tables.results.graphs.legends:
@@ -133,12 +134,13 @@ if __name__ == "__main__":
     print("# Create the PDF reports for each sample #")
     for sample in proj:
         print(sample.report())
-        timer.print_elapsed()
+    timer.print_elapsed()
 
     print("# Create the PDF reports for each taxonomic classification #")
     for report in proj.taxonomy.reports.all:
-        print(report())
-        timer.print_elapsed()
+        if report.tax.should_run:
+            print(report())
+    timer.print_elapsed()
 
     if proj.check_homogeneous("run_ncbi_blast"):
         print("# Create the PDF report for the NCBI BLAST #")

@@ -73,6 +73,7 @@ class Bundle:
         self.project.report.output_path.copy(self.autopaths.report)
         # Report for taxonomies #
         for r in self.project.taxonomy.reports.all:
+            if not r.tax.should_run: continue
             r.output_path.copy(self.autopaths.taxonomies_dir)
         # Zip it #
         self.base_dir.zip_to(self.archive)
