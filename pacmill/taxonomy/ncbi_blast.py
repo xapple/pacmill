@@ -230,8 +230,7 @@ class BlastClassify:
 class BlastResults:
 
     def __init__(self, tax):
-        self.tax        = tax
-        self.autopaths  = tax.autopaths
+        self.tax = tax
 
     @property_cached
     def report(self):
@@ -240,5 +239,10 @@ class BlastResults:
         all the information that concern this particular taxonomic
         classification strategy.
         """
+        # Imports #
         from pacmill.reports.ncbi_blast import NcbiBlastReport
-        return NcbiBlastReport(self.tax, self.autopaths.report_pdf)
+        # Output directory #
+        path = self.tax.proj.autopaths.taxonomy_dir + 'reports/'
+        path = path + self.tax.short_name + '.pdf'
+        # Return #
+        return NcbiBlastReport(path)
