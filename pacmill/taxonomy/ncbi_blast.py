@@ -110,12 +110,16 @@ class BlastClassify:
     def __call__(self, cpus=None, verbose=True):
         # Message #
         if verbose:
-            message = "Running `%s` taxonomy classification on '%s'"
+            message = "Running `%s` taxonomy classification on '%s'."
             print(message % (self.short_name, self.source))
         # Check blast is installed #
         self.check_installed()
         # Run #
         self.seq_search.run()
+        # Message #
+        if verbose:
+            message = "Generating BLAST summary Excel files at '%s'."
+            print(message % self.autopaths.summary_dir)
         # Generate summary lists #
         one  = self.all_otus_df(1)
         five = self.all_otus_df(5)

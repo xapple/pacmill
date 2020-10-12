@@ -15,7 +15,7 @@ Typically you would run this file from a command line like this:
 """
 
 # Built-in modules #
-import os, argparse
+import os, sys, argparse
 
 # Internal modules #
 from pacmill.core.project import Project
@@ -57,6 +57,25 @@ if __name__ == "__main__":
     # Create project #
     proj = Project(proj_name, proj_xls)
 
+    # Duplicate all output to a text log created in the project directory #
+    class UnbufferedLoggerDuplicator:
+        def __init__(self, path):
+            self.orig = sys.stdout
+            self.path = path
+            self.log  = open(self.path, "w")
+
+        def write(self, message):
+            self.orig.write(message)
+            self.log.write(message)
+            self.orig.flush()
+            self.log.flush()
+
+        def flush(self):
+            self.orig.flush()
+            self.log.flush()
+
+    sys.stdout = UnbufferedLoggerDuplicator(proj.autopaths.log)
+
     # Message #
     print("------------------------------------------")
     print("Running pacmill on project '%s'." % proj.short_name)
@@ -66,6 +85,7 @@ if __name__ == "__main__":
     timer = Timer()
     timer.print_start()
 
+    # Start the pipeline #
     print("# Validate the format of the FASTQs #")
     prll_map(lambda s: s.fastq.validator(), proj)
     timer.print_elapsed()

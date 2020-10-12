@@ -140,6 +140,7 @@ class Project:
                 /report/cache/
                 /report/project.pdf
                 /bundle/
+                /log.txt
                 """
 
     @property_cached
