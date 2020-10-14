@@ -197,7 +197,7 @@ class CrestClassify:
         crest('--verbose',
               '-o', self.dest_dir + 'output/',
               '-d', self.db_version_name,
-              '-r', 0.5,
+              '-r', 1,
               self.autopaths.db_hits,
               _out = self.autopaths.results_stdout.path,
               _err = self.autopaths.results_stderr.path)
