@@ -23,8 +23,9 @@ class Sample:
     """
     A Sample object consists first and foremost of one FASTQ file.
 
-    For a pipeline that uses paired reads (and hence two FASTQ files) please
-    have a look at a sister project: www.github.com/xapple/sifes
+    For a pipeline that uses paired reads (and hence two FASTQ files) such as
+    the ones produced by Illumina sequencers please have a look at a sister
+    project: www.github.com/xapple/sifes
 
     In addition, a Sample has many other metadata associated with it.
     Every column of the original excel file is now the name of an attribute.
