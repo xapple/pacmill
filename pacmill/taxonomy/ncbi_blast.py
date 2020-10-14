@@ -245,4 +245,4 @@ class BlastResults:
         path = self.tax.proj.autopaths.taxonomy_dir + 'reports/'
         path = path + self.tax.short_name + '.pdf'
         # Return #
-        return NcbiBlastReport(path)
+        return NcbiBlastReport(self.tax, path)
