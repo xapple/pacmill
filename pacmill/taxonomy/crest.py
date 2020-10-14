@@ -242,7 +242,8 @@ class CrestResults:
             Main genome;Bacteria;Bacteria (superkingdom);Terrabacteria;
             Firmicutes;Bacilli;Bacillales;Bacillaceae;Bacillus
 
-        We skip the first entry as it seems to be always "Main genome".
+        We skip the first entry as it seems to be always "Main genome"
+        and classified as rank "meta".
         """
         result = {}
         with open(self.autopaths.assignments, 'r') as handle:
@@ -271,7 +272,9 @@ class CrestResults:
         # Iterate over every rank number #
         rank_numbers = list(range(len(self.database.rank_names)))
         # Calculate for each position in the tree of life #
-        return [sum(1 for x in values if len(x) < i) for i in rank_numbers]
+        result = [sum(1 for x in values if len(x) <= i) for i in rank_numbers]
+        # Return #
+        return result
 
     @property_cached
     def count_assigned(self):
