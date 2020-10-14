@@ -219,7 +219,7 @@ class BlastClassify:
                 yield abund, otu, title, score, e_value, acc, length, p_ident
         # Convert to dataframe #
         df = pandas.DataFrame(one_row_per_hit(), columns=self.columns)
-        # Sort by E-value and also score #
+        # Sort by E-value and also by score #
         df = df.sort_values(by=['e_value', 'score'], ascending=False)
         # Filter and take only the top hits #
         df = df.head(max_hits)
