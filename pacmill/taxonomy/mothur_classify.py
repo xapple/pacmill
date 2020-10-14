@@ -216,7 +216,11 @@ class MothurClassifyResults:
 
     @property_cached
     def count_unassigned(self):
-        """Will count how many did not get a prediction at each level."""
+        """
+        Will count how many did not get a prediction at each level.
+        NB: The greengenes results are one item longer than when using the
+        silva or rdp databases, as they go until the species rank.
+        """
         # Load the assignment values created by mothur #
         vals = list(self.assignments.values())
         # Calculate for each position in the tree of life #
@@ -227,8 +231,8 @@ class MothurClassifyResults:
             sum((1 for x in vals if 'unclassified' in x[3])), # Order
             sum((1 for x in vals if 'unclassified' in x[4])), # Family
             sum((1 for x in vals if 'unclassified' in x[5])), # Genus
-            sum((1 for x in vals if x[6] == '')),             # Species
-        ]
+            sum((1 for x in vals if 'unclassified' in x[6] or # Species
+                                                      x[6] == ''))]
 
     @property_cached
     def count_assigned(self):
