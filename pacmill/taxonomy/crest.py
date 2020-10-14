@@ -37,6 +37,10 @@ class CrestClassify:
 
     The code is here:        https://github.com/lanzen/CREST
     The publication is here: http://dx.plos.org/10.1371/journal.pone.0049334
+
+    We have lowered the "drop-off from the highest bitscore" to half a percent
+    by adding the "-r 0.5" parameter. This should increase the resolution for
+    long reads such as the ones we have.
     """
 
     # Constants #
