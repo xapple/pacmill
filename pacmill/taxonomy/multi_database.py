@@ -147,7 +147,7 @@ class MultiTaxDatabases:
         for tax in self.taxonomies:
             # Instantiate #
             table = TaxaTable(self.proj.otu_table, tax,
-                              tax.autopaths.taxa_tables_dir)
+                              tax.base_dir + 'taxa_tables/')
             # Adjust the number of taxa displayed #
             max_taxa = getattr(self.proj.samples[0], 'max_taxa', None)
             if max_taxa: result.max_taxa_displayed = max_taxa
