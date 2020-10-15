@@ -148,7 +148,7 @@ class BlastClassify:
     #------------------------------ Dataframes -------------------------------#
     # Define columns needed #
     columns = ['abundance', 'otu_id', 'description', 'score', 'e_value',
-               'accession', 'length', 'identity']
+               'accession', 'length', 'cover', 'identity']
 
     def all_otus_df(self, num_hits_per_otu=5):
         """
@@ -208,15 +208,24 @@ class BlastClassify:
         # Generate one line per hit #
         def one_row_per_hit():
             for align, desc in zip(record.alignments, record.descriptions):
-                score   = desc.score
-                e_value = desc.e
-                acc     = desc.accession
-                title   = shorten(desc.title)
-                hsps    = align.hsps[0]
-                ident   = hsps.identities
-                length  = hsps.align_length
-                p_ident = "%0.1f%%" % (100 * float(ident) / float(length))
-                yield abund, otu, title, score, e_value, acc, length, p_ident
+                # Calculate all parameters #
+                score       = desc.score
+                e_value     = desc.e
+                acc         = desc.accession
+                title       = shorten(desc.title)
+                hsps        = align.hsps[0]
+                ident       = hsps.identities
+                qry_length  = record.query_length
+                hit_length  = align.length
+                algn_length = hsps.align_length
+                cover       = float(qry_length) / float(hit_length)
+                p_ident     = float(ident)      / float(algn_length)
+                # Format percentages as strings #
+                cover   = "%0.1f%%" % (100 * cover)
+                p_ident = "%0.1f%%" % (100 * p_ident)
+                # Yield one row #
+                yield abund, otu, title, score, e_value, acc,\
+                      algn_length, cover, p_ident
         # Convert to dataframe #
         df = pandas.DataFrame(one_row_per_hit(), columns=self.columns)
         # Sort by E-value and also by score #
