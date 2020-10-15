@@ -218,7 +218,7 @@ class BlastClassify:
                 qry_length  = record.query_length
                 hit_length  = align.length
                 algn_length = hsps.align_length
-                cover       = float(qry_length) / float(hit_length)
+                cover       = float(qry_length) / float(algn_length)
                 p_ident     = float(ident)      / float(algn_length)
                 # Format percentages as strings #
                 cover   = "%0.1f%%" % (100 * cover)
