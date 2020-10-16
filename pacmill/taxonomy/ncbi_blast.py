@@ -215,17 +215,19 @@ class BlastClassify:
                 title       = shorten(desc.title)
                 hsps        = align.hsps[0]
                 ident       = hsps.identities
+                # The lengths available #
                 qry_length  = record.query_length
                 hit_length  = align.length
                 algn_length = hsps.align_length
-                cover       = float(qry_length) / float(algn_length)
-                p_ident     = float(ident)      / float(algn_length)
+                # The ratios defined #
+                p_cover = float(qry_length) / float(algn_length)
+                p_ident = float(ident)      / float(algn_length)
                 # Format percentages as strings #
-                cover   = "%0.1f%%" % (100 * cover)
+                p_cover = "%0.1f%%" % (100 * p_cover)
                 p_ident = "%0.1f%%" % (100 * p_ident)
                 # Yield one row #
                 yield abund, otu, title, score, e_value, acc,\
-                      algn_length, cover, p_ident
+                      algn_length, p_cover, p_ident
         # Convert to dataframe #
         df = pandas.DataFrame(one_row_per_hit(), columns=self.columns)
         # Sort by E-value and also by score #
