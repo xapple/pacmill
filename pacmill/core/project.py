@@ -58,11 +58,12 @@ class Project:
         Other properties are described in their respective docstrings.
         """
         # The name of the project #
-        self.short_name = short_name.lower()
-        # Check it contains only alphanumerics and underscore #
-        if not self.short_name.isidentifier():
-            msg = "The short name of a project can only contain " \
-                  "alphanumerical characters and underscores."    \
+        self.short_name = short_name
+        # Check it contains only lower alphanumerics and underscore #
+        if not short_name.isidentifier() or not short_name.islower():
+            msg = "The short name of a project can only contain "  \
+                  "alphanumerical characters and underscores."     \
+                  "Also it cannot contain upper case characters."  \
                   "Currently it is: \n\n   `%s`\n"
             raise ValueError(msg % short_name)
         # You need at least one excel file #
@@ -88,6 +89,12 @@ class Project:
         all_dfs = [read_excel(path) for path in self.all_xlsx]
         # If there are several excel files, merge them together #
         metadata = pandas.concat(all_dfs, sort=False)
+        # Check the proj short names are only lower case #
+        if not all(metadata.project_short_name.str.islower()):
+            msg = "The short name of a project can only contain " \
+                  "alphanumerical characters and underscores."    \
+                  "Also it cannot contain upper case characters."
+            raise ValueError(msg)
         # Filter and take only samples that match this project's short_name #
         query = f'project_short_name == "{self.short_name}"'
         metadata = metadata.query(query).copy()
