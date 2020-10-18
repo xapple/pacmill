@@ -124,14 +124,23 @@ class CrestClassify:
         # This 'bootstrap' stuff can't detect paths it seems, have to cwd #
         current_dir = os.getcwd()
         os.chdir(src_dir.path)
-        # CREST needs to be updated, until then the next commands won't work #
-        print(1/0)
+        # Modify the buildout configuration #
+        buildout_config = src_dir + 'buildout.cfg'
+        old_line = "#setuptools=44.0.0"
+        new_line = "setuptools=44.0.0"
+        buildout_config.replace_line(old_line, new_line)
         # Call the install command - step one #
         bootstrap_script = src_dir + 'bootstrap.py'
-        sh.python2(bootstrap_script, _out=sys.stdout, _err=sys.stderr)
+        sh.python2(bootstrap_script,
+                   '--setuptools-version=44.0.0',
+                   '--buildout-version=2.12.0',
+                   _out=sys.stdout,
+                   _err=sys.stderr)
         # Call the install command - step two #
         buildout_cmd = src_dir + 'bin/buildout'
-        sh.python2(buildout_cmd, _out=sys.stdout, _err=sys.stderr)
+        sh.python2(buildout_cmd,
+                   _out=sys.stdout,
+                   _err=sys.stderr)
         # Restore current directory #
         os.chdir(current_dir)
         # The directory that contains the executable #
@@ -172,7 +181,7 @@ class CrestClassify:
         # Check blast is installed #
         check_cmd('blastn', True)
         # Check crest is installed #
-        pass
+        self.check_installed()
         # Check crest is at the right location #
         crest = sh.Command("~/programs/crest/bin/classify")
         # Number of cores #
