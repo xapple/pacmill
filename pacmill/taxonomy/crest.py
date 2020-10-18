@@ -120,6 +120,7 @@ class CrestClassify:
         # Make a temporary directory #
         tmp_dir = new_temp_dir()
         # Download tarball #
+        print(cls.tgz_url)
         tgz_loc = download_from_url(cls.tgz_url, tmp_dir, stream=True,
                                     progress=True)
         # Uncompress #
@@ -208,7 +209,7 @@ class CrestClassify:
         crest('--verbose',
               '-o', self.dest_dir + 'output/',
               '-d', self.db_version_name,
-              '-r', 1,
+              '-r', 0.5,
               self.autopaths.db_hits,
               _out = self.autopaths.results_stdout.path,
               _err = self.autopaths.results_stderr.path)
