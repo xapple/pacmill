@@ -149,12 +149,8 @@ class CrestClassify:
                    _err=sys.stderr)
         # Restore current directory #
         os.chdir(current_dir)
-        # The directory that contains the executable #
-        bin_dir = src_dir.with_tilda[:-1].replace('~', '$HOME')
-        # Suggest adding to the $PATH #
-        print("\nCREST was installed successfully. You should now "
-              "add this line to your .bash_profile: \n\n    "
-              "export PATH=%s/bin:$PATH\n" % bin_dir)
+        # Success message #
+        print("\nCREST was installed successfully.")
 
     #-------------------------- Automatic paths ------------------------------#
     all_paths = """
