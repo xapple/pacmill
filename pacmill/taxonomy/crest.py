@@ -13,10 +13,11 @@ import os, sys, multiprocessing, shutil, re
 # First party modules #
 from fasta import FASTA
 from autopaths.dir_path       import DirectoryPath
+from autopaths.file_path      import FilePath
 from autopaths.tmp_path       import new_temp_dir
 from plumbing.cache           import property_cached
-from plumbing.check_cmd_found import check_cmd
 from plumbing.apt_pkg         import get_apt_packages
+from plumbing.check_cmd_found import check_cmd
 from plumbing.scraping        import download_from_url
 
 # Third party modules #
@@ -47,6 +48,7 @@ class CrestClassify:
     short_name = 'crest'
     long_name  = 'LCAClassifier/CREST version 3.2.0'
     executable = 'classify'
+    hard_path  = '~/programs/crest/bin/classify'
 
     # The database #
     db_version_name = "silvamod128"
@@ -98,7 +100,11 @@ class CrestClassify:
         Try to determine if the CREST software is installed and
         accessible.
         """
-        return check_cmd(cls.executable, exception, cls.install.__doc__)
+        if not FilePath(cls.hard_path).exists and exception:
+            msg = "The executable '%s' is required for this operation." \
+                  " Unfortunately it cannot be found."
+            msg = msg % cls.hard_path + '\n\n' + cls.install.__doc__
+            raise Exception(msg)
 
     @classmethod
     def install(cls, prefix="~/programs/crest/"):
@@ -183,7 +189,7 @@ class CrestClassify:
         # Check crest is installed #
         self.check_installed()
         # Check crest is at the right location #
-        crest = sh.Command("~/programs/crest/bin/classify")
+        crest = sh.Command(self.hard_path)
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Run #
