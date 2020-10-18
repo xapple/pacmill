@@ -8,7 +8,7 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
-import os, multiprocessing, shutil, re
+import os, sys, multiprocessing, shutil, re
 
 # First party modules #
 from fasta import FASTA
@@ -89,8 +89,8 @@ class CrestClassify:
 
     #----------------------------- Installing --------------------------------#
     apt_packages = ['ncbi-blast+', 'python2']
-    tgz_url = "https://github.com/lanzen/CREST/releases/download/3.2.0/" \
-              "LCAClassifierV3.2.0.tar.gz"
+    tgz_url = "https://github.com/lanzen/CREST/releases/download/3.2.2/" \
+              "LCAClassifierV3.2.2.tar.gz"
 
     @classmethod
     def check_installed(cls, exception=True):
@@ -128,10 +128,10 @@ class CrestClassify:
         print(1/0)
         # Call the install command - step one #
         bootstrap_script = src_dir + 'bootstrap.py'
-        sh.python2(bootstrap_script)
+        sh.python2(bootstrap_script, _out=sys.stdout, _err=sys.stderr)
         # Call the install command - step two #
         buildout_cmd = src_dir + 'bin/buildout'
-        sh.python2(buildout_cmd)
+        sh.python2(buildout_cmd, _out=sys.stdout, _err=sys.stderr)
         # Restore current directory #
         os.chdir(current_dir)
         # The directory that contains the executable #
