@@ -19,7 +19,7 @@ from plumbing.common     import pretty_now
 
 ###############################################################################
 class ReportTemplate(Template):
-    """Things that are common to most reports in waste_flow."""
+    """Things that are common to most reports in pacmill."""
 
     def project_name(self):      return pacmill.project_name
     def project_url(self):       return pacmill.project_url
