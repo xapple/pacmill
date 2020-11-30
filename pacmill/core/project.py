@@ -84,7 +84,10 @@ class Project:
         samples contained in this project.
         """
         # Function to read one excel file #
-        read_excel = lambda path: pandas.read_excel(str(path), header=1)
+        # Any empty cell causes the conversion to integers to fail, so let's
+        # just not use it at all and do it later ourselves manually
+        def read_excel(path):
+            return pandas.read_excel(str(path), header=1, convert_float=False)
         # Read all excel files as data frames #
         all_dfs = [read_excel(path) for path in self.all_xlsx]
         # If there are several excel files, merge them together #

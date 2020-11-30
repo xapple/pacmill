@@ -74,6 +74,8 @@ class Sample:
     dna_keys = ['fwd_index_seq', 'rev_index_seq', 'fwd_primer_seq',
                 'rev_primer_seq']
 
+    int_keys = ['sample_num', 'fwd_read_count', 'rev_read_count', 'fwd_read_len', 'rev_read_len', 'primer_mismatches', 'primer_max_dist', 'min_read_len', 'max_read_len', 'phred_window_size', 'phred_threshold', 'otu_min_size', 'max_taxa']
+
     def transform_attrs(self):
         """
         This is where we add and change some attributes based on the
@@ -92,6 +94,10 @@ class Sample:
         for key in self.dna_keys:
             seq = getattr(self, key)
             if seq: setattr(self, key, seq.replace(' ', ''))
+        # Convert all values that are supposed to be integers
+        for key in self.int_keys:
+            value = getattr(self, key, None)
+            if value is not None: setattr(self, key, int(value))
 
     def validate_attrs(self):
         """
@@ -123,7 +129,7 @@ class Sample:
                       "characters, please check: '%s'"
                 msg = msg % (key, self.description, seq)
                 raise ValueError(msg)
-        # Check that barrnap mode is a valid option #
+        # Check that the barrnap mode is a valid option #
         if hasattr(self, 'barrnap_mode'):
             assert self.barrnap_mode in ['off', 'filter', 'concat', 'trim']
 

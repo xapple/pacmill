@@ -32,6 +32,12 @@ proj_xls = os.environ.get("PACMILL_PROJ_XLS", "No excel path has been set.")
 # Create project #
 proj = Project(proj_name, proj_xls)
 
-# Others #
-proj.ncbi_blast()
-proj.ncbi_blast.results.report()
+# Show samples #
+for sample in proj: print(sample.short_name)
+
+# Test PHRED window size #
+for sample in proj:
+    import pandas
+    quality = pandas.Series(range(100))
+    rolling = quality.rolling(sample.phred_window_size).mean().dropna().tolist()
+    print(rolling)
