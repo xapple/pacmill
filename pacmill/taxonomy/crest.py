@@ -90,7 +90,7 @@ class CrestClassify:
         return type('CrestDatabase', (), attributes)
 
     #----------------------------- Installing --------------------------------#
-    apt_packages = ['ncbi-blast+', 'python2']
+    apt_packages = ['ncbi-blast+', 'python2', 'python-dev']
     tgz_url = "https://github.com/lanzen/CREST/releases/download/3.2.2/" \
               "LCAClassifierV3.2.2.tar.gz"
 
@@ -137,6 +137,7 @@ class CrestClassify:
         new_line = "setuptools=44.0.0"
         buildout_config.replace_line(old_line, new_line)
         # Call the install command - step one #
+        print("Calling bootstrap command")
         bootstrap_script = src_dir + 'bootstrap.py'
         sh.python2(bootstrap_script,
                    '--setuptools-version=44.0.0',
@@ -144,6 +145,7 @@ class CrestClassify:
                    _out=sys.stdout,
                    _err=sys.stderr)
         # Call the install command - step two #
+        print("Calling buildout command")
         buildout_cmd = src_dir + 'bin/buildout'
         sh.python2(buildout_cmd,
                    _out=sys.stdout,
