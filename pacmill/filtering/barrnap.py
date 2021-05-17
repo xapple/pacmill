@@ -84,6 +84,9 @@ class Barrnap:
 
             >>> from pacmill.filtering.barrnap import Barrnap
             >>> Barrnap.install()
+
+        If you are on macOS you can just type:
+            $ brew install brewsci/bio/barrnap
         """
         # Start with required apt packages #
         get_apt_packages(cls.apt_packages, verbose=True)
