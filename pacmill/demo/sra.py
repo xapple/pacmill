@@ -26,11 +26,15 @@ class DumpSRA:
     """
     Takes care of running the `sra-toolkit` program to extract a FASTQ from
     an SRA file. See:
+
     https://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software
 
     Until Ubuntu 19, `sra-toolkit` was a package in the apt universe. This
     is not the case for Ubuntu 20. See:
+
     https://askubuntu.com/questions/1232028/sra-toolkit-for-ubuntu-20-04-tls
+
+    If you are on macOS you can just type "brew install sratoolkit".
     """
 
     def __repr__(self):
@@ -76,7 +80,7 @@ class DumpSRA:
         src_dir.move_to(prefix)
         # The directory that contains the executable #
         bin_dir = src_dir.with_tilda[:-1].replace('~', '$HOME')
-        # Mandatory config #
+        # Mandatory configuration #
         cls.vdb_config_workaround()
         # Suggest adding to the $PATH #
         print("\nThe sra-toolkit was installed successfully. You should now "
