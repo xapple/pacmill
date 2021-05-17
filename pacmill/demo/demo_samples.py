@@ -141,16 +141,11 @@ class DemoSample:
 ###############################################################################
 # Hardcode the download links #
 samples = {
-    'mock':   'https://sra-download.ncbi.nlm.nih.gov/traces/sra60/SRR/007923/'
-              'SRR8113901',
-    'p_19':   'https://sra-download.ncbi.nlm.nih.gov/traces/sra60/SRR/007923/'
-              'SRR8113902',
-    'pm_3':   'https://sra-download.ncbi.nlm.nih.gov/traces/sra60/SRR/007923/'
-              'SRR8113898',
-    'sala':   'https://sra-download.ncbi.nlm.nih.gov/traces/sra60/SRR/007923/'
-              'SRR8113900',
-    'tns_08': 'https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/'
-              'sra-pub-run-15/SRR8113899/SRR8113899.1',
+  'mock':   'https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR8113901/SRR8113901',
+  'p_19':   'https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR8113902/SRR8113902',
+  'pm_3':   'https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR8113898/SRR8113898',
+  'sala':   'https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR8113900/SRR8113900',
+  'tns_08': 'https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR8113899/SRR8113899',
 }
 
 # Make DemoSample objects #
