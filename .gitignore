@@ -15,7 +15,10 @@
 # Distribution #
 /build/
 /dist/
-/autopaths.egg-info/
+/pacmill.egg-info/
 
 # Testing #
 /.pytest_cache/
+
+# Large demo files #
+*.sra
