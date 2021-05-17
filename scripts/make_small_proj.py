@@ -9,10 +9,10 @@ Contact at www.sinclair.bio
 This script takes a pacmill project along with all the information describing
 the samples, and creates a new 'small_test' project that is identical to the
 original project except for the number of sequences of the raw sample FASTQ
-is randomly sub-sampled to 5'000.
+which is randomly sub-sampled to 5'000.
 
-Such a small test project is useful for development, as all the steps of
-the pipeline can be run at a much greater speed.
+Such a test project is useful for development, as all the steps of
+the pipeline can be run in a much shorter time frame.
 
 Typically you would run this file from a command line like this:
 
