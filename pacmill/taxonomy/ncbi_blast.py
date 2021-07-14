@@ -56,12 +56,19 @@ class BlastClassify:
     #----------------------------- Installing --------------------------------#
     apt_packages = ['ncbi-blast+']
 
-    @classmethod
-    def check_installed(cls, exception=True):
+    def check_installed(self, exception=True):
         """
-        Try to determine if the BLAST software is installed and
+        Try to determine if the BLAST software is installed and accessible.
+        Also try to determine if the database chosen is downloaded and
         accessible.
         """
+        # The database #
+        if not self.database:
+            msg  = "The taxonomic database does not seem to be accessible."
+            msg += " More information follows.\n\n"
+            msg += self.database.__doc__
+            raise Exception(msg)
+        # The command #
         return check_cmd('blastn', exception)
 
     #-------------------------- Automatic paths ------------------------------#
