@@ -21,7 +21,8 @@ from plumbing.cache import property_cached
 class MultiTaxDatabases:
     """
     This object should be attached to a Project object and will enable OTU
-    sequences to be matched for taxonomic assignments on several databases.
+    sequences to be matched for taxonomic assignments on several databases
+    and/or with different algorithms.
 
     Currently we support:
 
@@ -63,11 +64,12 @@ class MultiTaxDatabases:
     def taxonomies(self):
         return [self.silva, self.greengenes, self.rdp, self.crest]
 
-    def __call__(self, verbose=True):
+    def __call__(self, verbose=True, skip_algo=False):
         # Run all taxonomy methods #
-        for tax in self.taxonomies:
-            if tax.should_run:
-                tax(verbose=verbose)
+        if not skip_algo:
+            for tax in self.taxonomies:
+                if tax.should_run:
+                    tax(verbose=verbose)
         # Make all tables #
         for table in self.tables.all:
             if table.taxonomy.should_run:
@@ -79,9 +81,9 @@ class MultiTaxDatabases:
         # Import #
         from seqsearch.databases.mothur.silva import silva_mothur
         # Create #
-        tax =  MothurClassify(self.proj.otus.results,
-                              silva_mothur,
-                              self.autopaths.silva_dir)
+        tax = MothurClassify(self.proj.otus.results,
+                             silva_mothur,
+                             self.autopaths.silva_dir)
         # Modify #
         tax.should_run = self.proj.check_homogeneous('run_silva')
         # Return #
@@ -119,7 +121,8 @@ class MultiTaxDatabases:
         from pacmill.taxonomy.crest import CrestClassify
         # Create #
         tax = CrestClassify(self.proj.otus.results,
-                            self.autopaths.crest_dir)
+                            self.autopaths.crest_dir,
+                            self.proj.otu_table.tsv_path)
         # Modify #
         tax.should_run = self.proj.check_homogeneous('run_crest')
         # Return #
@@ -174,7 +177,7 @@ class MultiTaxDatabases:
         # Loop over taxonomies #
         for tax in self.taxonomies:
             # Path to report #
-            path =  self.autopaths.reports_dir + tax.database.tag + '.pdf'
+            path = self.autopaths.reports_dir + tax.database.tag + '.pdf'
             # Matching taxonomy tables #
             tables = getattr(self.tables, tax.database.tag)
             # Instantiate #
