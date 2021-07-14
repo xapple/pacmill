@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.4" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pacmill.taxonomy.multi_database API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
 Contact at www.sinclair.bio" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
-<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
 <style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js" integrity="sha256-eOgo0OtLL4cdq7RdwRUiGKLX9XsIJ7nGhWEKbohmVAQ=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 </head>
 <body>
@@ -54,7 +54,8 @@ from plumbing.cache import property_cached
 class MultiTaxDatabases:
     &#34;&#34;&#34;
     This object should be attached to a Project object and will enable OTU
-    sequences to be matched for taxonomic assignments on several databases.
+    sequences to be matched for taxonomic assignments on several databases
+    and/or with different algorithms.
 
     Currently we support:
 
@@ -94,43 +95,71 @@ class MultiTaxDatabases:
     #------------------------------ Running ----------------------------------#
     @property_cached
     def taxonomies(self):
-        return [self.silva, self.greengenes, self.rdp]
+        return [self.silva, self.greengenes, self.rdp, self.crest]
 
-    def __call__(self, verbose=True):
-        # Loop over databases #
-        for tax in self.taxonomies:
-            tax(verbose=verbose)
+    def __call__(self, verbose=True, skip_algo=False):
+        # Run all taxonomy methods #
+        if not skip_algo:
+            for tax in self.taxonomies:
+                if tax.should_run:
+                    tax(verbose=verbose)
         # Make all tables #
         for table in self.tables.all:
-            table(verbose=verbose)
+            if table.taxonomy.should_run:
+                table(verbose=verbose)
 
     #---------------------------- Compositions -------------------------------#
     @property_cached
     def silva(self):
+        # Import #
         from seqsearch.databases.mothur.silva import silva_mothur
-        return MothurClassify(self.proj.otus.results,
-                              silva_mothur,
-                              self.autopaths.silva_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             silva_mothur,
+                             self.autopaths.silva_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_silva&#39;)
+        # Return #
+        return tax
 
     @property_cached
     def greengenes(self):
+        # Import #
         from seqsearch.databases.mothur.greengenes import gg_mothur
-        return MothurClassify(self.proj.otus.results,
-                              gg_mothur,
-                              self.autopaths.greengenes_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             gg_mothur,
+                             self.autopaths.greengenes_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_greengenes&#39;)
+        # Return #
+        return tax
 
     @property_cached
     def rdp(self):
+        # Import #
         from seqsearch.databases.mothur.rdp import rdp_mothur
-        return MothurClassify(self.proj.otus.results,
-                              rdp_mothur,
-                              self.autopaths.rdp_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             rdp_mothur,
+                             self.autopaths.rdp_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_rdp&#39;)
+        # Return #
+        return tax
 
     @property_cached
     def crest(self):
+        # Import #
         from pacmill.taxonomy.crest import CrestClassify
-        return CrestClassify(self.proj.otus.results,
-                            self.autopaths.crest_dir)
+        # Create #
+        tax = CrestClassify(self.proj.otus.results,
+                            self.autopaths.crest_dir,
+                            self.proj.otu_table.tsv_path)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_crest&#39;)
+        # Return #
+        return tax
 
     #--------------------------------- Tables --------------------------------#
     @property_cached
@@ -141,8 +170,8 @@ class MultiTaxDatabases:
 
         Typically you can access these tables like this:
 
-            &gt;&gt;&gt; print(project.taxonomy.tables.silva)
-            &gt;&gt;&gt; print(project.taxonomy.tables.rdp)
+            &gt;&gt;&gt; print(proj.taxonomy.tables.silva)
+            &gt;&gt;&gt; print(proj.taxonomy.tables.rdp)
         &#34;&#34;&#34;
         # Import #
         from pacmill.taxonomy.taxa_tables import TaxaTable
@@ -154,7 +183,7 @@ class MultiTaxDatabases:
         for tax in self.taxonomies:
             # Instantiate #
             table = TaxaTable(self.proj.otu_table, tax,
-                              tax.autopaths.taxa_tables_dir)
+                              tax.dest_dir + &#39;taxa_tables/&#39;)
             # Adjust the number of taxa displayed #
             max_taxa = getattr(self.proj.samples[0], &#39;max_taxa&#39;, None)
             if max_taxa: result.max_taxa_displayed = max_taxa
@@ -181,13 +210,13 @@ class MultiTaxDatabases:
         # Loop over taxonomies #
         for tax in self.taxonomies:
             # Path to report #
-            path =  self.autopaths.reports_dir + tax.database.tag + &#39;.pdf&#39;
+            path = self.autopaths.reports_dir + tax.database.tag + &#39;.pdf&#39;
             # Matching taxonomy tables #
             tables = getattr(self.tables, tax.database.tag)
             # Instantiate #
             report = TaxonomyReport(tax, tables, self.proj, path)
             # Set attribute #
-            setattr(result, tax.short_name, report)
+            setattr(result, tax.database.tag, report)
             # Add it to list #
             result.all.append(report)
         # Return #
@@ -209,7 +238,8 @@ class MultiTaxDatabases:
 </code></dt>
 <dd>
 <div class="desc"><p>This object should be attached to a Project object and will enable OTU
-sequences to be matched for taxonomic assignments on several databases.</p>
+sequences to be matched for taxonomic assignments on several databases
+and/or with different algorithms.</p>
 <p>Currently we support:</p>
 <pre><code>* Silva.
 * Greengenes.
@@ -223,7 +253,8 @@ sequences to be matched for taxonomic assignments on several databases.</p>
 <pre><code class="python">class MultiTaxDatabases:
     &#34;&#34;&#34;
     This object should be attached to a Project object and will enable OTU
-    sequences to be matched for taxonomic assignments on several databases.
+    sequences to be matched for taxonomic assignments on several databases
+    and/or with different algorithms.
 
     Currently we support:
 
@@ -263,43 +294,71 @@ sequences to be matched for taxonomic assignments on several databases.</p>
     #------------------------------ Running ----------------------------------#
     @property_cached
     def taxonomies(self):
-        return [self.silva, self.greengenes, self.rdp]
+        return [self.silva, self.greengenes, self.rdp, self.crest]
 
-    def __call__(self, verbose=True):
-        # Loop over databases #
-        for tax in self.taxonomies:
-            tax(verbose=verbose)
+    def __call__(self, verbose=True, skip_algo=False):
+        # Run all taxonomy methods #
+        if not skip_algo:
+            for tax in self.taxonomies:
+                if tax.should_run:
+                    tax(verbose=verbose)
         # Make all tables #
         for table in self.tables.all:
-            table(verbose=verbose)
+            if table.taxonomy.should_run:
+                table(verbose=verbose)
 
     #---------------------------- Compositions -------------------------------#
     @property_cached
     def silva(self):
+        # Import #
         from seqsearch.databases.mothur.silva import silva_mothur
-        return MothurClassify(self.proj.otus.results,
-                              silva_mothur,
-                              self.autopaths.silva_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             silva_mothur,
+                             self.autopaths.silva_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_silva&#39;)
+        # Return #
+        return tax
 
     @property_cached
     def greengenes(self):
+        # Import #
         from seqsearch.databases.mothur.greengenes import gg_mothur
-        return MothurClassify(self.proj.otus.results,
-                              gg_mothur,
-                              self.autopaths.greengenes_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             gg_mothur,
+                             self.autopaths.greengenes_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_greengenes&#39;)
+        # Return #
+        return tax
 
     @property_cached
     def rdp(self):
+        # Import #
         from seqsearch.databases.mothur.rdp import rdp_mothur
-        return MothurClassify(self.proj.otus.results,
-                              rdp_mothur,
-                              self.autopaths.rdp_dir)
+        # Create #
+        tax = MothurClassify(self.proj.otus.results,
+                             rdp_mothur,
+                             self.autopaths.rdp_dir)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_rdp&#39;)
+        # Return #
+        return tax
 
     @property_cached
     def crest(self):
+        # Import #
         from pacmill.taxonomy.crest import CrestClassify
-        return CrestClassify(self.proj.otus.results,
-                            self.autopaths.crest_dir)
+        # Create #
+        tax = CrestClassify(self.proj.otus.results,
+                            self.autopaths.crest_dir,
+                            self.proj.otu_table.tsv_path)
+        # Modify #
+        tax.should_run = self.proj.check_homogeneous(&#39;run_crest&#39;)
+        # Return #
+        return tax
 
     #--------------------------------- Tables --------------------------------#
     @property_cached
@@ -310,8 +369,8 @@ sequences to be matched for taxonomic assignments on several databases.</p>
 
         Typically you can access these tables like this:
 
-            &gt;&gt;&gt; print(project.taxonomy.tables.silva)
-            &gt;&gt;&gt; print(project.taxonomy.tables.rdp)
+            &gt;&gt;&gt; print(proj.taxonomy.tables.silva)
+            &gt;&gt;&gt; print(proj.taxonomy.tables.rdp)
         &#34;&#34;&#34;
         # Import #
         from pacmill.taxonomy.taxa_tables import TaxaTable
@@ -323,7 +382,7 @@ sequences to be matched for taxonomic assignments on several databases.</p>
         for tax in self.taxonomies:
             # Instantiate #
             table = TaxaTable(self.proj.otu_table, tax,
-                              tax.autopaths.taxa_tables_dir)
+                              tax.dest_dir + &#39;taxa_tables/&#39;)
             # Adjust the number of taxa displayed #
             max_taxa = getattr(self.proj.samples[0], &#39;max_taxa&#39;, None)
             if max_taxa: result.max_taxa_displayed = max_taxa
@@ -350,13 +409,13 @@ sequences to be matched for taxonomic assignments on several databases.</p>
         # Loop over taxonomies #
         for tax in self.taxonomies:
             # Path to report #
-            path =  self.autopaths.reports_dir + tax.database.tag + &#39;.pdf&#39;
+            path = self.autopaths.reports_dir + tax.database.tag + &#39;.pdf&#39;
             # Matching taxonomy tables #
             tables = getattr(self.tables, tax.database.tag)
             # Instantiate #
             report = TaxonomyReport(tax, tables, self.proj, path)
             # Set attribute #
-            setattr(result, tax.short_name, report)
+            setattr(result, tax.database.tag, report)
             # Add it to list #
             result.all.append(report)
         # Return #
@@ -567,8 +626,8 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <div class="desc"><p>By using the OTU table along with the taxonomic assignment results,
 we can generate taxa tables at different ranks.</p>
 <p>Typically you can access these tables like this:</p>
-<pre><code>&gt;&gt;&gt; print(project.taxonomy.tables.silva)
-&gt;&gt;&gt; print(project.taxonomy.tables.rdp)
+<pre><code>&gt;&gt;&gt; print(proj.taxonomy.tables.silva)
+&gt;&gt;&gt; print(proj.taxonomy.tables.rdp)
 </code></pre></div>
 <details class="source">
 <summary>
@@ -667,7 +726,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 </body>
 </html>

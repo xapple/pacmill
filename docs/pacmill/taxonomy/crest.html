@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.4" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>pacmill.taxonomy.crest API documentation</title>
 <meta name="description" content="Written by Lucas Sinclair.
 MIT Licensed.
 Contact at www.sinclair.bio" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
-<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
 <style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js" integrity="sha256-eOgo0OtLL4cdq7RdwRUiGKLX9XsIJ7nGhWEKbohmVAQ=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 </head>
 <body>
@@ -41,24 +41,19 @@ Contact at www.sinclair.bio
 &#34;&#34;&#34;
 
 # Built-in modules #
-import os, multiprocessing, shutil
+import os, re
 
 # First party modules #
 from fasta import FASTA
-from autopaths.dir_path       import DirectoryPath
-from autopaths.tmp_path       import new_temp_dir
-from plumbing.cache           import property_cached
-from plumbing.check_cmd_found import check_cmd
-from plumbing.apt_pkg         import get_apt_packages
-from plumbing.scraping        import download_from_url
+from autopaths.dir_path import DirectoryPath
+from plumbing.cache     import property_cached
 
 # Third party modules #
-import sh
 
 ###############################################################################
 class CrestClassify:
     &#34;&#34;&#34;
-    Predicts taxonomy of DNA sequences by BLASTING against the &#39;SILVAMOD&#39;
+    Predicts taxonomy of DNA sequences by BLASTING against the &#39;SILVAMOD138&#39;
     database and picking the lowest common ancestor amongst contradicting
     assignments in the tree of life.
 
@@ -66,147 +61,70 @@ class CrestClassify:
     the assignment stops at the order level.
 
     CREST stands for Classification Resources for Environmental Sequence Tags.
-    It is also known as &#34;LCAClassifier&#34;.
 
-    The code is here:        https://github.com/lanzen/CREST
-    The publication is here: http://dx.plos.org/10.1371/journal.pone.0049334
+    The code is here:        https://github.com/xapple/crest4
+    The publication is here: https://dx.plos.org/10.1371/journal.pone.0049334
+
+    We have lowered the &#34;drop-off from the highest bitscore&#34; to half a percent
+    by adding the &#34;--score_drop 0.5&#34; parameter. This should increase the
+    resolution for long reads such as the ones we have.
     &#34;&#34;&#34;
 
     # Constants #
-    short_name = &#39;crest&#39;
-    long_name  = &#39;LCAClassifier/CREST version 3.2.0&#39;
-    executable = &#39;classify&#39;
+    short_name = &#39;crest4&#39;
+    long_name  = &#39;CREST version 4.1.8&#39;
 
     def __repr__(self):
         msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, dest_dir):
+    def __init__(self, source, dest_dir, otu_tsv):
         # Source is the FASTA file containing OTU consensus sequences #
         self.source = FASTA(source)
         # Destination is a directory that contains all the results #
         self.dest_dir = DirectoryPath(dest_dir)
-
-    @property_cached
-    def database(self):
-        # Find where the database is on the file system #
-        self.database_path  = which(&#39;classify&#39;).physical_path.directory.directory
-        self.database_path += &#39;parts/flatdb/%s/%s.fasta&#39; % (database, database)
-
-    #----------------------------- Installing --------------------------------#
-    apt_packages = [&#39;ncbi-blast+&#39;, &#39;python2&#39;]
-    tgz_url = &#34;https://github.com/lanzen/CREST/releases/download/3.2.0/&#34; \
-              &#34;LCAClassifierV3.2.0.tar.gz&#34;
-
-    @classmethod
-    def check_installed(cls, exception=True):
-        &#34;&#34;&#34;
-        Try to determine if the CREST software is installed and
-        accessible.
-        &#34;&#34;&#34;
-        return check_cmd(cls.executable, exception, cls.install.__doc__)
-
-    @classmethod
-    def install(cls, prefix=&#34;~/programs/crest/&#34;):
-        &#34;&#34;&#34;
-        To automatically download and install the CREST classifier software on
-        this computer and for the current user, type these commands in python:
-
-            &gt;&gt;&gt; from pacmill.taxonomy.crest import CrestClassify
-            &gt;&gt;&gt; CrestClassify.install()
-        &#34;&#34;&#34;
-        # Start with required apt packages #
-        get_apt_packages(cls.apt_packages, verbose=True)
-        # Make a temporary directory #
-        tmp_dir = new_temp_dir()
-        # Download tarball #
-        tgz_loc = download_from_url(cls.tgz_url, tmp_dir, stream=True,
-                                    progress=True)
-        # Uncompress #
-        tgz_loc.untargz_to(tmp_dir)
-        src_dir = tmp_dir.sub_directory
-        # Move it to where the user wants it #
-        src_dir.move_to(prefix)
-        # This &#39;bootstrap&#39; stuff can&#39;t detect paths it seems, have to cwd #
-        current_dir = os.getcwd()
-        os.chdir(src_dir)
-        # Call the install command - step one #
-        bootstrap_script = src_dir + &#39;bootstrap.py&#39;
-        sh.python2(bootstrap_script)
-        # Call the install command - step two #
-        buildout_cmd = src_dir + &#39;bin/buildout&#39;
-        sh.python2(buildout_cmd)
-        # Restore current directory #
-        os.chdir(current_dir)
-        # The directory that contains the executable #
-        bin_dir = src_dir.with_tilda[:-1].replace(&#39;~&#39;, &#39;$HOME&#39;)
-        # Suggest adding to the $PATH #
-        print(&#34;\nCREST was installed successfully. You should now &#34;
-              &#34;add this line to your .bash_profile: \n\n    &#34;
-              &#34;export PATH=%s/bin:$PATH\n&#34; % bin_dir)
-
-    #-------------------------- Automatic paths ------------------------------#
-    all_paths = &#34;&#34;&#34;
-                /otu_table.csv
-                /otu_table_norm.csv
-                /centers.fasta
-                /graphs/
-                /stats/
-                /comp_phyla/
-                /comp_tips/
-                /comp_order/
-                /comp_class/
-                /blast/db_hits.xml
-                /blast/stdout.txt
-                /blast/stderr.txt
-                /crest/assignments.tsv
-                /crest/composition.tsv
-                /crest/tree.txt
-                /crest/Relative_Abundance.tsv
-                /crest/Richness.tsv
-                /crest/stdout.txt
-                /crest/stderr.txt
-                &#34;&#34;&#34;
-
-    @property_cached
-    def autopaths(self):
-        &#34;&#34;&#34;
-        The AutoPaths object is used for quickly assessing the filesystem paths
-        of various file inputs/outputs and directories.
-        See https://github.com/xapple/autopaths#autopaths-object
-        &#34;&#34;&#34;
-        from autopaths.auto_paths import AutoPaths
-        return AutoPaths(self.dest_dir, self.all_paths)
+        # Path to a TSV file containing the OTU table #
+        # TODO The IDs in this file are like &#39;centroid=tns_08:1023;seqs=138&#39;
+        # TODO While the ones in the FASTA are like &#39;tns_08:1023&#39;
+        self.otu_tsv = otu_tsv
 
     #------------------------------ Running ----------------------------------#
-    def __call__(self, cpus=None):
-        # Number of cores #
-        if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
-        # Run #
-        sh.blastn(&#39;-task&#39;,              &#39;megablast&#39;,
-                  &#39;-num_threads&#39;, cpus,
-                  &#39;-query&#39;, self.source,
-                  &#39;-db&#39;, self.database_path,
-                  &#39;-out&#39;, self.p.db_hits,
-                  &#39;-max_target_seqs&#39;,   &#39;100&#39;,
-                  &#39;-outfmt&#39;,            &#39;5&#39;,
-                  _out=self.p.blast_stdout, _err=self.p.blast_stderr)
+    @property_cached
+    def crest_obj(self):
+        # Import #
+        from crest4 import Classify
+        # Create a new instance #
+        return Classify(fasta       = self.source,
+                        search_algo = &#39;blast&#39;,
+                        num_threads = True,
+                        output_dir  = self.dest_dir,
+                        search_hits = self.dest_dir + &#34;search.hits&#34;,
+                        score_drop  = 0.5,
+                        )
+
+    @property
+    def database(self):
+        &#34;&#34;&#34;
+        The crest object has a database property that has all the
+        information we need.
+        &#34;&#34;&#34;
+        return self.crest_obj.database
+
+    def __call__(self, run_search=True, verbose=True):
+        # Message #
+        if verbose:
+            message = &#34;Running `%s` taxonomy classification on &#39;%s&#39;&#34;
+            print(message % (self.short_name, self.source))
+        # We want to regenerate the search results, unless specified #
+        if run_search:
+            self.crest_obj.search_hits.remove()
+        # Run the similarity search and classification #
+        self.crest_obj()
         # Check #
-        if os.path.getsize(self.p.db_hits) == 0:
-            raise Exception(&#34;Hits file empty. The MEGABLAST process was probably killed.&#34;)
-        # CREST #
-        self.p.crest_dir.remove()
-        sh.classify(&#39;--verbose&#39;, &#39;--rdp&#39;,
-                    &#39;-o&#39;, self.base_dir + &#39;crest/&#39;,
-                    &#39;-d&#39;, self.database,
-                    self.p.db_hits,
-                    out=self.p.crest_stdout.path, _err=self.p.crest_stderr.path)
-        # Move #
-        shutil.move(self.p.db_hits.prefix_path + &#39;_Composition.tsv&#39;, self.p.crest_composition)
-        shutil.move(self.p.db_hits.prefix_path + &#39;_Tree.txt&#39;, self.p.crest_tree)
-        shutil.move(self.p.db_hits.prefix_path + &#39;_Assignments.tsv&#39;, self.p.crest_assignments)
-        # Clean up #
-        if os.path.exists(&#34;error.log&#34;) and os.path.getsize(&#34;error.log&#34;) == 0: os.remove(&#34;error.log&#34;)
+        self.crest_obj.search_hits.must_exist()
+        if os.path.getsize(self.crest_obj.search_hits) == 0:
+            msg = &#34;Hits file empty. The BLAST process was probably killed.&#34;
+            raise Exception(msg)
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
@@ -214,7 +132,7 @@ class CrestClassify:
         Return True if the taxonomic software was run already and the results
         are stored on the filesystem. Return False if it was not yet run.
         &#34;&#34;&#34;
-        return self.autopaths.assignments.exists
+        return bool(self.crest_obj.out_file)
 
     @property_cached
     def results(self):
@@ -224,27 +142,62 @@ class CrestClassify:
                   &#34; classification before running the tool.&#34;
             raise Exception(msg)
         # Return the results #
-        return CrestResults(self.autopaths)
+        return CrestResults(self.crest_obj)
 
 ###############################################################################
-class CrestResults(object):
+class CrestResults:
 
-    def __init__(self, autopaths):
-        self.autopaths = autopaths
+    def __init__(self, crest_obj):
+        self.crest_obj = crest_obj
 
     @property_cached
     def assignments(self):
+        &#34;&#34;&#34;
+        Typically an assignment from CREST looks like this:
+
+            Main genome,Bacteria,Bacteria (superkingdom),Terrabacteria,
+            Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus
+
+        We skip the first entry as it seems to be always &#34;Main genome&#34;
+        and classified as rank &#34;meta&#34;.
+        &#34;&#34;&#34;
         result = {}
-        with open(self.autopaths.assignments, &#39;r&#39;) as handle:
+        with open(self.crest_obj.out_file, &#39;r&#39;) as handle:
             for line in handle:
-                code, species = line.split(&#39;\t&#39;)
-                result[code] = tuple(species.strip(&#39;\n&#39;).split(&#39;;&#39;))[:8]
+                # Split by tabs #
+                code, species = line.strip(&#39;\n&#39;).split(&#39;\t&#39;)
+                # Split by semi-colons #
+                species = species.split(&#39;;&#39;)
+                # Remove useless whitespace #
+                species = tuple(map(lambda s: s.strip(), species))
+                # Get the original OTU name #
+                pattern  = r&#39;centroid=(.+);seqs=[0-9]+\Z&#39;
+                otu_name = re.findall(pattern, code)[0]
+                # Conform to the mothur standard of names #
+                otu_name = otu_name.replace(&#39;:&#39;, &#39;_&#39;)
+                # Make a dictionary #
+                result[otu_name] = species
+        # Check size #
+        assert len(result) == len(self.crest_obj.fasta)
+        # Return #
         return result
 
-    @property
+    @property_cached
+    def count_unassigned(self):
+        &#34;&#34;&#34;Will count how many did not get a prediction at each level.&#34;&#34;&#34;
+        # Load the assignment values created by CREST #
+        taxas = list(self.assignments.values())
+        # Iterate over every rank number #
+        rank_numbers = list(range(len(self.crest_obj.database.rank_names)))
+        # Calculate for each position in the tree of life #
+        result = [sum(1 for x in taxas if len(x) &lt;= i) for i in rank_numbers]
+        # Return #
+        return result
+
+    @property_cached
     def count_assigned(self):
-        &#34;&#34;&#34;How many got a position?&#34;&#34;&#34;
-        return len([s for s in self.assignments.values() if s != (&#39;No hits&#39;,)])</code></pre>
+        &#34;&#34;&#34;Will count how many did get a prediction at each level.&#34;&#34;&#34;
+        return [len(self.assignments) - x for x in self.count_unassigned]</code></pre>
 </details>
 </section>
 <section>
@@ -258,26 +211,28 @@ class CrestResults(object):
 <dl>
 <dt id="pacmill.taxonomy.crest.CrestClassify"><code class="flex name class">
 <span>class <span class="ident">CrestClassify</span></span>
-<span>(</span><span>source, dest_dir)</span>
+<span>(</span><span>source, dest_dir, otu_tsv)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Predicts taxonomy of DNA sequences by BLASTING against the 'SILVAMOD'
+<div class="desc"><p>Predicts taxonomy of DNA sequences by BLASTING against the 'SILVAMOD138'
 database and picking the lowest common ancestor amongst contradicting
 assignments in the tree of life.</p>
 <p>For instance if all hits for a given OTU only agree at the order level,
 the assignment stops at the order level.</p>
-<p>CREST stands for Classification Resources for Environmental Sequence Tags.
-It is also known as "LCAClassifier".</p>
+<p>CREST stands for Classification Resources for Environmental Sequence Tags.</p>
 <p>The code is here:
-<a href="https://github.com/lanzen/CREST">https://github.com/lanzen/CREST</a>
-The publication is here: <a href="http://dx.plos.org/10.1371/journal.pone.0049334">http://dx.plos.org/10.1371/journal.pone.0049334</a></p></div>
+<a href="https://github.com/xapple/crest4">https://github.com/xapple/crest4</a>
+The publication is here: <a href="https://dx.plos.org/10.1371/journal.pone.0049334">https://dx.plos.org/10.1371/journal.pone.0049334</a></p>
+<p>We have lowered the "drop-off from the highest bitscore" to half a percent
+by adding the "&ndash;score_drop 0.5" parameter. This should increase the
+resolution for long reads such as the ones we have.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class CrestClassify:
     &#34;&#34;&#34;
-    Predicts taxonomy of DNA sequences by BLASTING against the &#39;SILVAMOD&#39;
+    Predicts taxonomy of DNA sequences by BLASTING against the &#39;SILVAMOD138&#39;
     database and picking the lowest common ancestor amongst contradicting
     assignments in the tree of life.
 
@@ -285,147 +240,70 @@ The publication is here: <a href="http://dx.plos.org/10.1371/journal.pone.004933
     the assignment stops at the order level.
 
     CREST stands for Classification Resources for Environmental Sequence Tags.
-    It is also known as &#34;LCAClassifier&#34;.
 
-    The code is here:        https://github.com/lanzen/CREST
-    The publication is here: http://dx.plos.org/10.1371/journal.pone.0049334
+    The code is here:        https://github.com/xapple/crest4
+    The publication is here: https://dx.plos.org/10.1371/journal.pone.0049334
+
+    We have lowered the &#34;drop-off from the highest bitscore&#34; to half a percent
+    by adding the &#34;--score_drop 0.5&#34; parameter. This should increase the
+    resolution for long reads such as the ones we have.
     &#34;&#34;&#34;
 
     # Constants #
-    short_name = &#39;crest&#39;
-    long_name  = &#39;LCAClassifier/CREST version 3.2.0&#39;
-    executable = &#39;classify&#39;
+    short_name = &#39;crest4&#39;
+    long_name  = &#39;CREST version 4.1.8&#39;
 
     def __repr__(self):
         msg = &#39;&lt;%s object on &#34;%s&#34;&gt;&#39;
         return msg % (self.__class__.__name__, self.source.path)
 
-    def __init__(self, source, dest_dir):
+    def __init__(self, source, dest_dir, otu_tsv):
         # Source is the FASTA file containing OTU consensus sequences #
         self.source = FASTA(source)
         # Destination is a directory that contains all the results #
         self.dest_dir = DirectoryPath(dest_dir)
-
-    @property_cached
-    def database(self):
-        # Find where the database is on the file system #
-        self.database_path  = which(&#39;classify&#39;).physical_path.directory.directory
-        self.database_path += &#39;parts/flatdb/%s/%s.fasta&#39; % (database, database)
-
-    #----------------------------- Installing --------------------------------#
-    apt_packages = [&#39;ncbi-blast+&#39;, &#39;python2&#39;]
-    tgz_url = &#34;https://github.com/lanzen/CREST/releases/download/3.2.0/&#34; \
-              &#34;LCAClassifierV3.2.0.tar.gz&#34;
-
-    @classmethod
-    def check_installed(cls, exception=True):
-        &#34;&#34;&#34;
-        Try to determine if the CREST software is installed and
-        accessible.
-        &#34;&#34;&#34;
-        return check_cmd(cls.executable, exception, cls.install.__doc__)
-
-    @classmethod
-    def install(cls, prefix=&#34;~/programs/crest/&#34;):
-        &#34;&#34;&#34;
-        To automatically download and install the CREST classifier software on
-        this computer and for the current user, type these commands in python:
-
-            &gt;&gt;&gt; from pacmill.taxonomy.crest import CrestClassify
-            &gt;&gt;&gt; CrestClassify.install()
-        &#34;&#34;&#34;
-        # Start with required apt packages #
-        get_apt_packages(cls.apt_packages, verbose=True)
-        # Make a temporary directory #
-        tmp_dir = new_temp_dir()
-        # Download tarball #
-        tgz_loc = download_from_url(cls.tgz_url, tmp_dir, stream=True,
-                                    progress=True)
-        # Uncompress #
-        tgz_loc.untargz_to(tmp_dir)
-        src_dir = tmp_dir.sub_directory
-        # Move it to where the user wants it #
-        src_dir.move_to(prefix)
-        # This &#39;bootstrap&#39; stuff can&#39;t detect paths it seems, have to cwd #
-        current_dir = os.getcwd()
-        os.chdir(src_dir)
-        # Call the install command - step one #
-        bootstrap_script = src_dir + &#39;bootstrap.py&#39;
-        sh.python2(bootstrap_script)
-        # Call the install command - step two #
-        buildout_cmd = src_dir + &#39;bin/buildout&#39;
-        sh.python2(buildout_cmd)
-        # Restore current directory #
-        os.chdir(current_dir)
-        # The directory that contains the executable #
-        bin_dir = src_dir.with_tilda[:-1].replace(&#39;~&#39;, &#39;$HOME&#39;)
-        # Suggest adding to the $PATH #
-        print(&#34;\nCREST was installed successfully. You should now &#34;
-              &#34;add this line to your .bash_profile: \n\n    &#34;
-              &#34;export PATH=%s/bin:$PATH\n&#34; % bin_dir)
-
-    #-------------------------- Automatic paths ------------------------------#
-    all_paths = &#34;&#34;&#34;
-                /otu_table.csv
-                /otu_table_norm.csv
-                /centers.fasta
-                /graphs/
-                /stats/
-                /comp_phyla/
-                /comp_tips/
-                /comp_order/
-                /comp_class/
-                /blast/db_hits.xml
-                /blast/stdout.txt
-                /blast/stderr.txt
-                /crest/assignments.tsv
-                /crest/composition.tsv
-                /crest/tree.txt
-                /crest/Relative_Abundance.tsv
-                /crest/Richness.tsv
-                /crest/stdout.txt
-                /crest/stderr.txt
-                &#34;&#34;&#34;
-
-    @property_cached
-    def autopaths(self):
-        &#34;&#34;&#34;
-        The AutoPaths object is used for quickly assessing the filesystem paths
-        of various file inputs/outputs and directories.
-        See https://github.com/xapple/autopaths#autopaths-object
-        &#34;&#34;&#34;
-        from autopaths.auto_paths import AutoPaths
-        return AutoPaths(self.dest_dir, self.all_paths)
+        # Path to a TSV file containing the OTU table #
+        # TODO The IDs in this file are like &#39;centroid=tns_08:1023;seqs=138&#39;
+        # TODO While the ones in the FASTA are like &#39;tns_08:1023&#39;
+        self.otu_tsv = otu_tsv
 
     #------------------------------ Running ----------------------------------#
-    def __call__(self, cpus=None):
-        # Number of cores #
-        if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
-        # Run #
-        sh.blastn(&#39;-task&#39;,              &#39;megablast&#39;,
-                  &#39;-num_threads&#39;, cpus,
-                  &#39;-query&#39;, self.source,
-                  &#39;-db&#39;, self.database_path,
-                  &#39;-out&#39;, self.p.db_hits,
-                  &#39;-max_target_seqs&#39;,   &#39;100&#39;,
-                  &#39;-outfmt&#39;,            &#39;5&#39;,
-                  _out=self.p.blast_stdout, _err=self.p.blast_stderr)
+    @property_cached
+    def crest_obj(self):
+        # Import #
+        from crest4 import Classify
+        # Create a new instance #
+        return Classify(fasta       = self.source,
+                        search_algo = &#39;blast&#39;,
+                        num_threads = True,
+                        output_dir  = self.dest_dir,
+                        search_hits = self.dest_dir + &#34;search.hits&#34;,
+                        score_drop  = 0.5,
+                        )
+
+    @property
+    def database(self):
+        &#34;&#34;&#34;
+        The crest object has a database property that has all the
+        information we need.
+        &#34;&#34;&#34;
+        return self.crest_obj.database
+
+    def __call__(self, run_search=True, verbose=True):
+        # Message #
+        if verbose:
+            message = &#34;Running `%s` taxonomy classification on &#39;%s&#39;&#34;
+            print(message % (self.short_name, self.source))
+        # We want to regenerate the search results, unless specified #
+        if run_search:
+            self.crest_obj.search_hits.remove()
+        # Run the similarity search and classification #
+        self.crest_obj()
         # Check #
-        if os.path.getsize(self.p.db_hits) == 0:
-            raise Exception(&#34;Hits file empty. The MEGABLAST process was probably killed.&#34;)
-        # CREST #
-        self.p.crest_dir.remove()
-        sh.classify(&#39;--verbose&#39;, &#39;--rdp&#39;,
-                    &#39;-o&#39;, self.base_dir + &#39;crest/&#39;,
-                    &#39;-d&#39;, self.database,
-                    self.p.db_hits,
-                    out=self.p.crest_stdout.path, _err=self.p.crest_stderr.path)
-        # Move #
-        shutil.move(self.p.db_hits.prefix_path + &#39;_Composition.tsv&#39;, self.p.crest_composition)
-        shutil.move(self.p.db_hits.prefix_path + &#39;_Tree.txt&#39;, self.p.crest_tree)
-        shutil.move(self.p.db_hits.prefix_path + &#39;_Assignments.tsv&#39;, self.p.crest_assignments)
-        # Clean up #
-        if os.path.exists(&#34;error.log&#34;) and os.path.getsize(&#34;error.log&#34;) == 0: os.remove(&#34;error.log&#34;)
+        self.crest_obj.search_hits.must_exist()
+        if os.path.getsize(self.crest_obj.search_hits) == 0:
+            msg = &#34;Hits file empty. The BLAST process was probably killed.&#34;
+            raise Exception(msg)
 
     #------------------------------- Results ---------------------------------#
     def __bool__(self):
@@ -433,7 +311,7 @@ The publication is here: <a href="http://dx.plos.org/10.1371/journal.pone.004933
         Return True if the taxonomic software was run already and the results
         are stored on the filesystem. Return False if it was not yet run.
         &#34;&#34;&#34;
-        return self.autopaths.assignments.exists
+        return bool(self.crest_obj.out_file)
 
     @property_cached
     def results(self):
@@ -443,22 +321,10 @@ The publication is here: <a href="http://dx.plos.org/10.1371/journal.pone.004933
                   &#34; classification before running the tool.&#34;
             raise Exception(msg)
         # Return the results #
-        return CrestResults(self.autopaths)</code></pre>
+        return CrestResults(self.crest_obj)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="pacmill.taxonomy.crest.CrestClassify.all_paths"><code class="name">var <span class="ident">all_paths</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt id="pacmill.taxonomy.crest.CrestClassify.apt_packages"><code class="name">var <span class="ident">apt_packages</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt id="pacmill.taxonomy.crest.CrestClassify.executable"><code class="name">var <span class="ident">executable</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
 <dt id="pacmill.taxonomy.crest.CrestClassify.long_name"><code class="name">var <span class="ident">long_name</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -467,121 +333,10 @@ The publication is here: <a href="http://dx.plos.org/10.1371/journal.pone.004933
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="pacmill.taxonomy.crest.CrestClassify.tgz_url"><code class="name">var <span class="ident">tgz_url</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
-<h3>Static methods</h3>
-<dl>
-<dt id="pacmill.taxonomy.crest.CrestClassify.check_installed"><code class="name flex">
-<span>def <span class="ident">check_installed</span></span>(<span>exception=True)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Try to determine if the CREST software is installed and
-accessible.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@classmethod
-def check_installed(cls, exception=True):
-    &#34;&#34;&#34;
-    Try to determine if the CREST software is installed and
-    accessible.
-    &#34;&#34;&#34;
-    return check_cmd(cls.executable, exception, cls.install.__doc__)</code></pre>
-</details>
-</dd>
-<dt id="pacmill.taxonomy.crest.CrestClassify.install"><code class="name flex">
-<span>def <span class="ident">install</span></span>(<span>prefix='~/programs/crest/')</span>
-</code></dt>
-<dd>
-<div class="desc"><p>To automatically download and install the CREST classifier software on
-this computer and for the current user, type these commands in python:</p>
-<pre><code>&gt;&gt;&gt; from pacmill.taxonomy.crest import CrestClassify
-&gt;&gt;&gt; CrestClassify.install()
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@classmethod
-def install(cls, prefix=&#34;~/programs/crest/&#34;):
-    &#34;&#34;&#34;
-    To automatically download and install the CREST classifier software on
-    this computer and for the current user, type these commands in python:
-
-        &gt;&gt;&gt; from pacmill.taxonomy.crest import CrestClassify
-        &gt;&gt;&gt; CrestClassify.install()
-    &#34;&#34;&#34;
-    # Start with required apt packages #
-    get_apt_packages(cls.apt_packages, verbose=True)
-    # Make a temporary directory #
-    tmp_dir = new_temp_dir()
-    # Download tarball #
-    tgz_loc = download_from_url(cls.tgz_url, tmp_dir, stream=True,
-                                progress=True)
-    # Uncompress #
-    tgz_loc.untargz_to(tmp_dir)
-    src_dir = tmp_dir.sub_directory
-    # Move it to where the user wants it #
-    src_dir.move_to(prefix)
-    # This &#39;bootstrap&#39; stuff can&#39;t detect paths it seems, have to cwd #
-    current_dir = os.getcwd()
-    os.chdir(src_dir)
-    # Call the install command - step one #
-    bootstrap_script = src_dir + &#39;bootstrap.py&#39;
-    sh.python2(bootstrap_script)
-    # Call the install command - step two #
-    buildout_cmd = src_dir + &#39;bin/buildout&#39;
-    sh.python2(buildout_cmd)
-    # Restore current directory #
-    os.chdir(current_dir)
-    # The directory that contains the executable #
-    bin_dir = src_dir.with_tilda[:-1].replace(&#39;~&#39;, &#39;$HOME&#39;)
-    # Suggest adding to the $PATH #
-    print(&#34;\nCREST was installed successfully. You should now &#34;
-          &#34;add this line to your .bash_profile: \n\n    &#34;
-          &#34;export PATH=%s/bin:$PATH\n&#34; % bin_dir)</code></pre>
-</details>
-</dd>
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="pacmill.taxonomy.crest.CrestClassify.autopaths"><code class="name">var <span class="ident">autopaths</span></code></dt>
-<dd>
-<div class="desc"><p>The AutoPaths object is used for quickly assessing the filesystem paths
-of various file inputs/outputs and directories.
-See <a href="https://github.com/xapple/autopaths#autopaths-object">https://github.com/xapple/autopaths#autopaths-object</a></p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def __get__(self, instance, owner):
-    &#34;&#34;&#34;
-    If you see the current source code in a seemingly unrelated part of
-    an auto-generated documentation, it means the program making the
-    documentation was unable to correctly traverse a decorated property.
-    &#34;&#34;&#34;
-    # For debugging purposes #
-    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
-    # If called from a class #
-    if instance is None: return self
-    # Does a cache exist for this instance? #
-    self.check_cache(instance)
-    # Is the answer in the cache? #
-    if self.name in instance.__cache__: return instance.__cache__[self.name]
-    # If not we will compute it #
-    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
-    else:                                      result = self.func(instance)
-    # Let&#39;s store the answer for later #
-    instance.__cache__[self.name] = result
-    # Return #
-    return result</code></pre>
-</details>
-</dd>
-<dt id="pacmill.taxonomy.crest.CrestClassify.database"><code class="name">var <span class="ident">database</span></code></dt>
+<dt id="pacmill.taxonomy.crest.CrestClassify.crest_obj"><code class="name">var <span class="ident">crest_obj</span></code></dt>
 <dd>
 <div class="desc"><p>If you see the current source code in a seemingly unrelated part of
 an auto-generated documentation, it means the program making the
@@ -611,6 +366,23 @@ documentation was unable to correctly traverse a decorated property.</p></div>
     instance.__cache__[self.name] = result
     # Return #
     return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.crest.CrestClassify.database"><code class="name">var <span class="ident">database</span></code></dt>
+<dd>
+<div class="desc"><p>The crest object has a database property that has all the
+information we need.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def database(self):
+    &#34;&#34;&#34;
+    The crest object has a database property that has all the
+    information we need.
+    &#34;&#34;&#34;
+    return self.crest_obj.database</code></pre>
 </details>
 </dd>
 <dt id="pacmill.taxonomy.crest.CrestClassify.results"><code class="name">var <span class="ident">results</span></code></dt>
@@ -649,7 +421,7 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </dd>
 <dt id="pacmill.taxonomy.crest.CrestResults"><code class="flex name class">
 <span>class <span class="ident">CrestResults</span></span>
-<span>(</span><span>autopaths)</span>
+<span>(</span><span>crest_obj)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -657,32 +429,70 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class CrestResults(object):
+<pre><code class="python">class CrestResults:
 
-    def __init__(self, autopaths):
-        self.autopaths = autopaths
+    def __init__(self, crest_obj):
+        self.crest_obj = crest_obj
 
     @property_cached
     def assignments(self):
+        &#34;&#34;&#34;
+        Typically an assignment from CREST looks like this:
+
+            Main genome,Bacteria,Bacteria (superkingdom),Terrabacteria,
+            Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus
+
+        We skip the first entry as it seems to be always &#34;Main genome&#34;
+        and classified as rank &#34;meta&#34;.
+        &#34;&#34;&#34;
         result = {}
-        with open(self.autopaths.assignments, &#39;r&#39;) as handle:
+        with open(self.crest_obj.out_file, &#39;r&#39;) as handle:
             for line in handle:
-                code, species = line.split(&#39;\t&#39;)
-                result[code] = tuple(species.strip(&#39;\n&#39;).split(&#39;;&#39;))[:8]
+                # Split by tabs #
+                code, species = line.strip(&#39;\n&#39;).split(&#39;\t&#39;)
+                # Split by semi-colons #
+                species = species.split(&#39;;&#39;)
+                # Remove useless whitespace #
+                species = tuple(map(lambda s: s.strip(), species))
+                # Get the original OTU name #
+                pattern  = r&#39;centroid=(.+);seqs=[0-9]+\Z&#39;
+                otu_name = re.findall(pattern, code)[0]
+                # Conform to the mothur standard of names #
+                otu_name = otu_name.replace(&#39;:&#39;, &#39;_&#39;)
+                # Make a dictionary #
+                result[otu_name] = species
+        # Check size #
+        assert len(result) == len(self.crest_obj.fasta)
+        # Return #
         return result
 
-    @property
+    @property_cached
+    def count_unassigned(self):
+        &#34;&#34;&#34;Will count how many did not get a prediction at each level.&#34;&#34;&#34;
+        # Load the assignment values created by CREST #
+        taxas = list(self.assignments.values())
+        # Iterate over every rank number #
+        rank_numbers = list(range(len(self.crest_obj.database.rank_names)))
+        # Calculate for each position in the tree of life #
+        result = [sum(1 for x in taxas if len(x) &lt;= i) for i in rank_numbers]
+        # Return #
+        return result
+
+    @property_cached
     def count_assigned(self):
-        &#34;&#34;&#34;How many got a position?&#34;&#34;&#34;
-        return len([s for s in self.assignments.values() if s != (&#39;No hits&#39;,)])</code></pre>
+        &#34;&#34;&#34;Will count how many did get a prediction at each level.&#34;&#34;&#34;
+        return [len(self.assignments) - x for x in self.count_unassigned]</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
 <dt id="pacmill.taxonomy.crest.CrestResults.assignments"><code class="name">var <span class="ident">assignments</span></code></dt>
 <dd>
-<div class="desc"><p>If you see the current source code in a seemingly unrelated part of
-an auto-generated documentation, it means the program making the
-documentation was unable to correctly traverse a decorated property.</p></div>
+<div class="desc"><p>Typically an assignment from CREST looks like this:</p>
+<pre><code>Main genome,Bacteria,Bacteria (superkingdom),Terrabacteria,
+Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus
+</code></pre>
+<p>We skip the first entry as it seems to be always "Main genome"
+and classified as rank "meta".</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -712,15 +522,62 @@ documentation was unable to correctly traverse a decorated property.</p></div>
 </dd>
 <dt id="pacmill.taxonomy.crest.CrestResults.count_assigned"><code class="name">var <span class="ident">count_assigned</span></code></dt>
 <dd>
-<div class="desc"><p>How many got a position?</p></div>
+<div class="desc"><p>Will count how many did get a prediction at each level.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@property
-def count_assigned(self):
-    &#34;&#34;&#34;How many got a position?&#34;&#34;&#34;
-    return len([s for s in self.assignments.values() if s != (&#39;No hits&#39;,)])</code></pre>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
+</details>
+</dd>
+<dt id="pacmill.taxonomy.crest.CrestResults.count_unassigned"><code class="name">var <span class="ident">count_unassigned</span></code></dt>
+<dd>
+<div class="desc"><p>Will count how many did not get a prediction at each level.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __get__(self, instance, owner):
+    &#34;&#34;&#34;
+    If you see the current source code in a seemingly unrelated part of
+    an auto-generated documentation, it means the program making the
+    documentation was unable to correctly traverse a decorated property.
+    &#34;&#34;&#34;
+    # For debugging purposes #
+    if False: print(&#34;-&gt; property cached `%s`&#34; % instance)
+    # If called from a class #
+    if instance is None: return self
+    # Does a cache exist for this instance? #
+    self.check_cache(instance)
+    # Is the answer in the cache? #
+    if self.name in instance.__cache__: return instance.__cache__[self.name]
+    # If not we will compute it #
+    if inspect.isgeneratorfunction(self.func): result = tuple(self.func(instance))
+    else:                                      result = self.func(instance)
+    # Let&#39;s store the answer for later #
+    instance.__cache__[self.name] = result
+    # Return #
+    return result</code></pre>
 </details>
 </dd>
 </dl>
@@ -743,18 +600,12 @@ def count_assigned(self):
 <ul>
 <li>
 <h4><code><a title="pacmill.taxonomy.crest.CrestClassify" href="#pacmill.taxonomy.crest.CrestClassify">CrestClassify</a></code></h4>
-<ul class="two-column">
-<li><code><a title="pacmill.taxonomy.crest.CrestClassify.all_paths" href="#pacmill.taxonomy.crest.CrestClassify.all_paths">all_paths</a></code></li>
-<li><code><a title="pacmill.taxonomy.crest.CrestClassify.apt_packages" href="#pacmill.taxonomy.crest.CrestClassify.apt_packages">apt_packages</a></code></li>
-<li><code><a title="pacmill.taxonomy.crest.CrestClassify.autopaths" href="#pacmill.taxonomy.crest.CrestClassify.autopaths">autopaths</a></code></li>
-<li><code><a title="pacmill.taxonomy.crest.CrestClassify.check_installed" href="#pacmill.taxonomy.crest.CrestClassify.check_installed">check_installed</a></code></li>
+<ul class="">
+<li><code><a title="pacmill.taxonomy.crest.CrestClassify.crest_obj" href="#pacmill.taxonomy.crest.CrestClassify.crest_obj">crest_obj</a></code></li>
 <li><code><a title="pacmill.taxonomy.crest.CrestClassify.database" href="#pacmill.taxonomy.crest.CrestClassify.database">database</a></code></li>
-<li><code><a title="pacmill.taxonomy.crest.CrestClassify.executable" href="#pacmill.taxonomy.crest.CrestClassify.executable">executable</a></code></li>
-<li><code><a title="pacmill.taxonomy.crest.CrestClassify.install" href="#pacmill.taxonomy.crest.CrestClassify.install">install</a></code></li>
 <li><code><a title="pacmill.taxonomy.crest.CrestClassify.long_name" href="#pacmill.taxonomy.crest.CrestClassify.long_name">long_name</a></code></li>
 <li><code><a title="pacmill.taxonomy.crest.CrestClassify.results" href="#pacmill.taxonomy.crest.CrestClassify.results">results</a></code></li>
 <li><code><a title="pacmill.taxonomy.crest.CrestClassify.short_name" href="#pacmill.taxonomy.crest.CrestClassify.short_name">short_name</a></code></li>
-<li><code><a title="pacmill.taxonomy.crest.CrestClassify.tgz_url" href="#pacmill.taxonomy.crest.CrestClassify.tgz_url">tgz_url</a></code></li>
 </ul>
 </li>
 <li>
@@ -762,6 +613,7 @@ def count_assigned(self):
 <ul class="">
 <li><code><a title="pacmill.taxonomy.crest.CrestResults.assignments" href="#pacmill.taxonomy.crest.CrestResults.assignments">assignments</a></code></li>
 <li><code><a title="pacmill.taxonomy.crest.CrestResults.count_assigned" href="#pacmill.taxonomy.crest.CrestResults.count_assigned">count_assigned</a></code></li>
+<li><code><a title="pacmill.taxonomy.crest.CrestResults.count_unassigned" href="#pacmill.taxonomy.crest.CrestResults.count_unassigned">count_unassigned</a></code></li>
 </ul>
 </li>
 </ul>
@@ -770,7 +622,7 @@ def count_assigned(self):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 </body>
 </html>
