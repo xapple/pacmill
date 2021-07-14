@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # Compress #
     print("Compressing all FASTQ files.")
     for sample in samples: print(sample.fastq.compress(remove_orig=True))
-    # Remove the sra archive #
+    # Remove the SRA archive #
     for sample in samples: sample.path_sra.remove()
     # Success #
     print("Done. Results are in '%s'." % samples[0].base_dir)
