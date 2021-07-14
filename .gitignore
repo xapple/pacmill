@@ -22,3 +22,5 @@
 
 # Large demo files #
 *.sra
+*.fastq.gz
+/demo_project/output/
