@@ -94,9 +94,9 @@ class Project:
         metadata = pandas.concat(all_dfs, sort=False)
         # Check the proj short names are only lower case #
         if not all(metadata.project_short_name.str.islower()):
-            msg = "The short name of a project can only contain " \
-                  "alphanumerical characters and underscores."    \
-                  "Also it cannot contain upper case characters."
+            msg = "The short name of a project can only contain" \
+                  " alphanumerical characters and underscores."    \
+                  " Also it cannot contain upper case characters."
             raise ValueError(msg)
         # Filter and take only samples that match this project's short_name #
         query = f'project_short_name == "{self.short_name}"'
