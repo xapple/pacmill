@@ -12,7 +12,7 @@ and is meant simply as a sandbox.
 
 Typically you would run this file from a command line like this:
 
-     ipython3 -i -- ~/deploy/pacmill/scripts/dev/tmp_code.py
+     ipython3 -i -- ~/repos/pacmill/scripts/tmp_code.py
 """
 
 # Built-in modules #
@@ -35,9 +35,3 @@ proj = Project(proj_name, proj_xls)
 # Show samples #
 for sample in proj: print(sample.short_name)
 
-# Test PHRED window size #
-for sample in proj:
-    import pandas
-    quality = pandas.Series(range(100))
-    rolling = quality.rolling(sample.phred_window_size).mean().dropna().tolist()
-    print(rolling)
