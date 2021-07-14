@@ -34,7 +34,7 @@ class BlastClassify:
     db_short_name   = "ncbi_16s_rna"
     db_long_name    = 'The NCBI 16S RNA database'
 
-    # Options #
+    # Parameters #
     min_e_value        = 1e-5
     min_perc_identity  = 97
     max_target_seqs    = 5
@@ -169,7 +169,7 @@ class BlastClassify:
              4233    small_1:0           4  ...  NR_118997    1524     98.6%
         """
         # Parse the BLAST XML output file with BioPython #
-        all_otus_hits = self.seq_search.query.results
+        all_otus_hits = self.seq_search.results
         # Produce one mini-dataframe for every OTU #
         all_otus_dfs = [self.one_otu_df(record, num_hits_per_otu)
                         for record in all_otus_hits]
