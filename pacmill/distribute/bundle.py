@@ -79,6 +79,8 @@ class Bundle:
         self.base_dir.zip_to(self.archive)
         # Remove the directory #
         self.base_dir.remove()
+        # Return #
+        return self.archive
 
     #------------------------------- Results ---------------------------------#
     @property_cached
