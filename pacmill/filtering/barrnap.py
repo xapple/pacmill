@@ -27,6 +27,7 @@ class Barrnap:
     """
     Takes care of running the Barrnap program on a given FASTQ file.
     See https://github.com/tseemann/barrnap
+
     Barrnap predicts the presence and location of ribosomal RNA genes in
     genomes. Expects version 0.9.
 
@@ -228,9 +229,9 @@ class BarrnapExtract(Barrnap):
     """
     With this subclass, we will extract reads regions after running barrnap.
 
-    Using the original reads file and the GFF output of
-    barrnap, we will create a new FASTA file containing only the portion of
-    the original reads that contains the 16S rRNA gene.
+    Using the original reads file and the GFF output of barrnap, we will create
+    a new FASTA file containing only the portion of the original reads that
+    contains the 16S rRNA gene.
     """
 
     def __call__(self, cpus=None, verbose=True):
