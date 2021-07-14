@@ -34,7 +34,7 @@ class TaxaTable:
 
     def __repr__(self):
         msg = '<%s object on "%s">'
-        return msg % (self.__class__.__name__, self.otu_table)
+        return msg % (self.__class__.__name__, self.taxonomy)
 
     def __init__(self, otu_table, taxonomy, base_dir):
         # Attributes #
