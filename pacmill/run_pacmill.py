@@ -10,7 +10,7 @@ Script to run the `pacmill` pipeline.
 
 Typically you would run this file from a command line like this:
 
-    ipython3 -i -- ~/deploy/pacmill/scripts/running/run_pacmill.py \
+    ipython3 -i -- ~/deploy/pacmill/pacmill/run_pacmill.py \
                    small_test small_test/metadata_small_test.xlsx
 """
 
