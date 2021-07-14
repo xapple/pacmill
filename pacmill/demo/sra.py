@@ -113,8 +113,6 @@ class DumpSRA:
         self.vdb_config_workaround()
         # Get the command #
         dump = sh.Command("fastq-dump")
-        # Check version #
-        assert "2.10.8" in dump('--version')
         # Make a temporary directory #
         tmp_dir = new_temp_dir()
         # Run it #

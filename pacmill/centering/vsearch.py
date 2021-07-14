@@ -91,8 +91,6 @@ class ClusterVsearch:
             print(msg % self.source)
         # Check it is installed #
         check_cmd('vsearch', True)
-        # Check version #
-        assert b"v2.14.1" in sh.vsearch('--version').stderr
         # Number of cores #
         if cpus is None: cpus = min(multiprocessing.cpu_count(), 32)
         # Pick the command parameters #

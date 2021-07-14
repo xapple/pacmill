@@ -99,8 +99,6 @@ class MothurClassify:
         self.dest_dir.remove()
         # Link our input OTU sequences to the destination directory #
         self.autopaths.centers.link_from(self.source)
-        # Check version #
-        assert "1.42.1" in sh.mothur('--version')
         # Make the long command as multiple strings #
         cmd = ("#classify.seqs(", # The command
                " fasta=%s,"     , # The input file

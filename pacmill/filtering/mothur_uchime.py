@@ -55,8 +55,6 @@ class MothurUchime:
         if verbose: print("Running chimeras detection on '%s'" % self.source)
         # Check it is installed #
         check_cmd('mothur', True)
-        # Check version #
-        assert "1.42.1" in sh.mothur('--version')
         # Make new temporary directory #
         tmp_dir = new_temp_dir()
         source = tmp_dir + 'reads.fasta'
