@@ -14,6 +14,10 @@ Typically you would run this file from a command line like this:
                    small_test small_test/metadata_small_test.xlsx
 """
 
+# Matplotlib #
+import matplotlib
+matplotlib.use('Agg')
+
 # Built-in modules #
 import os, sys, argparse
 
@@ -22,7 +26,9 @@ from pacmill.core.project import Project
 
 # First party modules #
 from plumbing.timer import Timer
-from plumbing.processes import prll_map
+
+# Third party modules #
+from p_tqdm import p_umap
 
 # Constants #
 env_name = os.environ.get("PACMILL_PROJ_NAME")
@@ -87,7 +93,7 @@ if __name__ == "__main__":
 
     # Start the pipeline #
     print("# Validate the format of the FASTQs #")
-    prll_map(lambda s: s.fastq.validator(), proj)
+    p_umap(lambda s: s.fastq.validator(), proj)
     timer.print_elapsed()
 
     print("# Run FastQC on the samples individually #")
@@ -101,11 +107,11 @@ if __name__ == "__main__":
     timer.print_elapsed()
 
     print("# Filter reads in every sample based on several criteria #")
-    prll_map(lambda s: s.filter(), proj)
+    p_umap(lambda s: s.filter(), proj)
     timer.print_elapsed()
 
     print("# Remove chimeric reads #")
-    prll_map(lambda s: s.chimeras(cpus=1), proj)
+    p_umap(lambda s: s.chimeras(cpus=1), proj)
     timer.print_elapsed()
 
     print("# Detect presence of rRNA genes (optional) #")
@@ -122,14 +128,14 @@ if __name__ == "__main__":
     print(proj.otus())
     timer.print_elapsed()
 
-    print("# Assign taxonomy and make all taxa tables #")
-    proj.taxonomy()
-    timer.print_elapsed()
-
     if proj.check_homogeneous("run_ncbi_blast"):
         print("# BLAST sequences against the NCBI 16S database #")
         proj.ncbi_blast()
         timer.print_elapsed()
+
+    print("# Assign taxonomy and make all taxa tables #")
+    proj.taxonomy()
+    timer.print_elapsed()
 
     print("# Regenerate the graphs for the project #")
     print(proj.otu_table.graphs.otu_sums_graph(rerun=True))
