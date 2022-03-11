@@ -121,7 +121,7 @@ class SeqFilter:
     #-------------------------------- Primers --------------------------------#
     def primer_gen(self, reads, verbose=False, debug=False):
         """
-        We will uses regex patterns to search every read for both primers.
+        We will use regex patterns to search every read for both primers.
         We will record the start and end positions of primers when they are
         found. Both the forward and reverse primers are searched for.
         Both the original sequences and their reverse complements are
