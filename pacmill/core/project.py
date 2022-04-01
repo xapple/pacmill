@@ -66,11 +66,11 @@ class Project:
                   "Also it cannot contain upper case characters."  \
                   "Currently it is: \n\n   `%s`\n"
             raise ValueError(msg % short_name)
-        # You need at least one excel file #
+        # You need at least one Excel file #
         assert len(all_xlsx) > 0
-        # Save all excel file paths as Paths objects #
+        # Save all Excel file paths as Paths objects #
         self.all_xlsx = list(map(Path, all_xlsx))
-        # Check all the excel paths actually exist #
+        # Check all the Excel paths actually exist #
         for path in self.all_xlsx:
             if not path.exists:
                 msg = "The excel file at '%s' does not exist."
@@ -83,14 +83,14 @@ class Project:
         Return a pandas.DataFrame object describing the metadata of all
         samples contained in this project.
         """
-        # Function to read one excel file #
+        # Function to read one Excel file #
         # Any empty cell causes the conversion to integers to fail, so let's
         # just not use it at all and do it later ourselves manually
         def read_excel(path):
             return pandas.read_excel(str(path), header=1, convert_float=False)
         # Read all excel files as data frames #
         all_dfs = [read_excel(path) for path in self.all_xlsx]
-        # If there are several excel files, merge them together #
+        # If there are several Excel files, merge them together #
         metadata = pandas.concat(all_dfs, sort=False)
         # Check the proj short names are only lower case #
         if not all(metadata.project_short_name.str.islower()):

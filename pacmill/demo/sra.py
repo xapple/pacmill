@@ -12,11 +12,11 @@ import uuid
 
 # First party modules #
 from fasta import FASTQ
-from autopaths.file_path import FilePath
-from autopaths.tmp_path  import new_temp_dir
-from plumbing.cache      import property_cached
+from autopaths.file_path      import FilePath
+from autopaths.tmp_path       import new_temp_dir
+from plumbing.cache           import property_cached
 from plumbing.check_cmd_found import check_cmd
-from plumbing.scraping   import download_from_url
+from plumbing.scraping        import download_from_url
 
 # Third party modules #
 import sh

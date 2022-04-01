@@ -151,7 +151,7 @@ class Sample:
         file. If the column is present, no change is made. If it is absent,
         we will add that particular attribute to the current instance.
         """
-        # Check everyone of them #
+        # Check every one of them #
         for key, value in self.defaults.items():
             if not hasattr(self, key): setattr(self, key, value)
 
