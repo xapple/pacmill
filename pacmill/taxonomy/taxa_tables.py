@@ -41,7 +41,7 @@ class TaxaTable:
         self.otu_table = otu_table
         self.taxonomy  = taxonomy
         self.base_dir  = base_dir
-        # Short cuts #
+        # Shortcuts #
         self.otu_df = self.otu_table.df
         # The rank names #
         if hasattr(self.taxonomy.database, 'rank_names'):

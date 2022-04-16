@@ -27,8 +27,8 @@ class Sample:
     the ones produced by Illumina sequencers please have a look at a sister
     project: www.github.com/xapple/sifes
 
-    In addition, a Sample has many other metadata associated with it.
-    Every column of the original excel file is now the name of an attribute.
+    In addition, a Sample has alot of other metadata associated with it.
+    Every column of the original Excel file is now the name of an attribute.
     For instance (non exhaustive list):
 
         * self.num: the number of this sample in the project.
@@ -53,7 +53,7 @@ class Sample:
         reference to the Project object that creates it.
         Each named parameter will be set as an attribute of this instance
         with the same name. Hence, the attributes of a Sample correspond
-        directly to the column headers of the excel metadata file that
+        directly to the column headers of the Excel metadata file that
         was parsed by the Project object.
         """
         # Keep a reference to the parent Project object #
@@ -74,12 +74,16 @@ class Sample:
     dna_keys = ['fwd_index_seq', 'rev_index_seq', 'fwd_primer_seq',
                 'rev_primer_seq']
 
-    int_keys = ['sample_num', 'fwd_read_count', 'rev_read_count', 'fwd_read_len', 'rev_read_len', 'primer_mismatches', 'primer_max_dist', 'min_read_len', 'max_read_len', 'phred_window_size', 'phred_threshold', 'otu_min_size', 'max_taxa']
+    int_keys = ['sample_num', 'fwd_read_count', 'rev_read_count',
+                'fwd_read_len', 'rev_read_len', 'primer_mismatches',
+                'primer_max_dist', 'min_read_len', 'max_read_len',
+                'phred_window_size', 'phred_threshold', 'otu_min_size',
+                'max_taxa']
 
     def transform_attrs(self):
         """
         This is where we add and change some attributes based on the
-        information in the excel metadata file.
+        information in the Excel metadata file.
         """
         # The sample's short name can just be called short_name #
         self.short_name = self.sample_short_name
@@ -101,7 +105,7 @@ class Sample:
 
     def validate_attrs(self):
         """
-        This is where we check that the information in the excel
+        This is where we check that the information in the Excel
         metadata file is consistent and usable.
         """
         # Check the short name contains only alphanumerics and underscore #
@@ -147,7 +151,7 @@ class Sample:
 
     def set_default_attrs(self):
         """
-        This is where we set default values for optional columns in the excel
+        This is where we set default values for optional columns in the Excel
         file. If the column is present, no change is made. If it is absent,
         we will add that particular attribute to the current instance.
         """
@@ -297,7 +301,7 @@ class Sample:
         """
         # If barrnap was the last step #
         if self.barrnap_mode != 'off': return self.barrnap.results
-        # Otherwise chimeras was the last step #
+        # Otherwise, chimeras was the last step #
         return self.chimeras.results
 
     @property_cached

@@ -24,7 +24,7 @@ class MultiTaxDatabases:
     sequences to be matched for taxonomic assignments on several databases
     and/or with different algorithms.
 
-    Currently we support:
+    Currently, we support:
 
         * Silva.
         * Greengenes.

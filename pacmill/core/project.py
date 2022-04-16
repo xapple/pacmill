@@ -115,8 +115,6 @@ class Project:
         from pacmill.core.sample import Sample
         # Make one Sample object per row #
         samples = [Sample(self, **dict(row)) for i, row in rows]
-        # Add a reference to the current project #
-        for sample in samples: sample.parent = self
         # Check we have at least one sample #
         if not len(samples) > 0:
             msg = "No samples belonging to the project '%s' were found in" \
@@ -169,7 +167,7 @@ class Project:
         This method will check every Sample of the current project for a
         specific attribute (e.g. 'output_dir') and assert that this attribute
         has the same value in every Sample. If this is the case, the unique
-        value is returned. Otherwise an Exception is raised.
+        value is returned. Otherwise, an Exception is raised.
         """
         # Collect all values #
         all_values = set(getattr(s, attribute) for s in self)
@@ -184,7 +182,7 @@ class Project:
     def combine_reads(self, verbose=True, check=False):
         """
         This method will concatenate all the cleaned reads from every sample
-        within this project into a singe FASTA file for further processing.
+        within this project into a single FASTA file for further processing.
         """
         # Print a message #
         if verbose:
@@ -239,7 +237,7 @@ class Project:
         """
         Takes care of storing a table with OTU as rows and samples as columns
         and tracks how many sequences where found from each sample in each OTU.
-        Also responsible for drawing graphs of OTU distribution.
+        This is also responsible for drawing graphs of OTU distribution.
         """
         from pacmill.centering.otu_table import OtuTable
         return OtuTable(self.otus.table)

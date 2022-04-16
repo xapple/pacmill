@@ -8,6 +8,7 @@ Contact at www.sinclair.bio
 """
 
 # Built-in modules #
+import itertools
 
 # First party modules #
 from plumbing.cache import property_cached
@@ -100,7 +101,7 @@ class TaxaLegend(SoloLegend):
         taxa_table = self.parent.taxa_tables_by_rank[self.base_rank]
         # Normalize it #
         df = taxa_table.apply(lambda x: 100 * x / x.sum(), axis=1)
-        # Sort columns with biggest first #
+        # Sort columns with the biggest value first #
         df = df.reindex(df.mean().sort_values(ascending=False).index, axis=1)
         # Combine all columns above a certain number to 'Others' #
         max_taxa_count = self.parent.parent.max_taxa_displayed
@@ -111,7 +112,7 @@ class TaxaLegend(SoloLegend):
             df['(All Others Combined)'] = cols_summed
         # Trim taxonomic names to a certain number of characters #
         new_columns = {col: col if len(col) <= self.max_name_len
-        else col[:self.max_name_len-4] + ' ...'
+                       else col[:self.max_name_len-4] + ' ...'
                        for col in df.columns}
         df = df.rename(new_columns)
         # Return #
@@ -126,7 +127,6 @@ class TaxaLegend(SoloLegend):
         max_taxa = self.parent.parent.max_taxa_displayed - 1
         colors = cool_colors[:max_taxa] + ['#000000'] + cool_colors[max_taxa:]
         # Assign colors #
-        from itertools import cycle
-        result = dict(zip(taxa, cycle(colors)))
+        result = dict(zip(taxa, itertools.cycle(colors)))
         # Return #
         return result

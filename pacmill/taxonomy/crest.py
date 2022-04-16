@@ -133,7 +133,7 @@ class CrestResults:
             for line in handle:
                 # Split by tabs #
                 code, species = line.strip('\n').split('\t')
-                # Split by semi-colons #
+                # Split by semicolons #
                 species = species.split(';')
                 # Remove useless whitespace #
                 species = tuple(map(lambda s: s.strip(), species))
