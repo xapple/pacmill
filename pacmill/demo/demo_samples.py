@@ -121,7 +121,7 @@ class DemoSample:
     def sra_dump(self):
         """Takes care of running `fastq-dump` to extract sequences."""
         # Create filter object #
-        from pacmill.demo.sra import DumpSRA
+        from fasta.sra import DumpSRA
         sra_dump = DumpSRA(self.path_sra, self.path_fastq)
         # Return #
         return sra_dump

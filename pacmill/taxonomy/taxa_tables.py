@@ -29,7 +29,7 @@ class TaxaTable:
     generate taxa tables at different ranks.
     """
 
-    # Combine too many taxa together in the graphs #
+    # To avoid combining too many taxa together in the graphs #
     max_taxa_displayed = 18
 
     def __repr__(self):

@@ -124,7 +124,7 @@ if __name__ == "__main__":
     print(proj.combine_reads())
     timer.print_elapsed()
 
-    print("# Pick OTUS #")
+    print("# Pick OTUs #")
     print(proj.otus())
     timer.print_elapsed()
 

@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # Import #
     from pacmill.demo.demo_samples import samples
     # Check we have the required program for uncompressing first #
-    from pacmill.demo.sra import DumpSRA
+    from fasta.sra import DumpSRA
     DumpSRA.check_installed()
     # Message #
     print("\n Downloading the 5 demo samples which are:")
